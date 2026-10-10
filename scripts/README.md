@@ -7,13 +7,24 @@ node_modules and previously generated frontend files.
 
 ## Personal journal deployment
 
-`journal-image.yml` runs only when a release tag is pushed. Tags use the existing
-`YY.MM[.N][-rc.N]` format, for example `26.10`, `26.10.1` or `26.10-rc.1`;
-`v1.0.0` is not an application version supported by Kairos. A tag may point
+`journal-image.yml` runs only when a release tag is pushed. Kairos starts at
+`1.0.0` and uses `MAJOR.MINOR.PATCH[-rc.N]`, for example `1.0.1`, `1.1.0` or
+`1.1.0-rc.1`, without a `v` prefix. A tag may point
 to a commit on any branch, provided that commit contains this workflow. Branch
 pushes, PR merges, tag deletions and GitHub Release description edits do not
 deploy. There is no manual workflow-dispatch entry point; rerun a failed tag run
 when appropriate. Release-candidate tags also use this production pipeline.
+
+Set `internal/version/VERSION` to the target stable version before releasing;
+the tag's base must match that file. Development builds use that base followed by
+`-dev.<12-character commit>`, including shallow clones. Application versions are
+independent of database schema versions: starting at `1.0.0` does not reset,
+renumber or downgrade an existing database.
+
+Upgrade smoke tests resolve the previous stable ancestor. Independent semantic
+releases take precedence over the retained transition tags `26.10.1` and `26.10.2`;
+the first `1.0.0` release therefore tests an upgrade from `26.10.2`. Separate
+upgrade CI still verifies the original `neosmemo/memos:0.31.0` database baseline.
 
 The workflow validates the tag before starting the frontend and backend CI,
 builds the image on GitHub, runs the existing fresh-install, frontend,
@@ -46,9 +57,9 @@ For an explicitly authorized release, tag the reviewed source commit and push
 that one tag (replace the example version and commit before running):
 
 ```bash
-bash scripts/release_version.sh version 26.10.1
-git tag -a 26.10.1 REVIEWED_COMMIT -m "Journal 26.10.1"
-git push origin refs/tags/26.10.1
+bash scripts/release_version.sh version 1.0.0
+git tag -a 1.0.0 REVIEWED_COMMIT -m "Kairos 1.0.0"
+git push origin refs/tags/1.0.0
 ```
 
 Pushing the tag starts a real production deployment, including for `-rc.N` tags;

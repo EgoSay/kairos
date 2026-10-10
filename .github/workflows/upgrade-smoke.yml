@@ -18,6 +18,7 @@ on:
       - "store/migration/**"
       - "store/migrator.go"
       - "store/schema_version*.go"
+      - "internal/version/**"
       - "store/db/**"
       - "store/test/containers.go"
       - "store/test/migrator*_test.go"

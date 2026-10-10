@@ -1,21 +1,26 @@
 package version
 
 import (
+	_ "embed"
 	"regexp"
 	"runtime/debug"
-	"time"
+	"strings"
 
 	"github.com/pkg/errors"
 )
 
-// Version is injected by release builds or derived from the embedded commit date.
+//go:embed VERSION
+var developmentBaseVersion string
+
+// Version is injected by release builds or derived from VERSION and the embedded commit.
 var Version string
 
 // Commit is injected by CI or read from build metadata, falling back to unknown.
 var Commit = "unknown"
 
-// calendarVersion matches YY.MM[.N][-rc.N]; scripts/release_version.sh accepts the same tags.
-var calendarVersion = regexp.MustCompile(`^[1-9][0-9]\.(0[1-9]|1[0-2])(\.[1-9][0-9]*)?(-rc\.[1-9][0-9]*)?$`)
+// Release tags omit the v prefix. Development builds carry their source identity.
+var releaseVersion = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-rc\.[1-9][0-9]*)?$`)
+var developmentVersion = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-dev\.[a-f0-9]{12}$`)
 
 func init() {
 	if info, ok := debug.ReadBuildInfo(); ok {
@@ -25,30 +30,23 @@ func init() {
 
 func resolveBuild(version, commit string, settings []debug.BuildSetting) (string, string) {
 	for _, setting := range settings {
-		switch setting.Key {
-		case "vcs.time":
-			if version == "" {
-				if timestamp, err := time.Parse(time.RFC3339, setting.Value); err == nil {
-					version = timestamp.UTC().Format("06.01")
-				}
-			}
-		case "vcs.revision":
-			if commit == "" || commit == "unknown" {
-				commit = setting.Value
-			}
-		default:
+		if setting.Key == "vcs.revision" && (commit == "" || commit == "unknown") {
+			commit = setting.Value
 		}
+	}
+	if version == "" && len(commit) == 40 {
+		version = strings.TrimSpace(developmentBaseVersion) + "-dev." + commit[:12]
 	}
 	return version, commit
 }
 
-// Validate checks that the build has a calendar version before it is exposed.
+// Validate checks that the build has a Kairos version before it is exposed.
 func Validate() error {
 	if Version == "" {
 		return errors.New("missing build version: use go run -buildvcs=true ./cmd/memos or inject internal/version.Version with -ldflags")
 	}
-	if !calendarVersion.MatchString(Version) {
-		return errors.Errorf("invalid build version %q: expected YY.MM[.N][-rc.N]", Version)
+	if !releaseVersion.MatchString(Version) && !developmentVersion.MatchString(Version) {
+		return errors.Errorf("invalid build version %q: expected MAJOR.MINOR.PATCH[-rc.N] or MAJOR.MINOR.PATCH-dev.<12-char commit>", Version)
 	}
 	return nil
 }

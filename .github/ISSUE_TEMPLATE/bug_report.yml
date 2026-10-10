@@ -45,7 +45,7 @@ body:
     attributes:
       label: Kairos version
       description: Use the version from Settings > System, the image tag, or `memos --version`.
-      placeholder: "26.10.1 or main@abcdef"
+      placeholder: "1.0.0 or main@abcdef"
     validations:
       required: true
 

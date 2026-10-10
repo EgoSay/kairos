@@ -5,7 +5,7 @@ services:
       context: ..
       dockerfile: scripts/Dockerfile.dokploy
       args:
-        VERSION: ${KAIROS_VERSION:-26.10}
+        VERSION: ${KAIROS_VERSION:-1.0.0}
         COMMIT: ${KAIROS_COMMIT:-unknown}
     restart: unless-stopped
     init: true

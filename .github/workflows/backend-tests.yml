@@ -10,6 +10,7 @@ on:
       - "go.mod"
       - "go.sum"
       - "**.go"
+      - "internal/version/VERSION"
 
 concurrency:
   group: ${{ github.workflow }}-backend-${{ github.ref }}

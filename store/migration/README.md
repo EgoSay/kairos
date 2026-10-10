@@ -2,12 +2,14 @@
 
 The minimum supported database schema is **0.31.8**, shipped in **v0.31.0**.
 This is a fixed baseline, independent of application release numbering.
+Kairos's application version starts at `1.0.0`; existing calendar schema markers
+and migration directories remain unchanged. Do not reset them to the application version.
 
 - Fresh installations use the driver's `LATEST.sql` and record the current schema version.
 - Existing databases below the baseline must first run
-  [v0.31.0](https://github.com/EgoSay/kairos/releases/tag/v0.31.0) successfully.
+  [v0.31.0](https://github.com/usememos/memos/releases/tag/v0.31.0) successfully.
 - Databases older than v0.22, or with no schema version recorded, must first run
-  [v0.25.3](https://github.com/EgoSay/kairos/releases/tag/v0.25.3), then v0.31.0.
+  [v0.25.3](https://github.com/usememos/memos/releases/tag/v0.25.3), then v0.31.0.
 - Invalid schema versions and databases newer than the binary supports are rejected.
 
 Historical SemVer migration scripts are retained in Git history and released

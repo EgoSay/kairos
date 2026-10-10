@@ -21,7 +21,7 @@ COPY --from=frontend /src/server/frontend/dist ./server/frontend/dist
 ARG TARGETOS TARGETARCH VERSION COMMIT=unknown
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    : "${VERSION:?Pass the calendar version as a build argument}" && \
+    : "${VERSION:?Pass the Kairos version as a build argument}" && \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -trimpath \
       -ldflags="-s -w -X github.com/EgoSay/kairos/internal/version.Version=${VERSION} -X github.com/EgoSay/kairos/internal/version.Commit=${COMMIT}" \
