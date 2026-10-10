@@ -7,7 +7,7 @@ description: >
   or release candidate; changing release configuration is not itself a release.
 metadata:
   owner: "EgoSay"
-  version: "2.2.0"
+  version: "2.3.0"
   last-reviewed: "2026-10-10"
 ---
 
@@ -21,8 +21,8 @@ independent and must not be reset.
 
 The workflow validates the version, runs frontend/backend checks, builds and
 smoke-tests the complete image, publishes to `ghcr.io/egosay/kairos`,
-verifies the pre-upgrade snapshot/R2 backup, and updates the pinned
-`production/memos-journal` declaration for Dokploy. It confirms the public
+verifies the pre-upgrade snapshot/R2 backup, and asks the restricted server gate
+to update the existing Dokploy Raw Compose and invoke its deployment API. It confirms the public
 source identity and server image health before completing the deployment.
 
 The upstream Canary, Release, Render demo and stale-item workflows are retired.
@@ -31,18 +31,22 @@ Do not invoke `release.yml`, publish to `neosmemo/memos` or
 The journal workflow does not create a GitHub Release page.
 Before the first Kairos release, verify that Dokploy uses `EgoSay/kairos`
 and the deployed `journal_release_gate.py` expects the Kairos registry.
-Keep the existing composeId, appName, production branch, volumes, and data paths.
+Keep the existing composeId, appName, environment, volumes, and data paths.
+Use Raw Compose with autodeploy disabled; retained repository metadata points
+to `EgoSay/kairos` / `main`. The API key stays in root-only server configuration.
+Before release, install the reviewed gate/adapter changes and Compose template
+when they changed. The template SHA-256 must match the tagged source; the gate
+checks this and API access before it pauses writes.
 New GHCR packages default to private. This deployment uses public images:
 after the first package push, confirm its visibility is Public. The workflow
 checks anonymous manifest access before freezing writes. If that check fails,
 configure the package visibility and rerun only after confirming preparation
 never started; publishing credentials do not prove Dokploy pull access.
-Already published tags retain legacy request compatibility. New Kairos requests
-include the repository and must confirm the exact requested repository and digest.
-Both approved repositories remain usable as previous images for rollback.
-Preserve `main` and `production/memos-journal` during branch cleanup. Temporary
-branches may be removed after merge and verification; published tags and stored
-production history are not disposable branches.
+Historical tags remain release records; do not rerun their retired branch-based
+workflows after this migration. New requests include repository, commit, digest
+and template SHA-256. Both approved image repositories remain recovery targets.
+Preserve only `main` as a long-lived branch. Remove temporary branches after
+merge and verification; published tags and stored production history remain.
 
 The published transition tags `26.10.1` and `26.10.2` remain historical records.
 Previous-release resolution prefers independent semantic releases over those
@@ -52,8 +56,8 @@ upgrade smoke test; separate upgrade CI retains the original database baseline.
 ## Candidate and authorization
 
 - Inspect the actual remote refs and existing tags. Default to a reviewed
-  `origin/main` commit unless the user specified another candidate. Any branch
-  is supported; being reachable from main is not a release requirement.
+  `origin/main` commit. The tagged commit must be reachable from `origin/main`;
+  merge reviewed changes before publishing a release tag.
 - The candidate must contain the current tag-triggered journal workflow and
   the removal of upstream release workflows. An old commit may still contain
   old branch/tag triggers, so do not treat its configuration as current.
@@ -77,10 +81,10 @@ upgrade smoke test; separate upgrade CI retains the original database baseline.
    Inspect available CI results for that exact commit; run relevant checks
    when missing. Upgrade checks can be run through `upgrade-smoke.yml` on the
    candidate ref. There is no manual dispatch for the production workflow.
-3. Check the current production declaration and the required deployment
-   credentials without displaying secret values. Missing deployment credentials
-   cause the workflow to publish only the image, so a green run alone is not
-   proof of an application deployment.
+3. Check the current Dokploy declaration, installed gate/template and required
+   credentials without displaying secret values. Missing CI credentials fail
+   the workflow. API credentials or template mismatch fail before writes stop.
+   Never equate an image publication with a confirmed deployment.
 4. With release authorization, create a lightweight or annotated tag on the
    explicit commit and push only that tag. The workflow resolves the checked-out
    commit for both tag types and embeds the tag as the application version.
@@ -110,8 +114,10 @@ blindly retry backup/prepare steps while a pending release exists. For a source
 change, use a newly reviewed commit and a new version tag.
 
 Follow `scripts/README.md` for rollback. The pending-release gate protects new
-writes and schema changes; revert the production declaration only after safe
-data rollback is confirmed, because that push triggers Dokploy. Confirmed-release
+writes and schema changes. It waits for the matching Dokploy job to finish and
+restores both the previous declaration and image after the data check passes.
+Unknown queue outcomes or configuration drift require inspection, not blind
+retry. The independent watchdog uses this same server-side path. Confirmed-release
 recovery requires a separate compatibility/data assessment. Known rollback
 edge cases are tracked in [issues #2](https://github.com/EgoSay/kairos/issues/2)
 and [#4](https://github.com/EgoSay/kairos/issues/4) until resolved. Historical

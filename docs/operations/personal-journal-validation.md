@@ -93,4 +93,4 @@ J01 的信息架构、交互规范落实为运行界面与真实浏览器复核�
 
 AC21 的独立存储和自动调度现已配置并验证；J16 的外部备份条件已落地。完整 GitHub → 预备份 → 固定 digest → Dokploy GitHub App → 公网及服务器确认的新流水线于 19:04 成功，[运行证据](https://github.com/EgoSay/memos/actions/runs/37766844305)。实际 commit `966c6e037889654cb0b0483eaeaa58dd6d7d72ce`，digest `sha256:9b5136aeed10886f1dfe537e2204d62ed68ecf5eee4a1305143df944d4e2f639`；前端/后端/升级四项工作流均成功。升级前后整个逻辑数据库指纹一致、SQLite integrity=ok，其他 15 个服务容器 ID/镜像摘要完全一致；备份 timer 恢复 active，发布 pending 清除。上线后 R2 回执已使用新 commit，Mac 后台再次保存并验证独立快照、退出 0。主用手机蜂窝网络、软键盘、录音权限、真实 AI 与首个社媒平台仍属未验证条件。PR 保持 draft，不自动关闭需求议题或宣称本人正式验收。
 
-操作方法与部署工具见 [scripts/README.md](../../scripts/README.md)。生产升级配置使用声明分支 `production/memos-journal`；只有前后端、镜像和升级前备份检查通过后，才推送专用生产声明分支；Dokploy GitHub App 仅部署该分支。服务器不承担源码打包，既有其他服务未因本轮部署重建，整机没有重启。
+操作方法与部署工具见 [scripts/README.md](../../scripts/README.md)。上述历史验收当时使用声明分支 `production/memos-journal`；只有前后端、镜像和升级前备份检查通过后，才推送专用生产声明分支；Dokploy GitHub App 仅部署该分支。当前发布入口以 [部署说明](deployment.md) 为准。服务器不承担源码打包，既有其他服务未因本轮部署重建，整机没有重启。

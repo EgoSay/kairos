@@ -143,11 +143,12 @@ Black-box service tests live in `server/api/v1/test/`, unit tests next to the co
 ## CI Reference
 
 - Kairos releases start at `1.0.0` and use `MAJOR.MINOR.PATCH[-rc.N]` tags without a `v` prefix. To cut, promote, or check a release, follow
-  `.agents/skills/release/SKILL.md`. `journal-image.yml` deploys the tagged commit from any branch;
+  `.agents/skills/release/SKILL.md`. `journal-image.yml` requires the tagged commit to be reachable from `origin/main`;
   ordinary branch pushes and PR merges never start production deployment. RC tags deploy too.
 - Set `internal/version/VERSION` to the target stable version before release; the tag's base must match it.
 - Development builds use `VERSION-dev.<12-char commit>`; release builds inject the exact semantic version tag.
-- Keep `main` and the Dokploy declaration branch `production/memos-journal`. Delete merged temporary branches after checking for unique commits and active worktrees; do not remove published tags or rewrite history as branch cleanup.
+- Keep only `main` as a long-lived branch. CI uses the restricted server gate to deploy a fixed image digest through the Dokploy API; Dokploy Raw Compose has autodeploy disabled. Delete merged temporary branches after checking for unique commits and active worktrees; preserve published tags and historical backups.
+- Release gate code and the reviewed `scripts/compose.dokploy.yaml` template are installed under `/opt/memos-backup/`; update their server copies when changing them. The tagged template SHA-256 must match before writes can be paused. Dokploy API credentials remain in root-only `/etc/memos-backup/dokploy.json`, never in Git or CI.
 - `go build` embeds Git metadata automatically; `go run` needs `-buildvcs=true`. Builds without Git metadata must inject
   `github.com/EgoSay/kairos/internal/version.Version` through `-ldflags`.
 - Docker excludes `.git`; pass `--build-arg VERSION="$(bash scripts/release_version.sh development-version)"` and
