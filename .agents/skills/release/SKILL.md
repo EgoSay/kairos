@@ -100,7 +100,9 @@ Follow `scripts/README.md` for rollback. The pending-release gate protects new
 writes and schema changes; revert the production declaration only after safe
 data rollback is confirmed, because that push triggers Dokploy. Confirmed-release
 recovery requires a separate compatibility/data assessment. Known rollback
-edge cases are tracked in issues #21 and #23 until resolved.
+edge cases are tracked in [issues #2](https://github.com/EgoSay/kairos/issues/2)
+and [#4](https://github.com/EgoSay/kairos/issues/4) until resolved. Historical
+issue and PR links are listed in `docs/history.md`.
 
 Report the version tag, source commit, run URL, image digest, deployment and
 backup verification, and any remaining limits. Creating or editing GitHub

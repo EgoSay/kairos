@@ -12,14 +12,14 @@
 ## 搜索
 
 当前搜索支持关键词与表达式筛选，并可从标签、日期、分区和不同视图找回内容。
-可视化条件和“未添加标签”快捷筛选正在 [#25](https://github.com/EgoSay/kairos/issues/25) 完善。
+可视化条件和“未添加标签”快捷筛选正在 [#5](https://github.com/EgoSay/kairos/issues/5) 完善。
 
 高级筛选遵循接口中的 CEL 字段定义，详见 [API](api.md)。普通使用可以先通过标签和日历定位，无需为每条记录补全分类。
 
 ## 日历和地图
 
 活动日历按数量着色，点击日期回到当天。地图呈现已经保存位置的记录；定位结果可以修改。
-位置纠错与快捷添加仍在 [#27](https://github.com/EgoSay/kairos/issues/27) 跟进。
+位置纠错与快捷添加仍在 [#7](https://github.com/EgoSay/kairos/issues/7) 跟进。
 
 ## 随便看看
 
@@ -36,12 +36,12 @@ AI 洞察需要配置服务、手选来源并点击开始。发送范围在使�
 分区帮助本人整理内容。只有明确配置并启用的分区才自动向接收服务投递；保存时显示外发目标。
 投递回执与外部平台真正发布成功是不同结果。接收服务与平台需要自行配置、验证。
 
-已知的分区保存与外发时序问题保留在 [#20](https://github.com/EgoSay/kairos/issues/20) 和 [#22](https://github.com/EgoSay/kairos/issues/22)，不在品牌迁移中宣称修复。
+已知的分区保存与外发时序问题保留在 [#1](https://github.com/EgoSay/kairos/issues/1) 和 [#3](https://github.com/EgoSay/kairos/issues/3)，不在品牌迁移中宣称修复。
 
 ## 修改、最近删除与数据
 
 记录可以编辑、查看保留版本，也可以移入最近删除后恢复。彻底删除需要明确确认。
-附件预览及随记录进入回收站的联动正在 [#30](https://github.com/EgoSay/kairos/issues/30) 修复。
+附件预览及随记录进入回收站的联动正在 [#10](https://github.com/EgoSay/kairos/issues/10) 修复。
 
 “数据与备份”中的个人 ZIP 档案可带走内容；完整实例恢复需要数据库和媒体备份。
-配置定时 S3 备份、检测和独立状态页属于 [#31](https://github.com/EgoSay/kairos/issues/31)。目前可配置的实例备份工具见 [部署说明](operations/deployment.md)。
+配置定时 S3 备份、检测和独立状态页属于 [#11](https://github.com/EgoSay/kairos/issues/11)。目前可配置的实例备份工具见 [部署说明](operations/deployment.md)。

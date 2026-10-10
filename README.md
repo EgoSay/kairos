@@ -5,7 +5,7 @@
 
 Kairos 是一个私密、轻松、可以长期保存的生活记录工具。留下当时的文字、照片与声音，让多年后的自己仍能读到真实的生活。
 
-[开始使用](#快速开始) · [使用说明](docs/usage.md) · [部署与恢复](docs/operations/deployment.md) · [需求与已知问题](https://github.com/EgoSay/kairos/issues/32) · [MIT License](LICENSE)
+[开始使用](#快速开始) · [使用说明](docs/usage.md) · [部署与恢复](docs/operations/deployment.md) · [需求与已知问题](https://github.com/EgoSay/kairos/issues/12) · [项目历史](docs/history.md) · [MIT License](LICENSE)
 
 ![Kairos 桌面记录页，使用演示数据](docs/assets/screenshots/desktop.png)
 
@@ -41,7 +41,7 @@ Kairos 的名字取意于古希腊的“契机、恰当的时刻”。在这里�
 
 AI 需要自己的服务配置；外部投递需要接收服务，不等于已支持所有社媒平台。离线冷启动需要此前成功联网打开应用，浏览器草稿尚未同步时不在服务器备份里。
 
-产品持续完善中：搜索简化、图片粘贴体验、定位、聚焦入口、关联记录、附件预览与回收站联动，以及产品内的 S3 定时备份配置和监控页，均在 [需求清单 #32](https://github.com/EgoSay/kairos/issues/32) 跟进。现有备份脚本与待开发的管理页面分别说明，不将规划当作已发布能力。
+产品持续完善中：搜索简化、图片粘贴体验、定位、聚焦入口、关联记录、附件预览与回收站联动，以及产品内的 S3 定时备份配置和监控页，均在 [需求清单 #12](https://github.com/EgoSay/kairos/issues/12) 跟进。现有备份脚本与待开发的管理页面分别说明，不将规划当作已发布能力。
 
 ## 看看实际界面
 
@@ -108,6 +108,12 @@ flowchart LR
 Kairos 从自己的使用需要出发持续迭代。遇到问题或有想法，可以在 [Issues](https://github.com/EgoSay/kairos/issues) 描述具体场景。现有功能的可靠性和低负担体验优先。
 
 本地开发、检查和 PR 约定见 [CONTRIBUTING.md](CONTRIBUTING.md)，目录与工程规则见 [AGENTS.md](AGENTS.md)，接口说明见 [API 文档](docs/api.md)。
+
+## 项目历史
+
+Kairos 在本仓库独立维护。完整 Git 提交历史、分支和版本标签已经承接，未完成的需求与缺陷在本仓库的 Issues 中继续跟进。
+
+早期已关闭的 Issues 和原生 PR 讨论保存在 [EgoSay/memos 历史库](https://github.com/EgoSay/memos)。旧库曾使用 `EgoSay/kairos` 名称，因此旧链接和裸 `#编号` 可能不再指向原条目；查阅历史时请使用 [Issues 编号对照与 PR 索引](docs/history.md)。
 
 ## 许可与来源
 

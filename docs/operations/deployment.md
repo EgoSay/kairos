@@ -51,7 +51,9 @@
 新安装可以用 `kairos-data`；已有实例不能直接套用新安装 Compose，否则可能创建新的空卷。
 镜像来源切换本身不需要复制数据库或清空浏览器草稿。涉及卷或域名的后续迁移必须另做数据和本机缓存迁移。
 
-GitHub 改名与退出 fork 网络是两个操作。Git 历史、issues、PR 和部署绑定均需保护；没有确认元数据保留能力前，不直接执行不可逆的 fork 脱离。
+`EgoSay/kairos` 是独立仓库；早期 Issues 和 PR 历史保存在 `EgoSay/memos`，对应关系见 [项目历史](../history.md)。旧库不再承担生产发布。
+
+仓库迁移沿用现有 Dokploy 应用、生产分支和固定镜像声明，重新核对 GitHub App 对新仓库的访问与 Actions 发布凭据。仅迁移源码仓库不升级应用，也不更换数据卷。后续 Kairos 镜像仍通过正式版本标签发布，并完成镜像拉取、备份和 Dokploy 实际部署验证。
 
 ## 数据保障
 
@@ -68,6 +70,6 @@ MySQL/PostgreSQL 使用各自的一致性备份机制，并配套附件快照。
 
 ## 已知限制
 
-- 产品内 S3 配置、检测和备份状态页面在 [#31](https://github.com/EgoSay/kairos/issues/31) 跟进。
-- 发布回滚的容器缺失和声明恢复问题分别在 [#21](https://github.com/EgoSay/kairos/issues/21)、[#23](https://github.com/EgoSay/kairos/issues/23) 跟进。
+- 产品内 S3 配置、检测和备份状态页面在 [#11](https://github.com/EgoSay/kairos/issues/11) 跟进。
+- 发布回滚的容器缺失和声明恢复问题分别在 [#2](https://github.com/EgoSay/kairos/issues/2)、[#4](https://github.com/EgoSay/kairos/issues/4) 跟进。
 - 历史部署成功只说明当时结果。每次发布都需要读取当前配置、备份回执和运行版本。
