@@ -1,9 +1,11 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { MoreHorizontalIcon, PinIcon, PinOffIcon } from "lucide-react";
-import { type MouseEvent, useMemo, useState } from "react";
+import { type MouseEvent, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CLAMP_PREVIEW_HEIGHT_PX } from "@/components/ClampedSection";
+import JournalOriginalsDialog from "@/components/JournalOriginalsDialog";
 import JournalRecordActions from "@/components/JournalRecordActions";
+import JournalRecordHistoryDialog from "@/components/JournalRecordHistoryDialog";
 import JournalReviewActions from "@/components/JournalReviewActions";
 import MemoContent from "@/components/MemoContent";
 import { AttachmentGallery, MemoMetadataRows } from "@/components/MemoMetadata";
@@ -33,6 +35,8 @@ export default function JournalMemo({ memo }: { memo: Memo }) {
   const { expanded, setExpanded } = useJournalSession();
   const { userTagsSetting } = useAuth();
   const [revealed, setRevealed] = useState(false);
+  const [recordDialog, setRecordDialog] = useState<"history" | "originals" | null>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const hidden = isMemoBlurred(memo, userTagsSetting) && !revealed;
   const isExpanded = expanded.has(memo.name);
   const long = memo.content.length > 700;
@@ -78,11 +82,20 @@ export default function JournalMemo({ memo }: { memo: Memo }) {
             </Button>
           )}
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label="记录选项" />}>
+            <DropdownMenuTrigger
+              ref={menuTriggerRef}
+              render={<Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label="记录选项" />}
+            >
               <MoreHorizontalIcon className="size-4" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {user?.name === memo.creator && <JournalRecordActions name={memo.name} />}
+            <DropdownMenuContent align="end" finalFocus={recordDialog ? false : undefined}>
+              {user?.name === memo.creator && (
+                <JournalRecordActions
+                  name={memo.name}
+                  onOpenHistory={() => setRecordDialog("history")}
+                  onOpenOriginals={() => setRecordDialog("originals")}
+                />
+              )}
               <DropdownMenuItem
                 onClick={() => navigate(`/${memo.name}`, { state: createMemoNavigationState(parentPage) })}
                 className="min-h-11"
@@ -137,6 +150,12 @@ export default function JournalMemo({ memo }: { memo: Memo }) {
             parentPage={parentPage}
           />
         </div>
+      )}
+      {recordDialog === "history" && (
+        <JournalRecordHistoryDialog name={memo.name} open onOpenChange={() => setRecordDialog(null)} finalFocus={menuTriggerRef} />
+      )}
+      {recordDialog === "originals" && (
+        <JournalOriginalsDialog name={memo.name} open onOpenChange={() => setRecordDialog(null)} finalFocus={menuTriggerRef} />
       )}
       {previewState.items.length > 0 && (
         <PreviewImageDialog

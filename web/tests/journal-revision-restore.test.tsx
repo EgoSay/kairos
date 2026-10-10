@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import JournalRecordHistoryDialog from "@/components/JournalRecordHistoryDialog";
 
@@ -8,6 +8,53 @@ vi.mock("@/hooks/useJournalQueries", () => ({ journalRequest: request }));
 
 beforeEach(() => {
   request.mockReset();
+});
+
+it.each([
+  true,
+  false,
+])("distinguishes an initial read failure from empty history and retries successfully: has versions %s", async (hasVersions) => {
+  let finishRetry!: (result: unknown) => void;
+  request.mockRejectedValueOnce(new Error("temporary unavailable")).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishRetry = resolve;
+      }),
+  );
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const onOpenChange = vi.fn();
+  render(
+    <QueryClientProvider client={client}>
+      <JournalRecordHistoryDialog name="memos/record" open onOpenChange={onOpenChange} />
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByRole("alert")).toHaveTextContent("无法读取版本");
+  const emptyMessage = "这条记录还没有最近的修改版本。";
+  expect(screen.queryByText(emptyMessage)).not.toBeInTheDocument();
+  expect(request).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("button", { name: "重试" }));
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+  expect(screen.queryByText(emptyMessage)).not.toBeInTheDocument();
+  await act(async () => {
+    finishRetry({
+      revisions: hasVersions
+        ? [{ id: "recovered", createdTs: 1_700_000_000, memo: { name: "memos/record", content: "recovered version after retry" } }]
+        : [],
+    });
+  });
+  await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+  if (hasVersions) {
+    expect(await screen.findByText("recovered version after retry")).toBeInTheDocument();
+    expect(screen.queryByText(emptyMessage)).not.toBeInTheDocument();
+  } else {
+    expect(await screen.findByText(emptyMessage)).toBeVisible();
+    expect(screen.queryByText("恢复这个版本")).not.toBeInTheDocument();
+  }
+  expect(screen.getByRole("dialog", { name: "最近版本" })).toBeVisible();
+  expect(onOpenChange).not.toHaveBeenCalled();
+  expect(request).toHaveBeenCalledTimes(2);
+  expect(request).toHaveBeenLastCalledWith("/memos/record/revisions");
+  client.clear();
 });
 
 it.each([true, false])("refreshes derived authorization caches only after a successful restore: %s", async (success) => {

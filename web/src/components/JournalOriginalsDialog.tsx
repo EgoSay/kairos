@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { type RefObject, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getRequestToken, memoServiceClient } from "@/connect";
@@ -9,10 +9,12 @@ export default function JournalOriginalsDialog({
   name,
   open,
   onOpenChange,
+  finalFocus,
 }: {
   name: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  finalFocus?: RefObject<HTMLElement | null>;
 }) {
   const [error, setError] = useState("");
   const originals = useQuery({
@@ -48,7 +50,7 @@ export default function JournalOriginalsDialog({
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl">
+      <DialogContent size="xl" initialFocus finalFocus={finalFocus}>
         <DialogHeader>
           <DialogTitle>原文件</DialogTitle>
           <DialogDescription>只有你可以下载原始字节；分享使用独立的显示副本。旧记录可能没有保留原文件。</DialogDescription>

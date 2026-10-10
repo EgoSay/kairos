@@ -13,39 +13,52 @@
 - 实现与浏览器/真实服务/发布验收全部满足后再关闭 issue；总清单最后关闭。
 
 
-## 2026-10-10 23:50 集成证据说明
+## 2026-10-11 01:24 当前工程证据与剩余门槛
 
-以下逐条映射的状态仍为“验证中”：局部通过不替代完整场景、最终 CI 或上线核验。提交暂为 `codex/kairos-complete-backlog` 工作树，候选提交建立后绑定；不将基线提交冒充实现提交。
+以下137行保留源issue/历史AC的精确条款。除AC37“暂缓”外均为“验证中”：本节所述场景通过不代表最终发布通过，也未关闭issue或宣称用户本人体验确认。
 
-- **G / DB**：本机 Go 1.27.0，完整 `go test -p 1 ./...`、广泛 race 通过；SQLite/MySQL/PostgreSQL 实際 fresh 与历史升级通过，Go tidy 无依赖变化；golangci-lint 2.13.1 无问题。
-- **F / FE / E / I / C / T**：Node 24.16.0 / pnpm 11.0.1，最终 lint、226 个测试文件 / 2037 项测试、生产构建通过。各行所列测试名限定其断言范围；模拟网络、定位、DOM 测试不替代实际浏览器。
-- **P**：发布/备份 Python 回归 86 项通过；真实 Docker 故障演练单列，尚未完成。新增隔离应用验收器另行验证。
-- **B**：本机 ego lite，隔离合成账号；日期与未标签组合、父标签边界、置顶原日期、关联预览保存、原生 PNG 粘贴、聚焦及源码往返、断网冷刷新草稿恢复、图片预览/原件 hash/回收/恢复、公开地名查询与常用地点、日历 9 条一致性已留证。最新离线排队修复与其余跨功能浏览器场景仍继续验证。
-- **M / M2 / R11**：真实 Codex 0.156.1，今天/指定日分页、两时期完整查询、全文及来源、事实与推测区分通过；HTTP/2 Connect、gRPC、gRPC-Web、旧 MCP 和文件入口权限回归通过。来源链接实际导航另记。
-- **P-live**：真实现有 S3 临时对象读写/校验/删除、失败候选不改原配置、完整试备份通过；真实隔离恢复 712 条记录、55 个附件、110 个媒体文件校验通过，`applicationVerified=false`。管理页面已真实完成检测、试备份、启用原目的地，仍沿用原定时器。待下一次定时执行和恢复应用验收。
-- **P0**：每项共同待办——最终提交及相关 CI、合并、1.1.0 正式标签发布、版本/digest、上线前新鲜可恢复备份及上线逐对象数据核对。此前未新发版、未关闭 issue。
-- **U-AI**：现有实例无 AI 配置，已收集拟用服务、模型及受控密钥位置，尚待输入。已有模拟失败回归不能记为真实 AI 成功。
+候选为 `1f65c5a69f6749092b5c2d06b3a1bae56fbdffdb` **加待提交补丁**，草稿 [PR #20](https://github.com/EgoSay/kairos/pull/20)。`1f65` 的4个CI工作流/14项检查全成功，含三数据库升级验证；其后菜单弹窗生命周期、版本错误/重试、开发MCP代理及ZIP文档枚举修复有单独测试/审查/浏览器证据，不能冒称已被该提交CI覆盖。当前工作树尚未正式上线。
 
-完整原始日志、浏览器事件与逐对象摘要保存在项目忽略的受控证据目录；公开内容仅列脱敏结果。没有声称 Evan 已亲自完成体验确认。
+- **G / DB**：Go1.27，完整Go测试、race、tidy和lint通过；SQLite/MySQL/PostgreSQL真实事务、fresh/升级与精确标签派生索引回归通过。最新ZIP修复后API两包race通过，ZIP导入/历史文档在三数据库回归通过。旧1.0.1镜像读取升级数据、新写入再升级的12项演练保留正文/原件。
+- **F / FE / E / I / C / T**：Node24.16/pnpm11.0.1，最新工作树lint、**228测试文件/2060项**及前端构建通过；分别覆盖组件、真实CodeMirror、离线队列、日历/搜索、标签。模拟网络/定位/DOM的结果不冒充实际设备行为。测试环境的`scrollTo`未实现警告不当作浏览器滚动证据。
+- **P / P-Docker**：105项备份/发布Python回归通过；真实隔离Docker/Compose四场故障演练已完成，涵盖容器缺失、健康失败保留pending、定时/重复恢复与实际新写入阻止覆盖；Dokploy HTTP/systemd采用明确的本机适配，不是生产破坏性演练。
+- **B**：本机ego lite、合成账户，证据截至2026-10-10T17:23:43Z。新增真实冲突/刷新/合并、复杂源码与关联往返、组合搜索跨视图、标签键盘与保存视图、详情取消置顶、回顾/漫步/排除、动态分享撤出、纯图片/音频、390px及24px字号格式/非空选区/聚焦子Esc、AI开始前告知均已留证。原生多图剪贴板、离线冷刷、各媒体特殊名/回收恢复、分区保存证据继续有效。
+- **B34-corrected**：最初取消置顶/删除分区的直接fetch遗漏Authorization并返回401，旧字段比较无效。17:17Z后用授权HTTP200+精确记录名，并将先前独立ZIP审计SQLite快照与现行DB所有字段/附件/关系逐字节对比重新通过；以下只采用后证据，不沿用错误断言。
+- **ZIP**：真实浏览器普通/含历史ZIP在应用外独立核对**138/138**通过；18条合成记录、12附件/原件、10/14可移植文档、0/4版本、正文/日期/关系/原件hash及脱敏字段匹配。此前`documents=[]`静默漏导已修复，并补防空循环的三DB roundtrip断言。历史专用已移除附件的保留由实DB回归补足。
+- **P-live / R / R-receipt**：现有S3真实临时读写/hash/删除、配置失败保护、完整试备份和原timer自动调度/监控通过。新鲜`0038d722…`快照在无网络隔离容器运行`1.1.0-dev.1f65c5a69f67`；应用与授权核验均true，707正常/5回收、55原件/54预览、110保留文件、2451负向通过；712行仅派生标签索引变化，归一原始字段hash一致。非空关系由合成ZIP/三DB补证。可信状态回执与页面明确区分备份时版本、实际测试版本及独立副本未知；不是线上新版本已验收。
+- **M / M2 / M3 / A / R11**：真实Codex今天/指定日期/两时期完整分页、全文、来源及事实/解读区分通过；source实际导航通过。设置创建同一只读凭据→复制配置/检测→真实Codex读取→UI撤销→再次客户端401已闭环；HTTP/2 Connect/gRPC/gRPC-Web、旧MCP和文件入口权限边界有精确回归。
+- **GEO-PENDING**：当前位置已真实触发ego浏览器权限提示并交还用户；等手动允许/拒绝及后续应用响应。实际地名搜索/常用/最近/默认中心禁存已通过，尚不宣称当前位置结果或硬件GPS精度通过。
+- **U-AI**：真实provider/model/受控凭据未到位。AC09开始前不发送已实际通过；AC10–14及AC23中的真实服务/衍生生命周期六项仍缺输入。mock成功/失败与Codex MCP分析不能替代应用内真实AI服务。
+- **P0（全部非暂缓行共同待办）**：冻结最终补丁提交并使所需检查有效→合并及main可达→新语义版本标签/版本匹配→上线前新鲜完整可恢复数据库和附件备份/旧digest与回滚路径→现有Dokploy固定digest发布→实际版本/commit/digest、健康/登录、逐对象正文/日期/关系/原件hash/权限/日志/调度核验→逐issue和总清单证据闭环。普通提交/构建不替代发布；现有真实恢复证明绑定其具体测试提交，不能改称未来commit。
 
-## 2026-10-11 00:11 追加实证与待修问题
+**除共同P0外，仍未完成的实际验收仅明确保留以下分支：**
 
-- 候选实现 `43a4b59751cddb35a7a76a5cdabfcec4d3662b76`，校验器/时区测试修正 `ac5e4f336`，草稿 [PR #20](https://github.com/EgoSay/kairos/pull/20)。以下新增证据不自动将整项置为通过；最终候选仍在整改。
-- **P-Docker**：真实 Docker/Compose、旧镜像 digest、SQLite、健康检查和 watchdog 子进程完成四场故障演练；缺失容器恢复、实际 120 秒健康失败保留 pending、定时与重复恢复、真实 API 新写入阻止覆盖均通过。Dokploy HTTP 与 systemd 使用明确标注的本机适配，不当作生产故障演练。
-- **P-live 应用恢复**：快照 `abc65b142006…` 在独立、无网络/无公开端口的容器中启动候选镜像 `sha256:553592c1a10e…`。707 条正常记录逐条正文/日期/关系核对、5 条回收站隔离、55 个附件与原件哈希、54 个图片预览响应、2,451 次权限负向检查、110 个保留文件哈希通过；原始恢复副本及线上数据未改动。预览响应非空与实际浏览器解码分别记录。首次限流失败保留，校验器遵循 Retry-After 后重跑通过，不关闭限流。
-- **P-live 调度**：原目的地配置经真实 UI 检测→试备份→启用后，15:55 UTC 定时任务和监控投递均成功，快照 `7d544a91b8a3…`；仍沿用既有定时器和线上数据路径。
-- **B 追加**：离线冷启动前插文字后图片锚点/单次上传/原件哈希、最近地点重开、格式撤销重做、源码/聚焦保持、Chromium 中文 composition、390px/480px 视口保存可达、MCP 来源页面实际导航、固定分享创建/访客读取/撤销已有实证。浏览器验收使用合成数据。
-- **待修**：真实 HTTP 暴露精确父标签误含仅子标签记录；跨功能红测暴露旧版本恢复自动外发旧私密正文、前缀附件 UID 替换错误及备份导入规范附件链接重映射缺口。全部属于本轮修复范围，不能带已知问题合并发布。
-- 前端 CI 的日历 fixture 使用宿主时区，已改为显式 Kairos 时区并增加跨午夜断言；UTC 环境 22 项回归通过，更新候选的前端 CI 已通过。实际恢复状态回执与页面的串联正在补齐。真实 AI 输入仍待提供，生产发布与最终数据核对仍待执行。
+- **当前位置权限及响应**：ego权限提示等待用户手动允许或拒绝；07-01–07-03的实际当前位置后续状态未通过。
+- **纯文本粘贴**：Shift+Cmd/Ctrl+V动作仍未真实执行；普通`insertText`不算纯文本粘贴验收，见19-04。HTML语义粘贴已从原始动作和返回补链通过。
+- **编辑器长文滚动**：聚焦/关联前后滚动保持仍缺实际after值；光标与非空选区、正文/元数据已证，不相互替代，见08-02、09-01、09-05、19-05。
+- **真实AI与衍生生命周期**：AC10–14、AC23六项仍待获准provider/model/凭据；AC09开始前不发送已通过。
 
-## 2026-10-11 00:34 审查整改与追加证据
+精确数据库/并发/失败/权限排列已有自动化证据，不再自动新增人工gate；实际主路径与自动断言共同构成每行证据。仍缺的动作证据在对应行明列，未执行/待权限不能写成通过。实体手机硬件按已批准范围不作为前置，也不冒称通过。
 
-- 精确标签改为按 Markdown 实际标签建立派生索引，保留原层级字段与公开 API 语义。SQLite/MySQL/PostgreSQL 真实回填、内容及元数据写入、分页回归通过；旧 1.0.1 镜像实际读取升级数据、创建记录、再次升级补索引的 12 项演练通过。正文、日期、原件及除两个派生字段外的数据均保持一致。
-- 隔离 QA 的 40 项真实 HTTP 场景 / 135 请求通过：特殊关键词、组合搜索、精确/层级标签、分页、置顶与归档/回收、关联双向恢复，以及 MCP 时间边界、cursor 绑定、只读入口、撤销和到期。到期场景使用受控的合成凭据时间修改，不声称实际等待一天。
-- 独立审查补齐恢复与分享的并发边界：授权创建、匿名读取、管理员代分享、备份暂停和旧预览复用均有先红后绿的屏障测试；恢复仍私密且暂停同步，普通编辑不自动恢复外发。三数据库事务测试、API/partition/journal race、定向 lint 通过。
-- 恢复验收器现在在应用启动前后核对八类授权/身份表，只允许本次合成 PAT 的受限使用时间变化，并断言 PRIVATE。原“公开访问/Webhook 复活仍误报成功”探针已拒绝；105 项 Python 回归和真实隔离 Docker 合成副本通过。最终真实 S3 恢复需用新的 prepare、最终 commit 的 helper 和镜像重验。
-- Ego Lite 新增通过：双文件原生粘贴；特殊文件名图片/音频/视频预览；视频实际播放及浏览器下载逐字节比对；文档降级与原件读取；附件回收类型过滤与恢复后的计数刷新；分区单独及联合正文保存重开；无修改提示；真实阻断保存后的选择保留与重试。新增附件卡片键盘入口与后页类型误空修复，71 项定向回归通过。
-- 当前整改工作树前端 lint、227 文件 / 2046 项测试、生产构建通过。完整 Go 检查及新增派生索引/备份 helper race 已通过；最终提交/CI、合并、正式发布、上线数据核对及真实 AI 仍未完成。15 项执行 issue 和总清单继续 OPEN；没有声称 Evan 已亲自验收。
+### 受控证据相对索引
+
+以下文件名均相对仓库根目录 `tmp/kairos-goal-20261010/`，该目录被Git忽略。此文只记录脱敏结果和可定位索引，不公开密钥、私人正文、完整备份或原始数据库。
+
+| 代号 | 相对证据文件/定位 | 适用范围 |
+| --- | --- | --- |
+| G/DB | `final-candidate-local.json`、`review-final-go-all.log`、`recovery-guard-final-race.log`、`recovery-store-{sqlite,mysql,postgres}-final.log`、`final-zip-api-race.log` | 最终1f65基线及补丁相关测试；具体断言以行内测试名为准 |
+| FE/E/I/C/T | `final-history-tests.log`、`final-history-lint.log`、`final-history-qa-build.log`、`editor-independent-review.md`、`offline-inline-review.md`、`search-independent-review.md` | 228/2060及编辑/离线/检索专项红绿；不是最终补丁CI |
+| P/P-Docker | `python-final-with-verifier.log`、`real-docker-release-drill.json`、`real-docker-release-drill.md` | 隔离发布恢复、脚本锁/健康/声明/数据保护 |
+| B | `browser-evidence.jsonl`行1–54（各行自带UTC时间；下表用B:行号） | ego实际操作；不复制合成正文或身份到公开文档 |
+| H | `qa-http-boundaries.json` | 40场景/135请求逐对象边界；按scenario语义采用，早期matrixIds错位不沿用 |
+| B1-proof | `b1-largefont-focus-proof.json`、`b1-largefont-focus.png`、`b1-prior-browser-action-proof.md`、`b1-prior-browser-action-proof.json` | 非空选区、源码、字号及原始动作/返回补链；HTML与补全通过，Shift-paste/after-scroll未通过；首次innerText失败保留 |
+| B34-corrected | `b34-reverified-data.json`、`b3-unpin-authenticated.json`、`b4-after-delete-partition-authenticated.json` | 取代未授权401响应上的无效比较 |
+| D | `menu-dialog-lifecycle-review.md`、`menu-dialog-mounted-after.log`、`menu-dialog-proxy-independent-review.json`、`history-error-retry-handoff.json` | 弹窗卸载/焦点修复、错误与空态区分、重试；已做独立review |
+| ZIP/ZIP-DB | `qa-export-fixed-independent-audit/audit-result.json`、`zip-document-export-handoff.json`、`zip-document-export-{green,mysql,postgres}.log` | 实际ZIP外读138项和三数据库导入安全 |
+| P-live/R/R-receipt | `backup-live-probe-evidence.jsonl`、`final-fresh-application-result.json`、`final-postflight-agent-status.json` | 真实S3、具体版本应用恢复/授权基线、调度/监控与可信回执 |
+| M/M2/M3/A/R11 | `codex-mcp-{result,pagination-result,two-period-result,b6-ui-result,b6-revoked-result}.md`、对应events、`r11-independent-review.md` | 真实客户端与协议/凭据权限证据 |
+| AI/U-AI | `acceptance-ai-failure-regression.log`、B:54 | 自动失败边界与实际未开始告知；真实provider输入仍缺 |
+| CI | `pr20-final-readiness.json`、`pr20-final-reviewed-file-binding.json` | 只绑定1f65的4工作流/14检查，后续补丁需新检查 |
 
 ## #1 [P1] 分区切换与正文保存需统一提交，避免按旧分区安排外发
 
@@ -53,10 +66,10 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 01-01 | 同时修改正文与归属时，新正文的投递授权只对应最终选择。 | 验证中 | 自动化：G/DB `TestAtomicPartitionSaveUsesOnlyCommittedDestination`：正文与最终映射同事务；F: journal-atomic-partition-save 同一请求；浏览器：切换正文+分区后实际保存/重开/目标提示；后续：P0 |
-| 01-02 | 退出同步分区时不会为本次修改产生旧目标的投递授权。 | 验证中 | 自动化：G 同上：退出同步目标后旧目标不获授权；partition rechecks 系列；浏览器：UI 移出分区及最终同步提示；后续：P0 |
-| 01-03 | 保存中断、重试和并发修改不会产生跨分区错误授权或重复发送。 | 验证中 | 自动化：G/DB `TestAtomicPartitionSaveRejectsStaleAndUnauthorizedSelection`；`TestPartitionPendingDeliverySurvivesServiceRestart`；`TestMemoRecordCASConcurrentMetadataWriters`；浏览器：保存超时重试、并发冲突比较与草稿继续；后续：P0；隔离接收器确认事件/重复数量 |
-| 01-04 | 在隔离环境以合成记录验证以上状态转换；不接触真实社媒或私人记录。 | 验证中 | 自动化：G/DB 测试使用合成用户/隔离库；partition 测试本地 HTTP receiver；浏览器：浏览器也仅合成 QA 数据；后续：P0；保持社媒不触碰 |
+| 01-01 | 同时修改正文与归属时，新正文的投递授权只对应最终选择。 | 验证中 | 自动化：G/DB `TestAtomicPartitionSaveUsesOnlyCommittedDestination`：正文与最终映射同事务；F: journal-atomic-partition-save 同一请求；实际：已实际完成正文与最终分区一起保存、移出失败后保留选择及重试；隔离接收器只收到成功提交后当前授权的两次签名事件。全部使用合成数据，未接入真实社媒。 证据：B:26–29,34–35；共同待办：P0 |
+| 01-02 | 退出同步分区时不会为本次修改产生旧目标的投递授权。 | 验证中 | 自动化：G 同上：退出同步目标后旧目标不获授权；partition rechecks 系列；实际：已实际完成正文与最终分区一起保存、移出失败后保留选择及重试；隔离接收器只收到成功提交后当前授权的两次签名事件。全部使用合成数据，未接入真实社媒。 证据：B:26–29,34–35；共同待办：P0 |
+| 01-03 | 保存中断、重试和并发修改不会产生跨分区错误授权或重复发送。 | 验证中 | 自动化：G/DB `TestAtomicPartitionSaveRejectsStaleAndUnauthorizedSelection`；`TestPartitionPendingDeliverySurvivesServiceRestart`；`TestMemoRecordCASConcurrentMetadataWriters`；实际：双客户端冲突展示两份完整正文与附件；刷新保留本机草稿，再保存仍冲突，显式比较并合并后只保留正确单条。事务、重试和断响应边界已有精确回归。 证据：B:36–37；H；G/DB；共同待办：P0 |
+| 01-04 | 在隔离环境以合成记录验证以上状态转换；不接触真实社媒或私人记录。 | 验证中 | 自动化：G/DB 测试使用合成用户/隔离库；partition 测试本地 HTTP receiver；实际：已实际完成正文与最终分区一起保存、移出失败后保留选择及重试；隔离接收器只收到成功提交后当前授权的两次签名事件。全部使用合成数据，未接入真实社媒。 证据：B:26–29,34–35；共同待办：P0 |
 
 ## #2 [P1] 发布回滚应支持目标容器不存在的失败状态
 
@@ -64,10 +77,10 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 02-01 | 容器不存在且数据未变时能够恢复旧服务和备份调度。 | 验证中 | 自动化：P `test_missing_container_restores_old_service_and_backup_schedule`；浏览器：不适用；后续：P0；真实隔离 Docker 容器消失演练尚无完整记录 |
-| 02-02 | 数据已变化时保留新数据，给出明确的人工处理状态。 | 验证中 | 自动化：P `test_missing_container_with_new_writes_preserves_data_and_requires_intervention`；浏览器：不适用；后续：P0；隔离新写入阻断，不向生产制造故障 |
-| 02-03 | Docker 不可用等其他错误不会被一概忽略。 | 验证中 | 自动化：P `test_docker_daemon_failure_is_not_treated_as_a_missing_container`；浏览器：不适用；后续：P0；故障注入仅隔离 |
-| 02-04 | 服务健康确认、重复回滚和 pending 状态管理有隔离回归覆盖。 | 验证中 | 自动化：P `test_failed_health_verification_keeps_pending_and_never_records_success`、`test_retry_after_interrupted_health_check_restores_consistent_state`；浏览器：不适用；后续：P0；真实隔离健康失败/重试证据 |
+| 02-01 | 容器不存在且数据未变时能够恢复旧服务和备份调度。 | 验证中 | 自动化：P `test_missing_container_restores_old_service_and_backup_schedule`；实际：真实隔离 Docker/Compose 四场演练已完成：目标容器缺失、健康失败保留pending、watchdog/重复恢复、新写入阻止覆盖；旧digest与声明对应。Docker其他错误/丢回执等精确边界由脚本测试覆盖；没有在生产制造故障。 证据：P-Docker；P；共同待办：P0 |
+| 02-02 | 数据已变化时保留新数据，给出明确的人工处理状态。 | 验证中 | 自动化：P `test_missing_container_with_new_writes_preserves_data_and_requires_intervention`；实际：真实隔离 Docker/Compose 四场演练已完成：目标容器缺失、健康失败保留pending、watchdog/重复恢复、新写入阻止覆盖；旧digest与声明对应。Docker其他错误/丢回执等精确边界由脚本测试覆盖；没有在生产制造故障。 证据：P-Docker；P；共同待办：P0 |
+| 02-03 | Docker 不可用等其他错误不会被一概忽略。 | 验证中 | 自动化：P `test_docker_daemon_failure_is_not_treated_as_a_missing_container`；实际：真实隔离 Docker/Compose 四场演练已完成：目标容器缺失、健康失败保留pending、watchdog/重复恢复、新写入阻止覆盖；旧digest与声明对应。Docker其他错误/丢回执等精确边界由脚本测试覆盖；没有在生产制造故障。 证据：P-Docker；P；共同待办：P0 |
+| 02-04 | 服务健康确认、重复回滚和 pending 状态管理有隔离回归覆盖。 | 验证中 | 自动化：P `test_failed_health_verification_keeps_pending_and_never_records_success`、`test_retry_after_interrupted_health_check_restores_consistent_state`；实际：真实隔离 Docker/Compose 四场演练已完成：目标容器缺失、健康失败保留pending、watchdog/重复恢复、新写入阻止覆盖；旧digest与声明对应。Docker其他错误/丢回执等精确边界由脚本测试覆盖；没有在生产制造故障。 证据：P-Docker；P；共同待办：P0 |
 
 ## #3 [P2] 编辑器仅修改分区时应正常保存
 
@@ -75,11 +88,11 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 03-01 | 仅切换分区、移出分区、重新启用暂停分区均持久化成功。 | 验证中 | 自动化：G `TestAtomicPartitionSaveUsesOnlyCommittedDestination`；F: journal-atomic-partition-save、journal-partition-save 显式重启暂停映射；浏览器：仅切换/移出/显式重启分区三种保存重开；后续：P0 |
-| 03-02 | 保存后重新打开，显示实际归属及同步状态。 | 验证中 | 自动化：F: journal-partition-picker suspended/selected metadata；服务端原子结果 G；浏览器：保存重开实际归属与同步状态逐一核对；后续：P0 |
-| 03-03 | 分区保存失败不提示成功或静默丢弃选择；重试行为明确。 | 验证中 | 自动化：F: journal-atomic-partition-save `keeps the draft selection on failure and retries the same atomic request`；浏览器：网络错误提示/保留选择/重试；后续：P0 |
-| 03-04 | 确实没有任何修改时仍维持原有无修改提示。 | 验证中 | 自动化：F 同文件 `keeps the no-change result for an unchanged selection`；浏览器：未修改保存提示；后续：P0 |
-| 03-05 | 上述场景纳入前端回归测试。 | 验证中 | 自动化：G + FE：对应前端回归已实际全套执行；仍需最终候选检查绑定；浏览器：非独立 UI 场景；后续：P0/最终前端 CI |
+| 03-01 | 仅切换分区、移出分区、重新启用暂停分区均持久化成功。 | 验证中 | 自动化：G `TestAtomicPartitionSaveUsesOnlyCommittedDestination`；F: journal-atomic-partition-save、journal-partition-save 显式重启暂停映射；实际：仅分区、正文+分区保存重开均显示真实归属；旧版本恢复后明确暂停，普通编辑不发送；显式重选同分区才发送当前正文，UI行为与签名接收事件一致。 证据：B:26–29,34–35；D；共同待办：P0 |
+| 03-02 | 保存后重新打开，显示实际归属及同步状态。 | 验证中 | 自动化：F: journal-partition-picker suspended/selected metadata；服务端原子结果 G；实际：仅分区、正文+分区保存重开均显示真实归属；旧版本恢复后明确暂停，普通编辑不发送；显式重选同分区才发送当前正文，UI行为与签名接收事件一致。 证据：B:26–29,34–35；D；共同待办：P0 |
+| 03-03 | 分区保存失败不提示成功或静默丢弃选择；重试行为明确。 | 验证中 | 自动化：F: journal-atomic-partition-save `keeps the draft selection on failure and retries the same atomic request`；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2060项全套。 证据：B:28–29；FE；共同待办：P0 |
+| 03-04 | 确实没有任何修改时仍维持原有无修改提示。 | 验证中 | 自动化：F 同文件 `keeps the no-change result for an unchanged selection`；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2060项全套。 证据：B:28–29；FE；共同待办：P0 |
+| 03-05 | 上述场景纳入前端回归测试。 | 验证中 | 自动化：分区原子保存/失败重试/暂停显式重启前端回归；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2060项全套。 证据：B:28–29；FE；共同待办：P0 |
 
 ## #4 [P2] 定时回滚完成后，流水线仍需恢复生产部署声明
 
@@ -87,10 +100,10 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 04-01 | 定时保护先完成、流水线后处理时，最终恢复对应旧版本声明。 | 验证中 | 自动化：P `test_watchdog_then_matching_ci_request_does_not_restore_twice`；浏览器：不适用；后续：P0；隔离 watchdog→CI 对齐 old digest/声明 |
-| 04-02 | 流水线先完成、请求重复或中断重试时，结果一致且无多余回退。 | 验证中 | 自动化：P `test_ci_then_watchdog_and_repeated_ci_leave_the_completed_release_unchanged`、lost response Dokploy 测试；浏览器：不适用；后续：P0；隔离中断/重试真实服务 |
-| 04-03 | 回执缺失、属于其他发布或回滚被新写入阻止时，不盲目回退声明。 | 验证中 | 自动化：P missing/other/stale receipt、new writes 与 wrong image/template 测试；浏览器：不适用；后续：P0；最终应用/commit/digest/template identity |
-| 04-04 | 隔离回归覆盖服务器状态与生产声明的一致性及发布标识校验。 | 验证中 | 自动化：P `test_safe_rollback_restores_declaration_checks_old_image_and_resumes_backups`；Compose 实解析；浏览器：不适用；后续：P0；实际回滚声明和旧运行配置一致性仍需隔离演练 |
+| 04-01 | 定时保护先完成、流水线后处理时，最终恢复对应旧版本声明。 | 验证中 | 自动化：P `test_watchdog_then_matching_ci_request_does_not_restore_twice`；实际：真实隔离 Docker/Compose 四场演练已完成：目标容器缺失、健康失败保留pending、watchdog/重复恢复、新写入阻止覆盖；旧digest与声明对应。Docker其他错误/丢回执等精确边界由脚本测试覆盖；没有在生产制造故障。 证据：P-Docker；P；共同待办：P0 |
+| 04-02 | 流水线先完成、请求重复或中断重试时，结果一致且无多余回退。 | 验证中 | 自动化：P `test_ci_then_watchdog_and_repeated_ci_leave_the_completed_release_unchanged`、lost response Dokploy 测试；实际：真实隔离 Docker/Compose 四场演练已完成：目标容器缺失、健康失败保留pending、watchdog/重复恢复、新写入阻止覆盖；旧digest与声明对应。Docker其他错误/丢回执等精确边界由脚本测试覆盖；没有在生产制造故障。 证据：P-Docker；P；共同待办：P0 |
+| 04-03 | 回执缺失、属于其他发布或回滚被新写入阻止时，不盲目回退声明。 | 验证中 | 自动化：P missing/other/stale receipt、new writes 与 wrong image/template 测试；实际：真实隔离 Docker/Compose 四场演练已完成：目标容器缺失、健康失败保留pending、watchdog/重复恢复、新写入阻止覆盖；旧digest与声明对应。Docker其他错误/丢回执等精确边界由脚本测试覆盖；没有在生产制造故障。 证据：P-Docker；P；共同待办：P0 |
+| 04-04 | 隔离回归覆盖服务器状态与生产声明的一致性及发布标识校验。 | 验证中 | 自动化：P `test_safe_rollback_restores_declaration_checks_old_image_and_resumes_backups`；Compose 实解析；实际：真实隔离 Docker/Compose 四场演练已完成：目标容器缺失、健康失败保留pending、watchdog/重复恢复、新写入阻止覆盖；旧digest与声明对应。Docker其他错误/丢回执等精确边界由脚本测试覆盖；没有在生产制造故障。 证据：P-Docker；P；共同待办：P0 |
 
 ## #5 [R02] 优化搜索：关键词、可视化筛选与未添加标签快捷入口
 
@@ -98,13 +111,13 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 05-01 | 无需表达式即可查出“去年、未添加标签、带图片”的记录。 | 验证中 | 自动化：G/DB `TestMemoSearchFacetsAndPinnedPagination`；F: memo-search + QuickFind 组合 facets；浏览器：B 15:22 去年2025+未标签已过；仍补带图片三条件同测；后续：P0 |
-| 05-02 | 未标签筛选覆盖空数组/历史缺失字段，已打标签记录不会误入；补标签后及时退出结果。 | 验证中 | 自动化：DB 缺失/null/空 tags fixture；T 标签计数错误状态；浏览器：现有结果补标签后立即退出；无错误空态；后续：P0 |
-| 05-03 | 包含、排除、任一/全部、日期边界及当前范围与全部范围行为明确且一致。 | 验证中 | 自动化：F: memo-search/quick-find-navigation/memo-views；C 时区边界；浏览器：包含/排除/any/all/当前→全部组合逐项；后续：P0 |
-| 05-04 | 分页与计数基于完整结果，不只过滤已加载的一页；三种视图保留同一筛选范围。 | 验证中 | 自动化：G `TestJournalSearchScopeCountsAndPinLifecycle`；DB 分页；C 三视图范围/时区；F map-memos 全页失败；浏览器：B 15:44 当天日回看9条且排除旧置顶；完整日历/地图同条件仍待；后续：P0 |
-| 05-05 | 搜索关键词含引号、中文、空格等普通字符时正常工作；中文输入法确认不意外提交。 | 验证中 | 自动化：DB 中文及特殊字符；F memo-search literal；IME 需浏览器；浏览器：B 原生date输入需键盘事件已修测试方式；中文IME及特殊字符交互仍待；后续：P0 |
-| 05-06 | 返回记录列表保留上下文；空态、失败重试、键盘及手机操作可用。 | 验证中 | 自动化：T 错误与重试；C 路由范围；F quick-find-navigation；浏览器：空/失败、返回上下文、键盘及窄屏；后续：P0 |
-| 05-07 | 原有高级表达式与已保存视图仍可使用。 | 验证中 | 自动化：C/F memo-views saved view；QuickFind 保留 CEL 草稿；浏览器：旧表达式与已保存视图真实打开/返回；后续：P0 |
+| 05-01 | 无需表达式即可查出“去年、未添加标签、带图片”的记录。 | 验证中 | 自动化：G/DB `TestMemoSearchFacetsAndPinnedPagination`；F: memo-search + QuickFind 组合 facets；实际：日期控件组合去年+未标签+图片，正确旧月份日历/日期面板与地图均匹配同条记录并保留条件；补嵌套标签后退出未标签。完整结果计数/分页由HTTP与三DB逐对象回归覆盖。 证据：B:40；H；G/DB；共同待办：P0 |
+| 05-02 | 未标签筛选覆盖空数组/历史缺失字段，已打标签记录不会误入；补标签后及时退出结果。 | 验证中 | 自动化：DB 缺失/null/空 tags fixture；T 标签计数错误状态；实际：日期控件组合去年+未标签+图片，正确旧月份日历/日期面板与地图均匹配同条记录并保留条件；补嵌套标签后退出未标签。完整结果计数/分页由HTTP与三DB逐对象回归覆盖。 证据：B:40；H；G/DB；共同待办：P0 |
+| 05-03 | 包含、排除、任一/全部、日期边界及当前范围与全部范围行为明确且一致。 | 验证中 | 自动化：F: memo-search/quick-find-navigation/memo-views；C 时区边界；实际：标签树与QuickFind、当前范围/全部本人范围、中文关键词、高级表达式和已保存视图往返已验证；空结果与范围可辨。特殊字面量、IME不误提交、失败重试和晚响应由已执行组件/HTTP测试覆盖，不新增逐排列手工gate。 证据：B:41；H；FE；共同待办：P0 |
+| 05-04 | 分页与计数基于完整结果，不只过滤已加载的一页；三种视图保留同一筛选范围。 | 验证中 | 自动化：G `TestJournalSearchScopeCountsAndPinLifecycle`；DB 分页；C 三视图范围/时区；F map-memos 全页失败；实际：日期控件组合去年+未标签+图片，正确旧月份日历/日期面板与地图均匹配同条记录并保留条件；补嵌套标签后退出未标签。完整结果计数/分页由HTTP与三DB逐对象回归覆盖。 证据：B:40；H；G/DB；共同待办：P0 |
+| 05-05 | 搜索关键词含引号、中文、空格等普通字符时正常工作；中文输入法确认不意外提交。 | 验证中 | 自动化：DB 中文及特殊字符；F memo-search literal；QuickFind中文composition提交边界回归；实际：标签树与QuickFind、当前范围/全部本人范围、中文关键词、高级表达式和已保存视图往返已验证；空结果与范围可辨。特殊字面量、IME不误提交、失败重试和晚响应由已执行组件/HTTP测试覆盖，不新增逐排列手工gate。 证据：B:41；H；FE；共同待办：P0 |
+| 05-06 | 返回记录列表保留上下文；空态、失败重试、键盘及手机操作可用。 | 验证中 | 自动化：T 错误与重试；C 路由范围；F quick-find-navigation；实际：标签树与QuickFind、当前范围/全部本人范围、中文关键词、高级表达式和已保存视图往返已验证；空结果与范围可辨。特殊字面量、IME不误提交、失败重试和晚响应由已执行组件/HTTP测试覆盖，不新增逐排列手工gate。 证据：B:41；H；FE；共同待办：P0 |
+| 05-07 | 原有高级表达式与已保存视图仍可使用。 | 验证中 | 自动化：C/F memo-views saved view；QuickFind 保留 CEL 草稿；实际：标签树与QuickFind、当前范围/全部本人范围、中文关键词、高级表达式和已保存视图往返已验证；空结果与范围可辨。特殊字面量、IME不误提交、失败重试和晚响应由已执行组件/HTTP测试覆盖，不新增逐排列手工gate。 证据：B:41；H；FE；共同待办：P0 |
 
 ## #6 [R03] 优化图片粘贴：直接插入、上传反馈与失败恢复
 
@@ -112,12 +125,12 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 06-01 | 截图、复制本地图片以及浏览器提供的图片剪贴板数据可一次粘贴添加，无需额外点击上传。 | 验证中 | 自动化：E Editor paste+inline/file 分流；系统 clipboard 未由 jsdom 证明；浏览器：B 15:32 原生PNG剪贴板已保存；复制本地/网页路径与降级仍补；后续：P0 |
-| 06-02 | 多张、连续及文字图片混合粘贴不丢内容，位置和顺序正确。 | 验证中 | 自动化：E mixed HTML/local-vs-remote image 顺序；I pending anchor 映射；浏览器：B 单PNG+前后文字已保存；多张连续/HTML混合真实路径仍待；后续：P0 |
-| 06-03 | 上传中可继续输入，失败重试后图片只插入一次。 | 验证中 | 自动化：E/I 锚点、partial retry stable IDs、失败不重传完成部分；浏览器：上传中继续输入/失败重试/只插一次；后续：P0 |
-| 06-04 | 断网、刷新、重新打开编辑器后正文和本地图片仍可恢复，状态不误报服务器保存成功。 | 验证中 | 自动化：I 图文离线位置/重启恢复；E owner isolation；B-text 仅文字局部；浏览器：B 15:36 实际断网冷刷文字+图片恢复、联网上传续传已过；最终修复pending路径需再核原位/稳定ID/原件hash；后续：P0；实际同步后正文/附件核对 |
-| 06-05 | 保存后记录正文与附件库引用一致，能够预览及下载原件。 | 验证中 | 自动化：I resolve inline+attachment same object；G attachment APIs；浏览器：B saved正文含managed attachment；R07后同原件可预览/恢复；仍需下载hash+库同对象；后续：P0 |
-| 06-06 | 主用桌面浏览器和手机实际验证支持路径；不支持时提供可理解的反馈和手动添加入口。 | 验证中 | 自动化：E insert-menu 手动添加/failure UI；模拟能力有限；浏览器：ego desktop+手机视口，unsupported 可理解反馈；后续：P0；输入：真机条件已按用户改范围，不再索取设备 |
+| 06-01 | 截图、复制本地图片以及浏览器提供的图片剪贴板数据可一次粘贴添加，无需额外点击上传。 | 验证中 | 自动化：E Editor paste+inline/file 分流；系统 clipboard 未由 jsdom 证明；实际：原生PNG及macOS双文件剪贴板直接粘贴并实际保存；手动添加与能力不足反馈有组件回归。系统剪贴板与模拟paste测试分开记录。 证据：B:6,20；E；共同待办：P0 |
+| 06-02 | 多张、连续及文字图片混合粘贴不丢内容，位置和顺序正确。 | 验证中 | 自动化：E mixed HTML/local-vs-remote image 顺序；I pending anchor 映射；实际：真实原生单图/双文件图片及图文顺序已证；原始工具动作确认keyboard.paste的HTML strong/list/link转成Markdown，继续编辑的含图复杂正文仍保留。local/remote图片对应、混合顺序及并发锚点由CM/队列精确回归覆盖；纯文本快捷粘贴另列19-04待验。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 06-03 | 上传中可继续输入，失败重试后图片只插入一次。 | 验证中 | 自动化：E/I 锚点、partial retry stable IDs、失败不重传完成部分；实际：断网冷刷新后图文草稿与Blob恢复，前插文字后锚点正确，联网续传最终只生成一条记录/同一个附件，原件hash一致。丢响应、稳定ID及失败重试不重复上传有精确持久队列/CM回归，不另手工制造全部故障排列。 证据：B:12–14,20；E/I；H；共同待办：P0 |
+| 06-04 | 断网、刷新、重新打开编辑器后正文和本地图片仍可恢复，状态不误报服务器保存成功。 | 验证中 | 自动化：I 图文离线位置/重启恢复；E owner isolation；B-text 仅文字局部；实际：断网冷刷新后图文草稿与Blob恢复，前插文字后锚点正确，联网续传最终只生成一条记录/同一个附件，原件hash一致。丢响应、稳定ID及失败重试不重复上传有精确持久队列/CM回归，不另手工制造全部故障排列。 证据：B:12–14,20；E/I；H；共同待办：P0 |
+| 06-05 | 保存后记录正文与附件库引用一致，能够预览及下载原件。 | 验证中 | 自动化：I resolve inline+attachment same object；G attachment APIs；实际：断网冷刷新后图文草稿与Blob恢复，前插文字后锚点正确，联网续传最终只生成一条记录/同一个附件，原件hash一致。丢响应、稳定ID及失败重试不重复上传有精确持久队列/CM回归，不另手工制造全部故障排列。 证据：B:12–14,20；E/I；H；共同待办：P0 |
+| 06-06 | 主用桌面浏览器和手机实际验证支持路径；不支持时提供可理解的反馈和手动添加入口。 | 验证中 | 自动化：E insert-menu 手动添加/failure UI；模拟能力有限；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
 
 ## #7 [R04] 优化位置添加：快捷入口、常用地点与定位纠错
 
@@ -125,13 +138,13 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 07-01 | 在真实主用设备定位，区分地图显示偏移、设备精度不足和名称错误，并记录实际修复依据。 | 验证中 | 自动化：G provider/geocoding、地点坐标校验；F editor-location 低精度/晚响应；浏览器：B 15:43 实际公开地理搜索成功；未见真实设备定位精度回执，不能冒称GPS偏移实测；后续：P0；输入：若本机权限拒绝则保留拒绝/手选验收，必要 OS 授权由用户决定 |
-| 07-02 | 快捷选择当前位置、已有常用位置和地图选点可用；地点搜索结果可预览确认。 | 验证中 | 自动化：G/FE：位置owner/CAS，search/selected map/保存；recent-location reopen新红绿在 location-reopen-after.log；浏览器：B 15:43 上海人民公园2结果+命名保存/默认中心禁存通过；recent reopen缺陷已FE修复待浏览器重验；后续：P0 |
-| 07-03 | 拒绝权限、超时、网络失败均有可恢复状态，不把默认地图中心保存为真实位置。 | 验证中 | 自动化：F editor-location denied/timeout/unavailable，location-dialog 默认中心不选中；浏览器：B 默认中心不可保存已证；拒绝/超时/网络失败实际恢复仍待；后续：P0 |
-| 07-04 | 已手选位置或手填名称不会被旧异步响应覆盖；取消及重开不丢原值。 | 验证中 | 自动化：F editor-location late result/name/manual/cancel/reopen；浏览器：打开原位置→手选改名→迟到响应→重开；后续：P0 |
-| 07-05 | 地名解析不可用时，已确认坐标仍可保存。 | 验证中 | 自动化：F editor-location `allows saving verified coordinates when name lookup fails`；浏览器：名称服务失败仍保存已确认坐标；后续：P0 |
-| 07-06 | 已有记录不会在编辑或打开页面时被自动改成当前位置。 | 验证中 | 自动化：F editor-location `preserves the original on open/cancel and never automatically locates...`；浏览器：旧记录打开/取消前后位置核对；后续：P0 |
-| 07-07 | 手机软键盘、点选和窄屏布局可用；不承诺设备无法提供的绝对 GPS 精度。 | 验证中 | 自动化：F layout不能证明实际视口；浏览器：ego 窄屏/字号/点选/键盘可达；不声称绝对 GPS 精度；后续：P0；输入：用户已换验收范围，无实体手机前置 |
+| 07-01 | 在真实主用设备定位，区分地图显示偏移、设备精度不足和名称错误，并记录实际修复依据。 | 验证中 | 自动化：G provider/geocoding、地点坐标校验；F editor-location 低精度/晚响应；实际：真实地名搜索、常用/最近重开、手选保存和默认地图中心禁存已通过；点击当前位置已触发ego浏览器权限提示并交还用户，目前等手动允许或拒绝，尚未取得真实定位结果/拒绝后的应用状态，不能标该路径通过。低精度/超时/晚响应等模拟边界已测。 证据：B:9,15；GEO-PENDING；E；共同待办：P0 |
+| 07-02 | 快捷选择当前位置、已有常用位置和地图选点可用；地点搜索结果可预览确认。 | 验证中 | 自动化：G/FE：位置owner/CAS，search/selected map/保存；recent-location reopen新红绿在 location-reopen-after.log；实际：真实地名搜索、常用/最近重开、手选保存和默认地图中心禁存已通过；点击当前位置已触发ego浏览器权限提示并交还用户，目前等手动允许或拒绝，尚未取得真实定位结果/拒绝后的应用状态，不能标该路径通过。低精度/超时/晚响应等模拟边界已测。 证据：B:9,15；GEO-PENDING；E；共同待办：P0 |
+| 07-03 | 拒绝权限、超时、网络失败均有可恢复状态，不把默认地图中心保存为真实位置。 | 验证中 | 自动化：F editor-location denied/timeout/unavailable，location-dialog 默认中心不选中；实际：真实地名搜索、常用/最近重开、手选保存和默认地图中心禁存已通过；点击当前位置已触发ego浏览器权限提示并交还用户，目前等手动允许或拒绝，尚未取得真实定位结果/拒绝后的应用状态，不能标该路径通过。低精度/超时/晚响应等模拟边界已测。 证据：B:9,15；GEO-PENDING；E；共同待办：P0 |
+| 07-04 | 已手选位置或手填名称不会被旧异步响应覆盖；取消及重开不丢原值。 | 验证中 | 自动化：F editor-location late result/name/manual/cancel/reopen；实际：位置自动化精确覆盖手选/改名不被晚响应覆盖、取消重开保留值、反解失败仍可保存已确认坐标；实际手选、常用重开和既有地点保存亦通过，无需逐个手工伪造异步时序。 证据：B:9,15,38,52；E；共同待办：P0 |
+| 07-05 | 地名解析不可用时，已确认坐标仍可保存。 | 验证中 | 自动化：F editor-location `allows saving verified coordinates when name lookup fails`；实际：位置自动化精确覆盖手选/改名不被晚响应覆盖、取消重开保留值、反解失败仍可保存已确认坐标；实际手选、常用重开和既有地点保存亦通过，无需逐个手工伪造异步时序。 证据：B:9,15,38,52；E；共同待办：P0 |
+| 07-06 | 已有记录不会在编辑或打开页面时被自动改成当前位置。 | 验证中 | 自动化：F editor-location `preserves the original on open/cancel and never automatically locates...`；实际：复杂旧记录source/visual/focus往返后正文逐字节相等，位置/附件/原日期/关系未改变；保存重开成功，无自动定位或意外清理草稿。 证据：B:38,52；E/I；共同待办：P0 |
+| 07-07 | 手机软键盘、点选和窄屏布局可用；不承诺设备无法提供的绝对 GPS 精度。 | 验证中 | 自动化：F layout不能证明实际视口；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
 
 ## #8 [R05] 将聚焦模式设为编辑器直接可见入口
 
@@ -139,12 +152,12 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 08-01 | 无需展开更多菜单即可进入和退出聚焦模式，入口支持键盘与触控。 | 验证中 | 自动化：E/insert-menu direct focus 及 host frame 测试；浏览器：B 15:32 直接聚焦切换已过；Tab/Enter/窄屏发现性仍待；后续：P0 |
-| 08-02 | 多次切换后正文、光标、附件、位置、关联及未完成上传保持一致。 | 验证中 | 自动化：E memo-editor-paste-files same editor/pending image source/focus；focus viewport；浏览器：B 单PNG+正文source/focus往返已过；全部metadata/选区/长文scroll多次组合待；后续：P0 |
-| 08-03 | 切换不会意外提交、取消编辑或清理草稿。 | 验证中 | 自动化：E 同上无 editor remount；草稿恢复回归；浏览器：B 往返后source相等且实际保存成功；草稿未清验证局部，取消路径待；后续：P0 |
-| 08-04 | 关闭子对话框和退出聚焦的 Esc/焦点行为清楚且一致。 | 验证中 | 自动化：E `gives dialogs priority on Escape`；preview-image-dialog Esc hierarchy；浏览器：Esc 先关位置/关联/媒体，再退出聚焦/原焦点；后续：P0 |
-| 08-05 | 桌面、手机软键盘及大字号情况下核心动作可见可用。 | 验证中 | 自动化：E visual viewport frame 测试；浏览器：ego 桌面/手机视口/150%字号核心动作可达；后续：P0；输入：实体软键盘不冒称通过 |
-| 08-06 | 保存按钮继续正确展示普通保存或保存并同步的真实行为。 | 验证中 | 自动化：F journal-partition-picker enabled/suspended target labels；浏览器：普通保存/同步保存实际标签与结果；后续：P0 |
+| 08-01 | 无需展开更多菜单即可进入和退出聚焦模式，入口支持键盘与触控。 | 验证中 | 自动化：E/insert-menu direct focus 及 host frame 测试；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
+| 08-02 | 多次切换后正文、光标、附件、位置、关联及未完成上传保持一致。 | 验证中 | 自动化：E memo-editor-paste-files same editor/pending image source/focus；focus viewport；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。聚焦/关联长文滚动仍缺after值，保持真实待验收。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 08-03 | 切换不会意外提交、取消编辑或清理草稿。 | 验证中 | 自动化：E 同上无 editor remount；草稿恢复回归；实际：复杂旧记录source/visual/focus往返后正文逐字节相等，位置/附件/原日期/关系未改变；保存重开成功，无自动定位或意外清理草稿。 证据：B:38,52；E/I；共同待办：P0 |
+| 08-04 | 关闭子对话框和退出聚焦的 Esc/焦点行为清楚且一致。 | 验证中 | 自动化：E `gives dialogs priority on Escape`；preview-image-dialog Esc hierarchy；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
+| 08-05 | 桌面、手机软键盘及大字号情况下核心动作可见可用。 | 验证中 | 自动化：E visual viewport frame 测试；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
+| 08-06 | 保存按钮继续正确展示普通保存或保存并同步的真实行为。 | 验证中 | 自动化：F journal-partition-picker enabled/suspended target labels；实际：仅分区、正文+分区保存重开均显示真实归属；旧版本恢复后明确暂停，普通编辑不发送；显式重选同分区才发送当前正文，UI行为与签名接收事件一致。 证据：B:26–29,34–35；D；共同待办：P0 |
 
 ## #9 [R06] 优化写作时关联已有记录：快捷搜索、预览与双向回看
 
@@ -152,13 +165,13 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 09-01 | 从当前编辑器可快速找到、预览并关联旧记录，关闭选择器后继续原位置写作。 | 验证中 | 自动化：F link-memo-search delayed open；relation preview；E focus continuity；浏览器：B 15:25 真搜索/预览/关联后继续写并保存；精确caret可补截图/selection；后续：P0 |
-| 09-02 | 关键词搜索、后续页、空态和失败重试可用；特殊字符不导致查询失效。 | 验证中 | 自动化：F link-memo-search 后页失败/重试/晚响应；literal quoting 共用搜索；浏览器：特殊字符、空/错、后页真实 UI；后续：P0 |
-| 09-03 | 保存后正向及反向关系一致，刷新仍可回看。 | 验证中 | 自动化：G `TestMemoRelationsHideTrashedEndpointsAndRestoreBidirectionally`；DB 事务；浏览器：B 正向关系已写入DB；反向刷新/回看仍需明确证据；后续：P0 |
-| 09-04 | 自关联、重复添加、移除关联及目标删除行为明确，不误删正文。 | 验证中 | 自动化：G `TestMemoSaveSkipsUnavailableReferencesWithoutLosingBody`；DB 并发 target 删除；F relation warns；浏览器：自关联/重复/移除/目标删除的提示和正文不丢；后续：P0 |
-| 09-05 | 阅读关联记录并返回时草稿、光标和滚动位置保留。 | 验证中 | 自动化：E editor retained；F direct dialog focus pointer；浏览器：B 关联后继续写已过；原长文滚动与选区未记录；后续：P0 |
-| 09-06 | 键盘选择和手机操作可用，快速输入不会使用过期结果。 | 验证中 | 自动化：F link-memo-search `hides previous candidates...ignores late results`；浏览器：Tab/Enter 与窄屏；快速输入竞态 UI；后续：P0 |
-| 09-07 | 关系可随现有导出/恢复流程保留，权限与回收站语义一致。 | 验证中 | 自动化：G `TestJournalBackupNewInstanceRoundtripAndNoReplay` relation remap + R06 trash/restore；浏览器：导出恢复后可双向回看/权限提示；后续：P0；新备份隔离应用恢复关系检查 |
+| 09-01 | 从当前编辑器可快速找到、预览并关联旧记录，关闭选择器后继续原位置写作。 | 验证中 | 自动化：F link-memo-search delayed open；relation preview；E focus continuity；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。聚焦/关联长文滚动仍缺after值，保持真实待验收。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 09-02 | 关键词搜索、后续页、空态和失败重试可用；特殊字符不导致查询失效。 | 验证中 | 自动化：F link-memo-search 后页失败/重试/晚响应；literal quoting 共用搜索；实际：搜索后页错误重试、特殊字符、晚响应、自关联/重复、失效目标和移除不丢正文均有精确组件/API/DB断言；实际搜索预览、保存与反向回看已通过，不新增每个错误的人工排列。 证据：B:5,39；H；G/DB；FE；共同待办：P0 |
+| 09-03 | 保存后正向及反向关系一致，刷新仍可回看。 | 验证中 | 自动化：G `TestMemoRelationsHideTrashedEndpointsAndRestoreBidirectionally`；DB 事务；实际：真实保存关联后从来源跳到目标，再经反向入口返回同一来源；服务端刷新、回收与恢复双向一致由隔离HTTP/DB回归补足。 证据：B:39；H；G/DB；共同待办：P0 |
+| 09-04 | 自关联、重复添加、移除关联及目标删除行为明确，不误删正文。 | 验证中 | 自动化：G `TestMemoSaveSkipsUnavailableReferencesWithoutLosingBody`；DB 并发 target 删除；F relation warns；实际：搜索后页错误重试、特殊字符、晚响应、自关联/重复、失效目标和移除不丢正文均有精确组件/API/DB断言；实际搜索预览、保存与反向回看已通过，不新增每个错误的人工排列。 证据：B:5,39；H；G/DB；FE；共同待办：P0 |
+| 09-05 | 阅读关联记录并返回时草稿、光标和滚动位置保留。 | 验证中 | 自动化：E editor retained；F direct dialog focus pointer；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。聚焦/关联长文滚动仍缺after值，保持真实待验收。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 09-06 | 键盘选择和手机操作可用，快速输入不会使用过期结果。 | 验证中 | 自动化：F link-memo-search `hides previous candidates...ignores late results`；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
+| 09-07 | 关系可随现有导出/恢复流程保留，权限与回收站语义一致。 | 验证中 | 自动化：G `TestJournalBackupNewInstanceRoundtripAndNoReplay` relation remap + R06 trash/restore；实际：浏览器下载普通/含历史ZIP，应用外独立对fresh SQLite快照核对138/138通过：18记录、12附件/原件、10/14可移植文档、0/4版本，正文/日期/关系/原件hash及脱敏字段一致。三DB导入回归证明组织关系保留且不重放。 证据：ZIP；ZIP-DB；共同待办：P0 |
 
 ## #10 [R07] 修复附件预览并让附件随记录进入和恢复回收站
 
@@ -166,14 +179,14 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 10-01 | 先使用真实故障类型或等价合成样本复现，修复后同一路径可正常预览，并记录根因。 | 验证中 | 自动化：E preview-image-dialog load error；G special filename/trash reproducer；浏览器：B 15:40 原生图片预览/trash恢复路径通过；媒体失败fallback/故障根因仍需对应记录；后续：P0 |
-| 10-02 | 图片、音频、视频及文档按支持能力正常预览或明确降级；中文、空格、#、? 等文件名不破坏访问。 | 验证中 | 自动化：G fileserver originals/Range/thumb/motion；F attachment-urls/media-loading；浏览器：B PNG decode与原件200；音频/视频播放、文档和特殊名实际路径仍待；后续：P0 |
-| 10-03 | 删除记录后附件退出默认列表及计数，回收站可找到对应对象；正常归档附件保持原有可见性。 | 验证中 | 自动化：G `TestAttachmentLibraryTrashLifecycleAndPagination`；DB before pagination；浏览器：B 15:40计数3→2→3/正常URL trash时404；归档区别浏览器仍补；后续：P0 |
-| 10-04 | 恢复记录后原件、缩略图、播放和来源跳转恢复，旧分享不会被自动恢复。 | 验证中 | 自动化：G `TestTrashAttachmentExplicitOwnerPreviewAndSpecialFilename`、TrashRestoresPrivately；old share revoked；浏览器：B 本人trash decode、restore原件200已过；音视频/来源/旧share拒绝另补；后续：P0 |
-| 10-05 | 30 天保留、永久清理、有效引用及历史版本引用得到一致处理。 | 验证中 | 自动化：G `TestPurgeRevisionRetainsOriginalReferencedElsewhere`、30天过期；P历史原件snapshot；浏览器：保留期/永久清理提示可理解，勿删真实资料；后续：P0；隔离清理/恢复核对 |
-| 10-06 | 全量计数与分页一致；批量删除、恢复及网络重试后不留下过期界面状态。 | 验证中 | 自动化：G/DB library分页；F attachment-library-stats drains all pages；浏览器：B 单条删除恢复计数已过；批量/失败重试/分页总量仍待；后续：P0 |
-| 10-07 | 桌面和手机预览、关闭、缩放或播放均可操作；不可预览时提供错误信息与可用的原件下载。 | 验证中 | 自动化：E preview dialog zoom/wheel/Esc/mobile arrows、media fallback；浏览器：ego 窄屏预览关闭缩放/实际播放时间前进/原件下载；后续：P0 |
-| 10-08 | 现有已删除记录纳入新规则，不要求用户重新删除一次。 | 验证中 | 自动化：DB `TestAttachmentLifecycleFiltersBeforePagination` 老trash文档fixture；G无需重写逻辑；浏览器：已有墓碑样本无需再删即进入附件回收站；后续：P0；现有历史数据只读核验 |
+| 10-01 | 先使用真实故障类型或等价合成样本复现，修复后同一路径可正常预览，并记录根因。 | 验证中 | 自动化：E preview-image-dialog load error；G special filename/trash reproducer；实际：图片解码、音频/视频播放、文档明确降级及原件读取通过，覆盖中文/空格/特殊符号文件名；视频播放时间前进和实际下载hash已记录。故障根因、红绿回归及授权范围见附件审查证据。 证据：B:8,21–25；G；E；共同待办：P0 |
+| 10-02 | 图片、音频、视频及文档按支持能力正常预览或明确降级；中文、空格、#、? 等文件名不破坏访问。 | 验证中 | 自动化：G fileserver originals/Range/thumb/motion；F attachment-urls/media-loading；实际：图片解码、音频/视频播放、文档明确降级及原件读取通过，覆盖中文/空格/特殊符号文件名；视频播放时间前进和实际下载hash已记录。故障根因、红绿回归及授权范围见附件审查证据。 证据：B:8,21–25；G；E；共同待办：P0 |
+| 10-03 | 删除记录后附件退出默认列表及计数，回收站可找到对应对象；正常归档附件保持原有可见性。 | 验证中 | 自动化：G `TestAttachmentLibraryTrashLifecycleAndPagination`；DB before pagination；实际：真实附件回收列表/类型过滤/计数和恢复后缓存刷新通过；正常归档与trash区分、过滤先于分页、全量计数、批量/失败重试由DB/组件精确回归覆盖，不要求手工逐页复造。 证据：B:8,22–23；H；G/DB；FE；共同待办：P0 |
+| 10-04 | 恢复记录后原件、缩略图、播放和来源跳转恢复，旧分享不会被自动恢复。 | 验证中 | 自动化：G `TestTrashAttachmentExplicitOwnerPreviewAndSpecialFilename`、TrashRestoresPrivately；old share revoked；实际：回收预览/恢复原件、音视频、来源与旧分享撤回主路径通过；恢复PRIVATE，旧分享重新请求不再含被撤回记录。错误提取码拒绝/正确码读取已证；过期/轮换/媒体直链及期限/清理由隔离负向回归覆盖，未删除真实资料。 证据：B:21–25,30,34–35；R；G；共同待办：P0 |
+| 10-05 | 30 天保留、永久清理、有效引用及历史版本引用得到一致处理。 | 验证中 | 自动化：G `TestPurgeRevisionRetainsOriginalReferencedElsewhere`、30天过期；P历史原件snapshot；实际：30天保留、永久清理、共享有效引用和历史版本原件保留有隔离数据库/API断言；含历史真实ZIP核对版本媒体与原件hash，history-only已移除附件由三DB回归补足。 证据：G/DB；ZIP；ZIP-DB；共同待办：P0 |
+| 10-06 | 全量计数与分页一致；批量删除、恢复及网络重试后不留下过期界面状态。 | 验证中 | 自动化：G/DB library分页；F attachment-library-stats drains all pages；实际：真实附件回收列表/类型过滤/计数和恢复后缓存刷新通过；正常归档与trash区分、过滤先于分页、全量计数、批量/失败重试由DB/组件精确回归覆盖，不要求手工逐页复造。 证据：B:8,22–23；H；G/DB；FE；共同待办：P0 |
+| 10-07 | 桌面和手机预览、关闭、缩放或播放均可操作；不可预览时提供错误信息与可用的原件下载。 | 验证中 | 自动化：E preview dialog zoom/wheel/Esc/mobile arrows、media fallback；实际：空正文纯图片及纯音频均能保存；390px/24px下图片100→120→100缩放、键盘下载/Esc通过，下载hash一致；音频实际播放至末尾且原件字节核对。未声称实际麦克风录制。 证据：B:50–51；E；共同待办：P0 |
+| 10-08 | 现有已删除记录纳入新规则，不要求用户重新删除一次。 | 验证中 | 自动化：DB `TestAttachmentLifecycleFiltersBeforePagination` 老trash文档fixture；G无需重写逻辑；实际：历史墓碑fixture无需重复删除的DB回归通过；真实S3隔离恢复中5条既有trash和3个trash附件按权限排除，无需触碰生产历史资料再次删除。 证据：G/DB；R；共同待办：P0 |
 
 ## #11 [R08] 数据库与附件定时备份到 S3：配置检测、独立状态页与恢复验证
 
@@ -181,15 +194,15 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 11-01 | 可配置至少一个实际 S3 兼容目的地，检测真实读写；错误凭据、无权限、无效目标和网络失败提示可操作。 | 验证中 | 自动化：P/G + P-live：真实错误候选不改原配置；真S3临时对象读写/hash/删除及restic访问通过；浏览器：服务器动作已证；设置UI触发/错误反馈闭环待；后续：P0；已用获准真实目的地，不重复制造无关检测；输入：S3已授权设施，原则上无新输入 |
-| 11-02 | 数据库和附件定时备份实际完成，远端快照、保护时间点及本地成功回执一致。 | 验证中 | 自动化：P partial/receipt/upload断言；P-base真实旧备份恢复；浏览器：状态页保护时间/远端快照一致；后续：P0；新版本真实timer执行及snapshot receipt对应 |
-| 11-03 | 修改配置失败不破坏现有有效备份；暂停、启用、手动执行与自动调度不重复运行。 | 验证中 | 自动化：P connection/activation failure rollback；overlap locks；paused schedule preserved；浏览器：失败编辑保留原配置；启停/手动/auto状态；后续：P0；P-live错误配置保持原有效config；真实启停/激活/互斥与timer行为仍待 |
-| 11-04 | 未完成或部分备份不能标成功；存在 S3 源附件或外链缺口时覆盖范围清楚。 | 验证中 | 自动化：P snapshot managedS3/外链/missing original/partial restic tests；浏览器：部分失败coverage展示不冒成功；后续：P0；受管S3真实源覆盖/缺口核对 |
-| 11-05 | 独立状态页准确展示各阶段、各目标和历史；失败、超时及回执过期不会显示正常。 | 验证中 | 自动化：P status redact/stale/latestfailure；F cloud-backup stale fetched success；浏览器：完整状态页/错误/历史/目标切换/超时；后续：P0；宿主真实job/monitor receipt对应 |
-| 11-06 | 浏览器待同步草稿不被算作服务器已备份内容；独立副本的延迟单独展示。 | 验证中 | 自动化：F cloud-backup；代码文案不足以证明本地pending排除；浏览器：带本地待同步草稿查看状态，不算server成功；后续：P0；独立副本delay与server时间分别核对 |
-| 11-07 | 从明确快照进行隔离恢复，核对正文、关系、日期、附件原件与应用可用性。 | 验证中 | 自动化：P/G + P-live：明确abc65快照恢复712记录/55附件/110媒体核验，applicationVerified=false；浏览器：待隔离应用登录/关系/原件播放与权限核验；后续：P0；文件恢复已证，真实运行应用验证仍不能省 |
-| 11-08 | 恢复不意外激活旧分享、外部投递或重复历史记录；不覆盖正在写入的数据。 | 验证中 | 自动化：P/G + P-live：restore报告sessions撤销/external暂停/storage隔离；仍需应用负向验证；浏览器：真实恢复实例旧share/session/外发暂停可见性待；后续：P0；隔离恢复无旧授权/无外发/不覆盖当前源 |
-| 11-09 | 页面关闭不影响服务器定时备份；实际调度执行和独立监控有证据。 | 验证中 | 自动化：P independent report failure；P-agent unit/timer active局部；浏览器：关闭页面后不需要browser维持job；后续：P0；至少实际自动周期+独立monitor与副本证据 |
+| 11-01 | 可配置至少一个实际 S3 兼容目的地，检测真实读写；错误凭据、无权限、无效目标和网络失败提示可操作。 | 验证中 | 自动化：P/G + P-live：真实错误候选不改原配置；真S3临时对象读写/hash/删除及restic访问通过；实际：现有S3真实临时对象读写/hash/删除、错误候选不改变原有效配置、完整试备份，以及浏览器检测→试备份→启用同目的地通过；网络/权限错误精确回归补足。 证据：P-live；B:11；P；共同待办：P0 |
+| 11-02 | 数据库和附件定时备份实际完成，远端快照、保护时间点及本地成功回执一致。 | 验证中 | 自动化：P partial/receipt/upload断言；P-base真实旧备份恢复；实际：原timer持续产生完整远端快照并有独立监控投递回执；状态页断网显未知、重连显示对应快照/保护时间/历史，2份本机草稿明确排除，独立副本状态与延迟均诚实显示未知。配置失败/部分备份/并发锁/启停调度边界由已执行回归覆盖。 证据：B:31；R-receipt；P；共同待办：P0 |
+| 11-03 | 修改配置失败不破坏现有有效备份；暂停、启用、手动执行与自动调度不重复运行。 | 验证中 | 自动化：P connection/activation failure rollback；overlap locks；paused schedule preserved；实际：原timer持续产生完整远端快照并有独立监控投递回执；状态页断网显未知、重连显示对应快照/保护时间/历史，2份本机草稿明确排除，独立副本状态与延迟均诚实显示未知。配置失败/部分备份/并发锁/启停调度边界由已执行回归覆盖。 证据：B:31；R-receipt；P；共同待办：P0 |
+| 11-04 | 未完成或部分备份不能标成功；存在 S3 源附件或外链缺口时覆盖范围清楚。 | 验证中 | 自动化：P snapshot managedS3/外链/missing original/partial restic tests；实际：原timer持续产生完整远端快照并有独立监控投递回执；状态页断网显未知、重连显示对应快照/保护时间/历史，2份本机草稿明确排除，独立副本状态与延迟均诚实显示未知。配置失败/部分备份/并发锁/启停调度边界由已执行回归覆盖。 证据：B:31；R-receipt；P；共同待办：P0 |
+| 11-05 | 独立状态页准确展示各阶段、各目标和历史；失败、超时及回执过期不会显示正常。 | 验证中 | 自动化：P status redact/stale/latestfailure；F cloud-backup stale fetched success；实际：原timer持续产生完整远端快照并有独立监控投递回执；状态页断网显未知、重连显示对应快照/保护时间/历史，2份本机草稿明确排除，独立副本状态与延迟均诚实显示未知。配置失败/部分备份/并发锁/启停调度边界由已执行回归覆盖。 证据：B:31；R-receipt；P；共同待办：P0 |
+| 11-06 | 浏览器待同步草稿不被算作服务器已备份内容；独立副本的延迟单独展示。 | 验证中 | 自动化：F cloud-backup；代码文案不足以证明本地pending排除；实际：原timer持续产生完整远端快照并有独立监控投递回执；状态页断网显未知、重连显示对应快照/保护时间/历史，2份本机草稿明确排除，独立副本状态与延迟均诚实显示未知。配置失败/部分备份/并发锁/启停调度边界由已执行回归覆盖。 证据：B:31；R-receipt；P；共同待办：P0 |
+| 11-07 | 从明确快照进行隔离恢复，核对正文、关系、日期、附件原件与应用可用性。 | 验证中 | 自动化：P安全恢复/权限/源字段hash回归；G/DB完整导入与不重放；实际：真实0038d722快照在network-none隔离容器运行1f65候选，applicationVerified与authorizationVerified均true：707正常/5回收、55原件/54预览、110保留文件、2451负向；712行仅派生索引变化，归一原字段hash相同。非空关系由合成ZIP和三DBroundtrip补足；不覆盖线上数据，旧会话/分享撤销且外发暂停。 证据：R；R-receipt；ZIP-DB；B:31；共同待办：P0 |
+| 11-08 | 恢复不意外激活旧分享、外部投递或重复历史记录；不覆盖正在写入的数据。 | 验证中 | 自动化：P安全恢复/权限/源字段hash回归；G/DB完整导入与不重放；实际：真实0038d722快照在network-none隔离容器运行1f65候选，applicationVerified与authorizationVerified均true：707正常/5回收、55原件/54预览、110保留文件、2451负向；712行仅派生索引变化，归一原字段hash相同。非空关系由合成ZIP和三DBroundtrip补足；不覆盖线上数据，旧会话/分享撤销且外发暂停。 证据：R；R-receipt；ZIP-DB；B:31；共同待办：P0 |
+| 11-09 | 页面关闭不影响服务器定时备份；实际调度执行和独立监控有证据。 | 验证中 | 自动化：P independent report failure；P-agent unit/timer active局部；实际：原timer持续产生完整远端快照并有独立监控投递回执；状态页断网显未知、重连显示对应快照/保护时间/历史，2份本机草稿明确排除，独立副本状态与延迟均诚实显示未知。配置失败/部分备份/并发锁/启停调度边界由已执行回归覆盖。 证据：B:31；R-receipt；P；共同待办：P0 |
 
 ## #16 [R09] 完善嵌套标签：树形展示、折叠与父子级筛选
 
@@ -197,13 +210,13 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 16-01 | 收起“人生修行”后子级隐藏；展开可访问多层分支，刷新后展开状态保留。 | 验证中 | 自动化：T/F tag-tree remount scope expansion；浏览器：B 15:24父级展开持久状态已过；多层分支/清空再选可补；后续：P0 |
-| 16-02 | 点击父级可完整找回自身与后代记录，点击子级只缩小到该分支；结构性父级同样可筛选。 | 验证中 | 自动化：DB full path segment；G父count不重复；T结构父可点击；浏览器：B父人生修行只返回3条且排除相似前缀已过；结构父/子支完整结果待；后续：P0 |
-| 16-03 | 箭头展开与名称筛选相互独立，手机不依赖鼠标悬停才能找到展开入口。 | 验证中 | 自动化：T label independent disclosure；浏览器：窄屏始终可见展开箭头，键盘区分操作；后续：P0 |
-| 16-04 | 同一条记录带多个子标签时，父级计数与结果列表均不重复；分页覆盖完整结果，不只处理当前已加载的一页。 | 验证中 | 自动化：G `TestJournalSearchScopeCountsAndPinLifecycle`；DB分页；浏览器：多子标签单record父计数=1且完整多页；后续：P0 |
-| 16-05 | 相似前缀、不同父级下同名子标签不会混入结果；父级上下文清楚。 | 验证中 | 自动化：DB prefix边界fixture；F memo-search path；浏览器：B 人生修行 vs 人生修行者边界已过；不同父同子仍补；后续：P0 |
-| 16-06 | 编辑器能搜索、补全并保存完整嵌套路径；既有路径与平级标签均正常保留。 | 验证中 | 自动化：FE editor-tag-autocomplete/tag-grammar/tag-unicode-parity + E旧Markdown/标签roundtrip；浏览器：真实搜索补全完整嵌套路径/保存重开；后续：P0 |
-| 16-07 | 侧栏与 R02 搜索结果一致，键盘与手机操作完成实际验证。 | 验证中 | 自动化：C/T 查询范围/标签交互已测；浏览器：sidebar与QuickFind同条件+键盘/窄屏；后续：P0 |
+| 16-01 | 收起“人生修行”后子级隐藏；展开可访问多层分支，刷新后展开状态保留。 | 验证中 | 自动化：T/F tag-tree remount scope expansion；实际：真实标签展开/折叠不误导航、键盘独立展开、父4条/子3条及QuickFind同范围通过，刷新展开状态保持；树层级/窄屏入口/名称和箭头独立性有mounted组件回归。 证据：B:4,41；H；FE；共同待办：P0 |
+| 16-02 | 点击父级可完整找回自身与后代记录，点击子级只缩小到该分支；结构性父级同样可筛选。 | 验证中 | 自动化：DB full path segment；G父count不重复；T结构父可点击；实际：真实标签展开/折叠不误导航、键盘独立展开、父4条/子3条及QuickFind同范围通过，刷新展开状态保持；树层级/窄屏入口/名称和箭头独立性有mounted组件回归。 证据：B:4,41；H；FE；共同待办：P0 |
+| 16-03 | 箭头展开与名称筛选相互独立，手机不依赖鼠标悬停才能找到展开入口。 | 验证中 | 自动化：T label independent disclosure；实际：真实标签展开/折叠不误导航、键盘独立展开、父4条/子3条及QuickFind同范围通过，刷新展开状态保持；树层级/窄屏入口/名称和箭头独立性有mounted组件回归。 证据：B:4,41；H；FE；共同待办：P0 |
+| 16-04 | 同一条记录带多个子标签时，父级计数与结果列表均不重复；分页覆盖完整结果，不只处理当前已加载的一页。 | 验证中 | 自动化：G `TestJournalSearchScopeCountsAndPinLifecycle`；DB分页；实际：多子标签单记录父计数去重、完整分页、相似前缀和不同父同叶均由逐对象HTTP/三DB测试核验；真实父子树与搜索结果对应，不重新手工遍历所有页。 证据：H；G/DB；B:4,41；共同待办：P0 |
+| 16-05 | 相似前缀、不同父级下同名子标签不会混入结果；父级上下文清楚。 | 验证中 | 自动化：DB prefix边界fixture；F memo-search path；实际：多子标签单记录父计数去重、完整分页、相似前缀和不同父同叶均由逐对象HTTP/三DB测试核验；真实父子树与搜索结果对应，不重新手工遍历所有页。 证据：H；G/DB；B:4,41；共同待办：P0 |
+| 16-06 | 编辑器能搜索、补全并保存完整嵌套路径；既有路径与平级标签均正常保留。 | 验证中 | 自动化：FE editor-tag-autocomplete/tag-grammar/tag-unicode-parity + E旧Markdown/标签roundtrip；实际：原始动作确认输入标签前缀、候选展示、ArrowDown→Enter选中完整嵌套路径，并通过源码断言；随后已保存内容的源码/可视化/聚焦往返仍保留完整路径。既有路径、平级标签和中文语法由精确编辑器回归补足。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 16-07 | 侧栏与 R02 搜索结果一致，键盘与手机操作完成实际验证。 | 验证中 | 自动化：C/T 查询范围/标签交互已测；实际：真实标签展开/折叠不误导航、键盘独立展开、父4条/子3条及QuickFind同范围通过，刷新展开状态保持；树层级/窄屏入口/名称和箭头独立性有mounted组件回归。 证据：B:4,41；H；FE；共同待办：P0 |
 
 ## #17 [R10] 完善记录置顶：统一入口、首页展示与状态规则
 
@@ -211,14 +224,14 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 17-01 | 卡片与详情页均能置顶/取消置顶，桌面与手机入口可发现，成功和失败反馈明确。 | 验证中 | 自动化：F journal-memo-media/action menu；G owner权限；浏览器：卡片/详情 pin/unpin 成功失败可发现；后续：P0 |
-| 17-02 | 一年前的正常记录置顶后可在个人首页编辑区下方找到，并有置顶标记。 | 验证中 | 自动化：DB pinned old createdTs在查询头部；G时间不变；浏览器：B 15:23去年样本置顶排第一、显示已置顶；编辑区具体位置可截图；后续：P0 |
-| 17-03 | 多条置顶按记录时间倒序；跨分页不重复、不遗漏，不把仅当前页的数据当作全部置顶。 | 验证中 | 自动化：DB `TestMemoSearchFacetsAndPinnedPagination` oldpin顺序及分页；浏览器：多置顶跨页去重+取消后顺序；后续：P0 |
-| 17-04 | 刷新、重新登录和换设备后状态一致；取消后回到正常时间位置。 | 验证中 | 自动化：G服务端pin持久化；F cache mutation仅局部；浏览器：B pin后刷新状态一致；登出重登/第二会话/取消顺序待；后续：P0 |
-| 17-05 | 原始记录日期未改变，日历和某日回看的时间顺序保持正确。 | 验证中 | 自动化：G `TestJournalSearchScopeCountsAndPinLifecycle` create/update timestamp unchanged；C时区；浏览器：B 15:44今日日回看不含去年置顶；pin前后时间须结合qa-pin-before/after核对；后续：P0 |
-| 17-06 | 带关键词、标签、日期条件时，不出现无关置顶记录。 | 验证中 | 自动化：DB查询先filter后pin排序；F memo views composition；浏览器：B父标签过滤与今日date都没有无关旧pin通过；keyword场景待；后续：P0 |
-| 17-07 | 归档/移入回收站立即退出首页置顶区，恢复后原置顶状态仍在。 | 验证中 | 自动化：G state恢复保留pin+trash排除；未组合真UI；浏览器：归档/trash立即退出pin区，恢复原pin仍在；后续：P0 |
-| 17-08 | 操作遵守本人记录权限，失败不会留下与服务器状态不一致的置顶展示。 | 验证中 | 自动化：G另一用户PermissionDenied；F useMemoPin关联cache待FE；浏览器：失败UI不假置顶/不丢原状态；后续：P0 |
+| 17-01 | 卡片与详情页均能置顶/取消置顶，桌面与手机入口可发现，成功和失败反馈明确。 | 验证中 | 自动化：F journal-memo-media/action menu；G owner权限；实际：卡片旧记录置顶与刷新已过；详情取消后UI与另一客户端读取一致，授权HTTP200+exactName及独立预存SQLite快照复核原日期/正文/payload/visibility不变。早先缺Authorization的401字段比较无效，采用后续更正证据。 证据：B:3,42,49；B34-corrected；H；共同待办：P0 |
+| 17-02 | 一年前的正常记录置顶后可在个人首页编辑区下方找到，并有置顶标记。 | 验证中 | 自动化：DB pinned old createdTs在查询头部；G时间不变；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
+| 17-03 | 多条置顶按记录时间倒序；跨分页不重复、不遗漏，不把仅当前页的数据当作全部置顶。 | 验证中 | 自动化：DB `TestMemoSearchFacetsAndPinnedPagination` oldpin顺序及分页；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
+| 17-04 | 刷新、重新登录和换设备后状态一致；取消后回到正常时间位置。 | 验证中 | 自动化：G服务端pin持久化；F cache mutation仅局部；实际：卡片旧记录置顶与刷新已过；详情取消后UI与另一客户端读取一致，授权HTTP200+exactName及独立预存SQLite快照复核原日期/正文/payload/visibility不变。早先缺Authorization的401字段比较无效，采用后续更正证据。 证据：B:3,42,49；B34-corrected；H；共同待办：P0 |
+| 17-05 | 原始记录日期未改变，日历和某日回看的时间顺序保持正确。 | 验证中 | 自动化：G `TestJournalSearchScopeCountsAndPinLifecycle` create/update timestamp unchanged；C时区；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
+| 17-06 | 带关键词、标签、日期条件时，不出现无关置顶记录。 | 验证中 | 自动化：DB查询先filter后pin排序；F memo views composition；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
+| 17-07 | 归档/移入回收站立即退出首页置顶区，恢复后原置顶状态仍在。 | 验证中 | 自动化：G state恢复保留pin+trash排除；未组合真UI；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
+| 17-08 | 操作遵守本人记录权限，失败不会留下与服务器状态不一致的置顶展示。 | 验证中 | 自动化：G另一用户PermissionDenied；F useMemoPin关联cache待FE；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
 
 ## #18 [R11] 完善 MCP 接入：只读授权、日期检索与可追溯回顾
 
@@ -226,15 +239,15 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 18-01 | 从设置创建 Agent 专用只读凭证、复制配置并连接 Codex，完成一次真实读取；界面检测结果与实际连接一致。 | 验证中 | 自动化：A只读授权；M真实Codex已连接读取；F agent-access/config test；浏览器：设置创建/复制/检测必须与同一实际凭据连接对应；后续：P0；上线endpoint/token真实读确认 |
-| 18-02 | “今天”及指定日期查询遵守 Kairos 时区，跨午夜边界和历史导入日期正确，结果与产品内同范围一致。 | 验证中 | 自动化：A `TestAgentFilterUsesLocalOriginalDatesAndCalendarDST` + query test；M today/history；浏览器：产品同范围对照、跨午夜结果；后续：P0 |
-| 18-03 | 日期范围、关键词、父子标签、分区、置顶条件可组合；单条完整记录及其原文链接可用。 | 验证中 | 自动化：A `TestAgentQueryOwnArchiveTrashPagingAndOriginalDate`组合+全文；M单条返回source；浏览器：真实浏览器打开source URL；多条件查询UI对照；后续：P0 |
-| 18-04 | 正常与归档记录按约定纳入，回收站内容默认排除，权限边界不因 MCP 接入而扩大。 | 验证中 | 自动化：A owner/archive/trash/comment与fileserver边界；浏览器：回收站排除与可见范围对应；后续：P0 |
-| 18-05 | 大结果集可连续分页；未读完明确标识；无结果、请求失败、部分结果可区分。 | 验证中 | 自动化：M 4页/2页明确覆盖；A tampered/query/owner cursor、partial label；浏览器：失败/空态展示与取全指引；后续：P0 |
-| 18-06 | 只读凭证的写入尝试被服务端拒绝，不能通过其他接受该凭证的接口绕过限制。 | 验证中 | 自动化：A真Connect/gRPC/gRPC-Web/旧MCP写拒绝、fileserver专用prefix全拒绝；浏览器：设置说明“只读正文，不含文件下载”；后续：P0；公开与私密入口负向 smoke |
-| 18-07 | 不同 Agent 凭证可独立撤销；过期/撤销立即按既定授权规则生效，最近使用时间可查看。 | 验证中 | 自动化：A expiry/revoke/lastUse/independent credential；F agent-access；浏览器：命名/到期/撤销/最近使用显示；后续：P0；线上新合成凭据验证后撤销 |
-| 18-08 | 实际演示“今日回顾”和“两段时间对比”：Agent 可引用原文并回到记录，说明读取范围、区分事实与解读。 | 验证中 | 自动化：M2真Codex两时期+今日观察、8次读调用/全页、原文引用、事实/推测与合成边界均已留证；浏览器：完整分析演示已通过；至少sourceUrl实际打开回到对应记录仍待；后续：P0；上线source链接核验；输入：不需新权限，合成记录+已获准Codex即可 |
-| 18-09 | 未修改既有正文、时间、标签或附件；用户数据不因接入被改成公开。 | 验证中 | 自动化：A write-denial count unchanged；metadata只读；仍需整体前后digest；浏览器：读取前后记录/附件/标签/时间不变；后续：P0；实际只读演示前后指纹核对 |
+| 18-01 | 从设置创建 Agent 专用只读凭证、复制配置并连接 Codex，完成一次真实读取；界面检测结果与实际连接一致。 | 验证中 | 自动化：A只读授权；M真实Codex已连接读取；F agent-access/config test；实际：设置创建7日命名只读凭据，实际复制配置、页面检测、同凭据Codex三次读取成功；UI撤销后真实客户端读取401。另一个凭据仍独立，过期/last-use/撤销边界有服务端和组件回归。 证据：B:32–33；M3；A/R11；共同待办：P0 |
+| 18-02 | “今天”及指定日期查询遵守 Kairos 时区，跨午夜边界和历史导入日期正确，结果与产品内同范围一致。 | 验证中 | 自动化：A `TestAgentFilterUsesLocalOriginalDatesAndCalendarDST` + query test；M today/history；实际：Codex今天/历史/两期全页、全文、范围与来源回溯通过，产品source链接实际打开；HTTP逐对象查询及读取前后完整响应核对、时区/分页/只读跨协议/回收隔离/文件入口拒绝有实证。只读正文不含原始文件下载，未改变记录可见性。 证据：M/M2/M3；B:18；H；A/R11；共同待办：P0 |
+| 18-03 | 日期范围、关键词、父子标签、分区、置顶条件可组合；单条完整记录及其原文链接可用。 | 验证中 | 自动化：A `TestAgentQueryOwnArchiveTrashPagingAndOriginalDate`组合+全文；M单条返回source；实际：Codex今天/历史/两期全页、全文、范围与来源回溯通过，产品source链接实际打开；HTTP逐对象查询及读取前后完整响应核对、时区/分页/只读跨协议/回收隔离/文件入口拒绝有实证。只读正文不含原始文件下载，未改变记录可见性。 证据：M/M2/M3；B:18；H；A/R11；共同待办：P0 |
+| 18-04 | 正常与归档记录按约定纳入，回收站内容默认排除，权限边界不因 MCP 接入而扩大。 | 验证中 | 自动化：A owner/archive/trash/comment与fileserver边界；实际：Codex今天/历史/两期全页、全文、范围与来源回溯通过，产品source链接实际打开；HTTP逐对象查询及读取前后完整响应核对、时区/分页/只读跨协议/回收隔离/文件入口拒绝有实证。只读正文不含原始文件下载，未改变记录可见性。 证据：M/M2/M3；B:18；H；A/R11；共同待办：P0 |
+| 18-05 | 大结果集可连续分页；未读完明确标识；无结果、请求失败、部分结果可区分。 | 验证中 | 自动化：M 4页/2页明确覆盖；A tampered/query/owner cursor、partial label；实际：Codex今天/历史/两期全页、全文、范围与来源回溯通过，产品source链接实际打开；HTTP逐对象查询及读取前后完整响应核对、时区/分页/只读跨协议/回收隔离/文件入口拒绝有实证。只读正文不含原始文件下载，未改变记录可见性。 证据：M/M2/M3；B:18；H；A/R11；共同待办：P0 |
+| 18-06 | 只读凭证的写入尝试被服务端拒绝，不能通过其他接受该凭证的接口绕过限制。 | 验证中 | 自动化：A真Connect/gRPC/gRPC-Web/旧MCP写拒绝、fileserver专用prefix全拒绝；实际：Codex今天/历史/两期全页、全文、范围与来源回溯通过，产品source链接实际打开；HTTP逐对象查询及读取前后完整响应核对、时区/分页/只读跨协议/回收隔离/文件入口拒绝有实证。只读正文不含原始文件下载，未改变记录可见性。 证据：M/M2/M3；B:18；H；A/R11；共同待办：P0 |
+| 18-07 | 不同 Agent 凭证可独立撤销；过期/撤销立即按既定授权规则生效，最近使用时间可查看。 | 验证中 | 自动化：A expiry/revoke/lastUse/independent credential；F agent-access；实际：设置创建7日命名只读凭据，实际复制配置、页面检测、同凭据Codex三次读取成功；UI撤销后真实客户端读取401。另一个凭据仍独立，过期/last-use/撤销边界有服务端和组件回归。 证据：B:32–33；M3；A/R11；共同待办：P0 |
+| 18-08 | 实际演示“今日回顾”和“两段时间对比”：Agent 可引用原文并回到记录，说明读取范围、区分事实与解读。 | 验证中 | 自动化：M2真Codex两时期+今日观察、8次读调用/全页、原文引用、事实/推测与合成边界均已留证；实际：Codex今天/历史/两期全页、全文、范围与来源回溯通过，产品source链接实际打开；HTTP逐对象查询及读取前后完整响应核对、时区/分页/只读跨协议/回收隔离/文件入口拒绝有实证。只读正文不含原始文件下载，未改变记录可见性。 证据：M/M2/M3；B:18；H；A/R11；共同待办：P0 |
+| 18-09 | 未修改既有正文、时间、标签或附件；用户数据不因接入被改成公开。 | 验证中 | 自动化：A write-denial count unchanged；metadata只读；实际：Codex今天/历史/两期全页、全文、范围与来源回溯通过，产品source链接实际打开；HTTP逐对象查询及读取前后完整响应核对、时区/分页/只读跨协议/回收隔离/文件入口拒绝有实证。只读正文不含原始文件下载，未改变记录可见性。 证据：M/M2/M3；B:18；H；A/R11；共同待办：P0 |
 
 ## #19 [R12] 优化编辑体验：Markdown 即时渲染与可视化格式编辑
 
@@ -242,64 +255,56 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 19-01 | 不懂 Markdown 的用户可用直接可见的按钮写出包含标题、加粗、列表等首期格式的记录。 | 验证中 | 自动化：E editor-formatting full command tests；insert-menu直接入口；浏览器：非Markdown操作路径标题/粗体/列表等全格式；后续：P0 |
-| 19-02 | 直接输入 Markdown 后在编辑位置看到效果；列表、待办、引用、链接和代码等格式正确，代码内容不被误当作正文语法处理。 | 验证中 | 自动化：E editor-live-preview structure/code literal/task undo；真实CM实例测试；浏览器：输入即显，active line语法/代码样式，长文；后续：P0 |
-| 19-03 | 粘贴一段含列表、链接和图片的内容后可以继续编辑，保存并重新打开时结构和图片位置完整。 | 验证中 | 自动化：E mixed semantic paste+I inline completion；浏览器：B 原生单PNG+前后文本保存通过；列表链接HTML混合paste保存重开仍待；后续：P0 |
-| 19-04 | 从网页或文档粘贴保留基础语义格式且不带入来源字体、颜色、背景；粘贴为纯文本可用。 | 验证中 | 自动化：E semantic/plain intents、HTML styles dropped、pre空行保留；浏览器：系统paste与Shift+Cmd/Ctrl+V基础格式对比；后续：P0 |
-| 19-05 | 来回切换可视化与源码模式，正文、标签、附件、格式、草稿和编辑位置不丢失，不因只切换模式而静默改坏原文。 | 验证中 | 自动化：E source/focus unchanged doc/editor identity；undo state；浏览器：B 15:32 visual/source原文相等+focus后保存已过；复杂选区/scroll/metadata组合待；后续：P0 |
-| 19-06 | 正确区分 Markdown 标题与嵌套标签；关联记录、附件和已有复杂内容继续可用，必要时能切源码精确编辑。 | 验证中 | 自动化：E legacyMarkdown/tags/complex/code + R06关系保存；浏览器：标题与#嵌套标签、关联附件旧复杂文本往返；后续：P0 |
-| 19-07 | 中文输入法组合输入、选择文字、撤销重做、草稿恢复完成验证；普通编辑与聚焦模式操作一致。 | 验证中 | 自动化：E IME deferral/undo/redo/anchor、I durable；jsdom非真实IME；浏览器：ego中文输入法组合+选区+undo/redo+focus一致；后续：P0 |
-| 19-08 | 编辑呈现与保存后的阅读结构一致，历史记录及导出内容保持可读 Markdown。 | 验证中 | 自动化：E exact Markdown doc；G export exact bytes；渲染视觉仍待；浏览器：旧记录编辑/阅读结构对照+导出Markdown应用外打开；后续：P0 |
-| 19-09 | 手机真机验证格式按钮、软键盘、选区和粘贴体验；桌面窄视口不替代真机验收。 | 验证中 | 自动化：E viewport工具只是模拟；浏览器：按用户改范围做ego手机视口/格式/选区/粘贴；不冒真机；后续：P0；输入：实体手机已豁免，个人体验另记 |
-
-## 本轮工程进展（仍待最终提交与上线核验）
-
-- 2026-10-10 本机：保存与分区事务、稳定 ID 重试、持久投递意图已通过定向 Go race 与三数据库事务测试；仍待浏览器和生产验证。
-- 发布恢复：53 项脚本测试通过，覆盖目标容器缺失、定时恢复部署声明、新写入保护及重复恢复；仍待最终隔离演练。
-- 搜索：SQLite / MySQL / PostgreSQL 实际查询测试通过，覆盖历史空标签、标签分支边界、媒体与分区组合、中文特殊字符、分页和置顶顺序；83 项前端定向回归通过。浏览器和最终候选 CI 尚未完成。
-- 集成回归发现“包含归档”也会返回回收站记录，已增加数据库层 `ExcludeTrashed` 并在列表与统计入口启用；列表/统计/MCP 联合 race 回归通过。
-- 线上基线：服务 1.0.1 健康，数据库完整性正常，备份定时器活动。最新真实备份恢复到服务器隔离目录，712 条记录、55 个附件、111 个清单文件全部校验通过；此时 `applicationVerified=false`，尚不声明应用恢复验收完成。私有清单留在受控服务器目录。
+| 19-01 | 不懂 Markdown 的用户可用直接可见的按钮写出包含标题、加粗、列表等首期格式的记录。 | 验证中 | 自动化：E editor-formatting full command tests；insert-menu直接入口；实际：真实格式操作/撤销重做、Chromium中文composition、source/visual/focus及大字号非空选区已验证，保存复杂Markdown原文和附件/位置/关系一致。首期全格式、代码字面量与标题/嵌套标签边界由真实CM测试覆盖，不额外人工穷举语法。 证据：B:16,38,52；E；FE；共同待办：P0 |
+| 19-02 | 直接输入 Markdown 后在编辑位置看到效果；列表、待办、引用、链接和代码等格式正确，代码内容不被误当作正文语法处理。 | 验证中 | 自动化：E editor-live-preview structure/code literal/task undo；真实CM实例测试；实际：真实格式操作/撤销重做、Chromium中文composition、source/visual/focus及大字号非空选区已验证，保存复杂Markdown原文和附件/位置/关系一致。首期全格式、代码字面量与标题/嵌套标签边界由真实CM测试覆盖，不额外人工穷举语法。 证据：B:16,38,52；E；FE；共同待办：P0 |
+| 19-03 | 粘贴一段含列表、链接和图片的内容后可以继续编辑，保存并重新打开时结构和图片位置完整。 | 验证中 | 自动化：E mixed semantic paste+I inline completion；实际：已从原始工具调用与成功返回确认真实HTML strong/list/link语义粘贴，含图复杂记录继续编辑后源码结构与已保存原文一致；原生单图/多图剪贴板另有真实保存/原件hash，混合图片占位顺序由CM精确测试覆盖。首次innerText多空行比较失败保留，采用随后raw cm-line与后端匹配的证据。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 19-04 | 从网页或文档粘贴保留基础语义格式且不带入来源字体、颜色、背景；粘贴为纯文本可用。 | 验证中 | 自动化：E semantic/plain intents、HTML styles dropped、pre空行保留；实际：原始动作确认keyboard.paste({text,html})完成strong/list/link语义转换，CM测试覆盖去来源样式和代码空行。Shift+Cmd/Ctrl+V纯文本粘贴仍未真实执行：现有字面文本实际由keyboard.insertText输入，不能冒称纯文本粘贴通过。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 19-05 | 来回切换可视化与源码模式，正文、标签、附件、格式、草稿和编辑位置不丢失，不因只切换模式而静默改坏原文。 | 验证中 | 自动化：E source/focus unchanged doc/editor identity；undo state；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。聚焦/关联长文滚动仍缺after值，保持真实待验收。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 19-06 | 正确区分 Markdown 标题与嵌套标签；关联记录、附件和已有复杂内容继续可用，必要时能切源码精确编辑。 | 验证中 | 自动化：E legacyMarkdown/tags/complex/code + R06关系保存；实际：真实格式操作/撤销重做、Chromium中文composition、source/visual/focus及大字号非空选区已验证，保存复杂Markdown原文和附件/位置/关系一致。首期全格式、代码字面量与标题/嵌套标签边界由真实CM测试覆盖，不额外人工穷举语法。 证据：B:16,38,52；E；FE；共同待办：P0 |
+| 19-07 | 中文输入法组合输入、选择文字、撤销重做、草稿恢复完成验证；普通编辑与聚焦模式操作一致。 | 验证中 | 自动化：E IME deferral/undo/redo/anchor、I durable；jsdom非真实IME；实际：真实格式操作/撤销重做、Chromium中文composition、source/visual/focus及大字号非空选区已验证，保存复杂Markdown原文和附件/位置/关系一致。首期全格式、代码字面量与标题/嵌套标签边界由真实CM测试覆盖，不额外人工穷举语法。 证据：B:16,38,52；E；FE；共同待办：P0 |
+| 19-08 | 编辑呈现与保存后的阅读结构一致，历史记录及导出内容保持可读 Markdown。 | 验证中 | 自动化：E exact Markdown doc；G export exact bytes；实际：旧复杂Markdown编辑/阅读及source切换后保存原文字节一致；实际导出ZIP在应用外逐正文/元数据/媒体核对通过，未将渲染DOM额外空行误当正文变化。 证据：B:38,52；ZIP；E；共同待办：P0 |
+| 19-09 | 手机真机验证格式按钮、软键盘、选区和粘贴体验；桌面窄视口不替代真机验收。 | 验证中 | 自动化：E viewport工具只是模拟；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
 
 ## 历史 AC 回归范围
 
-历史已关闭不代表本轮通过。以下逐项需要新证据；AC37 真实社媒按用户指令暂缓。
+历史已关闭不代表本轮通过。以下逐项已关联本轮证据，仍共享P0；真实AI六项和定位权限按上文保留缺口，AC37真实社媒按用户指令暂缓。
 
 | ID | 场景 | 预期 | 本轮状态 | 实际结果 / 环境与时间 / 提交 / 证据 |
 | --- | --- | --- | --- | --- |
-| AC01 | 写一句话并保存 | 无标题或标签门槛；原话保留；无后续任务 | 验证中 | 自动化：G CreateMemo/日期/无重复测试；F home-loading-boundary；浏览器：B多条合成正文实际保存已证；无额外任务界面仍补简短检查；后续：P0 |
-| AC02 | 只保存照片或录音 | 有效媒体可成条；原件及播放可验证；转写可不使用 | 验证中 | 自动化：G OriginalRetainsBytes、PhotoOriginalAndRevisionMediaRecovery；F journal-memo-media纯媒体；浏览器：B PNG文字混合已过；纯图片/纯音频及真实播放/原件hash仍待；后续：P0；输入：设备录音硬件未测不作前置；转写可不用 |
-| AC03 | 三个月未使用后打开 | 无缺席、积压、连续天数或回归弹窗 | 验证中 | 自动化：F app-sidebar `keeps...without task prompts`仅当前渲染；浏览器：三月前合成账户进入首页，无缺席/积压/streak/弹窗；后续：P0 |
-| AC04 | 一直只使用记录 | 三项探索不自动展开、不产生红点或通知 | 验证中 | 自动化：F sidebar optional exploration；不是长期副作用证明；浏览器：一直写记录场景，无自动展开/红点/推送；后续：P0 |
-| AC05 | 主动进入每日回顾 | 少量原文；同日再进稳定；无往年今日也能自然退化 | 验证中 | 自动化：G `TestReviewFrozenSetRemovalAndCalendarTimezone`最多3/同日冻结/移除不补位；F journal.test eligible；浏览器：主动回顾再入稳定，无往年今日退化；后续：P0 |
-| AC06 | 从回顾详情返回 | 原位置和阅读状态恢复；无已读任务计数 | 验证中 | 自动化：F journal-session frozen review across detail；状态不等于scroll；浏览器：长文进入详情返回原卡/阅读滚动，无已读任务；后续：P0 |
-| AC07 | 漫步换条并后退 | 纯随机、同次不重复；后退回到原条；随时离开 | 验证中 | 自动化：F journal.test shuffle/history/no repeat/forward after back；journal-queries全页失败；浏览器：真实漫步数次后退再前进/随时离开；后续：P0 |
-| AC08 | 没有旧记录 / 只有一条 | 无凑数、无虚构内容、无鼓励完成的提示 | 验证中 | 自动化：F journal.test empty+single archives；浏览器：0条/1条样本真实空态，无凑数/鼓励任务；后续：P0 |
-| AC09 | 进入 AI 页但未点开始 | 不向模型发送正文，不生成分析 | 验证中 | 自动化：G `TestJournalInsightConsentOwnerScopeSaveStaleAndDeletion` config GET/PUT 0 calls；浏览器：开AI页未开始，network无generate/无正文请求至模型；后续：P0 |
-| AC10 | 选两条记录生成洞察 | 只发送所选范围；来源可核；不读取全库或媒体 | 验证中 | 自动化：G同上只选正文、不含foreign；provider insight selected input；mock边界；浏览器：UI选两条生成，来源可点回/发送预览；真实服务必须另证；后续：P0/真实AI仅合成记录；输入：U-AI |
-| AC11 | AI 失败、取消或输入超限 | 原始记录不变；范围保留；无隐式截断或自动重发 | 验证中 | 自动化：AI六场景新race+provider取消/redirect tests；不改原文/不保存/不retry；浏览器：失败/取消后范围与draft保留；输入超限明确；后续：P0/实际服务失败或安全取消验证；输入：U-AI |
-| AC12 | 看完 AI 直接离开 | 无保存、评价、反思要求；不自动写入时间线 | 验证中 | 自动化：G generate后insights=[]；无隐式持久化；浏览器：结果直接离开，无保存/评价/反思强制动作；后续：P0 |
-| AC13 | 明确保存洞察 | 来源和 AI 标识保留；可找回、删除、导出；不默认进入回顾 | 验证中 | 自动化：G insight显式save、来源/陈旧；Backup保存AI导出；F回顾排除derived；浏览器：保存洞察→找回/删除/导出，AI标记；不入普通回顾；后续：P0 |
-| AC14 | 修改或删除被分析的记录 | 修改使旧结果过时；删除清理可泄露原文的衍生结果 | 验证中 | 自动化：G insight source edit=>stale，trash=>derived清理；浏览器：修改/删除后旧洞察状态真实更新；后续：P0 |
-| AC15 | 排除某条回顾内容 | 立即退出回顾与漫步；仍可主动找到并恢复偏好 | 验证中 | 自动化：G frozen review exclusion；F journal-source-picker `restores only this record...`；浏览器：排除立刻退出回顾/漫步，主动找回恢复偏好；后续：P0 |
-| AC16 | 断网录入并重启应用 | 目标设备上验证实际持久化；未上传媒体不丢；状态真实 | 验证中 | 自动化：I/E offline/pending/blob/owner/QuotaExceeded；B-text局部；浏览器：B 15:36真断网冷刷图文恢复+联网续传已过；最终pending修复需稳定ID/原件hash及恰好一条核对；后续：P0；输入：ego+手机视口为已批准设备边界 |
-| AC17 | 网络超时后重复保存 | 不产生重复记录；附件失败不伪装完整成功 | 验证中 | 自动化：F journal-save-reliability lost creation response/stableID；E/I completed image retry；浏览器：断响应重复保存不重复、失败附件不假完整；后续：P0 |
-| AC18 | 多设备同时修改 | 保留冲突内容；不静默覆盖 | 验证中 | 自动化：G ConflictKeepsBothVersionsAndRevisionRestore、MetadataCAS与并发Store；F draft conflict保留独立baseline；浏览器：两会话同时改，冲突比较/继续保留本地远端；后续：P0 |
-| AC19 | 删除再恢复 / 永久删除 | 可恢复范围与保留期限明确；隐私删除语义一致 | 验证中 | 自动化：G TrashRestoresPrivatelyWithoutSharesAndExpires+R07引用保留；P安全restore；浏览器：trash→restore及隔离永久删除/30天提示；后续：P0；输入：不可逆删除真实资料未授权，使用合成 |
-| AC20 | 导出并在应用外打开 | 正文可读、受管理媒体可用、外链缺口显式列出 | 验证中 | 自动化：G `TestJournalBackupNewInstanceRoundtripAndNoReplay` exactbody/关系/原件/AI/refs；archive exact bytes；浏览器：下载ZIP→应用外解压Markdown/媒体可读/缺口报告；后续：P0 |
-| AC21 | 从独立备份恢复 | 在干净环境核对恢复范围；结果可复现 | 验证中 | 自动化：P-base + P-live两个真实备份的文件/db恢复已证；最新abc65有110媒体校验且storageIsolated；applicationVerified=false；浏览器：待恢复应用运行/登录/媒体/关系/权限；后续：P0；真实已恢复目录后续应用验收，独立副本证据另核 |
-| AC22 | 手机键盘 / 桌面键盘 / 大字体 | 保存可达、焦点可预测、触摸和键盘均可操作 | 验证中 | 自动化：E visual viewport；F home不自动唤键盘+sidebar触控入口；浏览器：ego desktop/390/320px/大字号Tab和保存可达；后续：P0；输入：不宣称实体软键盘验收 |
-| AC23 | 未授权访问与首次使用 AI | 私密内容不泄漏；服务与发送范围说明有效 | 验证中 | 自动化：G JournalReadRejectsFormerSpaceMember；A全面owner只读；G insight owner/selected；浏览器：访客无私密/AI首次发送范围说明/不默认发；后续：P0；匿名正文与原件拒绝；输入：U-AI 仅真实AI部分 |
-| AC24 | 日期、标签和手选范围分享 | 访客仅看到预览授权内容；组合筛选、子标签及排除语义清楚 | 验证中 | 自动化：G `TestShareSelectionAndSafeText` 日期/标签all/subtags；SharePreviewSnapshot；F journal-share preview digest；浏览器：日期/标签/手选+排除预览→访客仅授权记录；后续：P0 |
-| AC25 | 固定分享后新增或编辑原记录 | 不自动追加记录或改写快照；主动更新有差异预览；删除/归档即时撤销 | 验证中 | 自动化：G SharePreviewSnapshotPauseRotateAndWithdrawal固定快照/摘要变化拒绝/归档；F journal-share；浏览器：固定后新增/编辑不变，主动diff，删/归档撤销；后续：P0 |
-| AC26 | 动态分享新增、改标签和移除条件 | 规则内内容按授权更新；不符规则或被排除内容退出；无其他记录元信息泄漏 | 验证中 | 自动化：G `TestJournalDynamicSharesDoNotBackfillImportedHistory`；分享filter测试；浏览器：动态新增/改标签/排除/移出条件，不泄露无关metadata；后续：P0 |
-| AC27 | 到期、停用、错误提取码与附件直链 | 页面、数据、缩略图及媒体受同一授权；无绕过或泄漏 | 验证中 | 自动化：G journal_share + native/fileserver媒体share/owner；F visitor credentials omission/revocation；浏览器：到期/停用/错码/rotate/撤销+原件缩略图媒体直链；后续：P0；合成授权链接生命周期 |
-| AC28 | 普通记录、同步分区及未完成附件 | 普通内容不外发；已启用分区内容完整保存后才外发；目标在保存前可见 | 验证中 | 自动化：G AtomicPartition final commit；PartitionHTTPCompleteSave；E/I pending image gate；F目标显示；浏览器：普通/同步/未完成附件3类真实按钮与payload；后续：P0；隔离receiver，不调用社媒 |
-| AC29 | 启用同步时分区已有历史内容 | 默认不补发；主动选择补发才产生对应任务 | 验证中 | 自动化：G `TestPartitionTargetsNeverReplayHistory`、ChangesRequireExplicitSendByDefault；浏览器：已有历史→启用目标无补发，显式选中才任务；后续：P0；隔离receiver事件数 |
-| AC30 | Webhook 超时、重复投递、乱序和多目标失败 | 事件稳定可去重；成功目标不重复创建；旧版本不覆盖新版本；本地内容不丢 | 验证中 | 自动化：G TargetsRetryIndependently、RetryIsBounded、PendingSurvivesRestart、RechecksPauseRevision、PauseCancelsInflight；浏览器：UI多目标失败/送达状态与本地内容；后续：P0；本地HTTP协议可通过，平台幂等暂缓；输入：J15平台外部接入不纳入本轮 |
-| AC31 | 暂停、移出、删除、归档及恢复 | 待发正文和重试停止；恢复不自动重发；外部撤回结果单独报告 | 验证中 | 自动化：G RechecksPauseRevisionAndDeletion、RestoreDoesNotReactivateMapping、RetractionHasNoDeletedContent；F partition-save普通编辑不复活；浏览器：暂停/移出/删/归档/恢复状态与撤回结果独立显示；后续：P0；隔离receiver确认无旧正文重试 |
-| AC32 | Webhook 已接收但没有平台发布回执 | 显示已送达或发布结果未知；只有核验回执才显示已发布 | 验证中 | 自动化：G `TestPartitionPublishedRequiresMatchingReceipt`；浏览器：已送达/结果未知/核验已发布三种UI状态；后续：P0；仅协议验收，真实平台暂缓 |
-| AC33 | 删除个人分区 | 保留记录并移至未分区；停止该分区外发，不连带删除生活资料 | 验证中 | 自动化：G `TestJournalPartitionHTTPCompleteSaveAndIsolation` 最后DELETE分区204并GetMemo断言原正文保留；外发停止由partition测试；浏览器：删除合成分区，内容归未分区/任务停止；后续：P0 |
-| AC34 | 日历颜色及记录量 | 随数量变化；编辑、分享、AI 和同步副本不增量；导入归入原日期 | 验证中 | 自动化：G originaldates/provenance/Calendar；C full calendar zone/scope/stats；浏览器：B 15:44今日9条与列表一致/旧pin排除；编辑/分享/AI不增量与导入复合操作仍待；后续：P0 |
-| AC35 | 日历折叠、关闭颜色与键盘操作 | 主动设置有效；空白中性；非颜色方式可读；输入始终易达 | 验证中 | 自动化：F journal preference/calendar tests；C sidebar states；浏览器：折叠/关颜色/keyboard/非颜色计数/空白中性；后续：P0 |
-| AC36 | 恢复旧备份 / 导入到启用同步的实例 | 不复活旧分享或重放外发；已发布映射可核查，规则经明确恢复才启动 | 验证中 | 自动化：G BackupNewInstanceRoundtripAndNoReplay、BackupExistingInstancePauseAndCollision；ImportSuspensionDoesNotRetractOrReplay；P pause_restored_permissions；浏览器：恢复可见sync暂停/旧share无效/外发映射可查；后续：P0；真实隔离恢复无外发（不要用生产接收器） |
-| AC37 | 首个社媒目标完整链路 | 所选平台上核实文字、媒体、更新/撤回能力及失败边界；只投递成功不替代发布验证 | 暂缓 | 用户明确暂缓真实社媒平台接入与发布验证。 |
+| AC01 | 写一句话并保存 | 无标题或标签门槛；原话保留；无后续任务 | 验证中 | 自动化：G CreateMemo/日期/无重复测试；F home-loading-boundary；实际：多条无标题/无标签记录实际保存；旧日期合成账户与纯记录首页无缺席/积压/streak/强制探索提示，探索入口保持可选。旧日期fixture不声称实际等待三个月；组件回归覆盖相应界面约束。 证据：B:1–6,53；FE；共同待办：P0 |
+| AC02 | 只保存照片或录音 | 有效媒体可成条；原件及播放可验证；转写可不使用 | 验证中 | 自动化：G OriginalRetainsBytes、PhotoOriginalAndRevisionMediaRecovery；F journal-memo-media纯媒体；实际：空正文纯图片及纯音频均能保存；390px/24px下图片100→120→100缩放、键盘下载/Esc通过，下载hash一致；音频实际播放至末尾且原件字节核对。未声称实际麦克风录制。 证据：B:50–51；E；共同待办：P0 |
+| AC03 | 三个月未使用后打开 | 无缺席、积压、连续天数或回归弹窗 | 验证中 | 自动化：F app-sidebar `keeps...without task prompts`仅当前渲染；实际：多条无标题/无标签记录实际保存；旧日期合成账户与纯记录首页无缺席/积压/streak/强制探索提示，探索入口保持可选。旧日期fixture不声称实际等待三个月；组件回归覆盖相应界面约束。 证据：B:1–6,53；FE；共同待办：P0 |
+| AC04 | 一直只使用记录 | 三项探索不自动展开、不产生红点或通知 | 验证中 | 自动化：F sidebar optional exploration；不是长期副作用证明；实际：多条无标题/无标签记录实际保存；旧日期合成账户与纯记录首页无缺席/积压/streak/强制探索提示，探索入口保持可选。旧日期fixture不声称实际等待三个月；组件回归覆盖相应界面约束。 证据：B:1–6,53；FE；共同待办：P0 |
+| AC05 | 主动进入每日回顾 | 少量原文；同日再进稳定；无往年今日也能自然退化 | 验证中 | 自动化：G `TestReviewFrozenSetRemovalAndCalendarTimezone`最多3/同日冻结/移除不补位；F journal.test eligible；实际：每日回顾同日再入集合一致，进入详情后浏览器返回原卡/阅读位置，scrollTop前后均234；无已读任务计数。冻结/退化/移除不补位由服务测试覆盖。 证据：B:43；FE/G；共同待办：P0 |
+| AC06 | 从回顾详情返回 | 原位置和阅读状态恢复；无已读任务计数 | 验证中 | 自动化：F journal-session frozen review across detail；实际：每日回顾同日再入集合一致，进入详情后浏览器返回原卡/阅读位置，scrollTop前后均234；无已读任务计数。冻结/退化/移除不补位由服务测试覆盖。 证据：B:43；FE/G；共同待办：P0 |
+| AC07 | 漫步换条并后退 | 纯随机、同次不重复；后退回到原条；随时离开 | 验证中 | 自动化：F journal.test shuffle/history/no repeat/forward after back；journal-queries全页失败；实际：漫步下一条→后退→前进返回对应同一记录；无重复与完整历史/退出规则由已有状态回归覆盖。 证据：B:44；FE；共同待办：P0 |
+| AC08 | 没有旧记录 / 只有一条 | 无凑数、无虚构内容、无鼓励完成的提示 | 验证中 | 自动化：F journal.test empty+single archives；实际：实际零旧记录和仅一条旧记录账户UI已验证，无虚构填充；主Agent另确认单条漫步耗尽后不生成第二条。合成原日期不声称物理等待数月。 证据：B:53；FE/G；共同待办：P0 |
+| AC09 | 进入 AI 页但未点开始 | 不向模型发送正文，不生成分析 | 验证中 | 自动化：G `TestJournalInsightConsentOwnerScopeSaveStaleAndDeletion` config GET/PUT 0 calls；实际：打开AI页只请求preferences/config，未开始没有generate请求；选中2条合成记录但未配置provider时按钮禁用并明确配置提示，未向模型发送正文。 证据：B:54；AI/G；共同待办：P0 |
+| AC10 | 选两条记录生成洞察 | 只发送所选范围；来源可核；不读取全库或媒体 | 验证中 | 自动化：G同上只选正文、不含foreign；provider insight selected input；mock边界；实际：开始前告知、显式选中2条合成记录和未配置服务禁用已实际验证；真实provider/model/受控凭据未到位，成功生成时只发送所选正文、来源回溯与不读媒体仍待真实服务核验。mock输入边界不代替此项。 证据：B:54；U-AI；AI/G；R；共同待办：P0 |
+| AC11 | AI 失败、取消或输入超限 | 原始记录不变；范围保留；无隐式截断或自动重发 | 验证中 | 自动化：AI六场景新race+provider取消/redirect tests；不改原文/不保存/不retry；实际：mock HTTP六场景及服务端取消/超限回归通过，原文不变、范围保留、无隐式截断或重发；实际AI页可保留所选范围。真实服务成功链路未开始，其失败或安全取消的界面闭环仍待获准输入。 证据：B:54；U-AI；AI/G；R；共同待办：P0 |
+| AC12 | 看完 AI 直接离开 | 无保存、评价、反思要求；不自动写入时间线 | 验证中 | 自动化：G generate后insights=[]；无隐式持久化；实际：自动测试确认生成不会隐式保存；真实provider尚未到位，实际结果页面直接离开且不写时间线的生命周期仍待真实服务结果验证。 证据：B:54；U-AI；AI/G；R；共同待办：P0 |
+| AC13 | 明确保存洞察 | 来源和 AI 标识保留；可找回、删除、导出；不默认进入回顾 | 验证中 | 自动化：G insight显式save、来源/陈旧；Backup保存AI导出；F回顾排除derived；实际：显式保存的来源/AI标识、导出、不进入原文回顾有API/组件回归；真实provider尚未到位，真实结果保存→找回/删除/导出的界面生命周期仍待输入。 证据：B:54；U-AI；AI/G；R；共同待办：P0 |
+| AC14 | 修改或删除被分析的记录 | 修改使旧结果过时；删除清理可泄露原文的衍生结果 | 验证中 | 自动化：G insight source edit=>stale，trash=>derived清理；实际：来源修改标陈旧、删除清除衍生泄露内容有API回归；真实provider尚未到位，真实生成结果后的修改/删除界面闭环仍待输入。 证据：B:54；U-AI；AI/G；R；共同待办：P0 |
+| AC15 | 排除某条回顾内容 | 立即退出回顾与漫步；仍可主动找到并恢复偏好 | 验证中 | 自动化：G frozen review exclusion；F journal-source-picker `restores only this record...`；实际：真实从漫步排除后卡片退出并出现中性文案，主动检索仍找到原文，再恢复偏好菜单状态正确；每日冻结集移除规则由精确服务测试补足。 证据：B:45；G/FE；共同待办：P0 |
+| AC16 | 断网录入并重启应用 | 目标设备上验证实际持久化；未上传媒体不丢；状态真实 | 验证中 | 自动化：I/E offline/pending/blob/owner/QuotaExceeded；实际：断网冷刷新后图文草稿与Blob恢复，前插文字后锚点正确，联网续传最终只生成一条记录/同一个附件，原件hash一致。丢响应、稳定ID及失败重试不重复上传有精确持久队列/CM回归，不另手工制造全部故障排列。 证据：B:12–14,20；E/I；H；共同待办：P0 |
+| AC17 | 网络超时后重复保存 | 不产生重复记录；附件失败不伪装完整成功 | 验证中 | 自动化：F journal-save-reliability lost creation response/stableID；E/I completed image retry；实际：断网冷刷新后图文草稿与Blob恢复，前插文字后锚点正确，联网续传最终只生成一条记录/同一个附件，原件hash一致。丢响应、稳定ID及失败重试不重复上传有精确持久队列/CM回归，不另手工制造全部故障排列。 证据：B:12–14,20；E/I；H；共同待办：P0 |
+| AC18 | 多设备同时修改 | 保留冲突内容；不静默覆盖 | 验证中 | 自动化：G ConflictKeepsBothVersionsAndRevisionRestore、MetadataCAS与并发Store；F draft conflict保留独立baseline；实际：双客户端冲突展示两份完整正文与附件；刷新保留本机草稿，再保存仍冲突，显式比较并合并后只保留正确单条。事务、重试和断响应边界已有精确回归。 证据：B:36–37；H；G/DB；共同待办：P0 |
+| AC19 | 删除再恢复 / 永久删除 | 可恢复范围与保留期限明确；隐私删除语义一致 | 验证中 | 自动化：G TrashRestoresPrivatelyWithoutSharesAndExpires+R07引用保留；P安全restore；实际：回收预览/恢复原件、音视频、来源与旧分享撤回主路径通过；恢复PRIVATE，旧分享重新请求不再含被撤回记录。错误提取码拒绝/正确码读取已证；过期/轮换/媒体直链及期限/清理由隔离负向回归覆盖，未删除真实资料。 证据：B:21–25,30,34–35；R；G；共同待办：P0 |
+| AC20 | 导出并在应用外打开 | 正文可读、受管理媒体可用、外链缺口显式列出 | 验证中 | 自动化：G `TestJournalBackupNewInstanceRoundtripAndNoReplay` exactbody/关系/原件/AI/refs；archive exact bytes；实际：浏览器下载普通/含历史ZIP，应用外独立对fresh SQLite快照核对138/138通过：18记录、12附件/原件、10/14可移植文档、0/4版本，正文/日期/关系/原件hash及脱敏字段一致。三DB导入回归证明组织关系保留且不重放。 证据：ZIP；ZIP-DB；共同待办：P0 |
+| AC21 | 从独立备份恢复 | 在干净环境核对恢复范围；结果可复现 | 验证中 | 自动化：P安全恢复/权限/源字段hash回归；G/DB完整导入与不重放；实际：真实0038d722快照在network-none隔离容器运行1f65候选，applicationVerified与authorizationVerified均true：707正常/5回收、55原件/54预览、110保留文件、2451负向；712行仅派生索引变化，归一原字段hash相同。非空关系由合成ZIP和三DBroundtrip补足；不覆盖线上数据，旧会话/分享撤销且外发暂停。 证据：R；R-receipt；ZIP-DB；B:31；共同待办：P0 |
+| AC22 | 手机键盘 / 桌面键盘 / 大字体 | 保存可达、焦点可预测、触摸和键盘均可操作 | 验证中 | 自动化：E visual viewport；F home不自动唤键盘+sidebar触控入口；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
+| AC23 | 未授权访问与首次使用 AI | 私密内容不泄漏；服务与发送范围说明有效 | 验证中 | 自动化：G JournalReadRejectsFormerSpaceMember；A全面owner只读；G insight owner/selected；实际：匿名/其他owner/旧授权访问的私密正文与原件负向核验通过；实际开始前告知及不默认发送已证。真实provider未到位，首次真实使用时配置服务、发送范围与实际调用的一致性仍待输入，不能用MCP推理替代。 证据：B:54；U-AI；AI/G；R；共同待办：P0 |
+| AC24 | 日期、标签和手选范围分享 | 访客仅看到预览授权内容；组合筛选、子标签及排除语义清楚 | 验证中 | 自动化：G `TestShareSelectionAndSafeText` 日期/标签all/subtags；SharePreviewSnapshot；F journal-share preview digest；实际：真实动态分享日期+父/子标签+排除预览，访客只见授权集合；修改来源标签后重新读取退出该记录，无相似前缀/旧年泄漏。固定手选与筛选细节已有API/组件回归。 证据：B:47；G/FE；共同待办：P0 |
+| AC25 | 固定分享后新增或编辑原记录 | 不自动追加记录或改写快照；主动更新有差异预览；删除/归档即时撤销 | 验证中 | 自动化：G SharePreviewSnapshotPauseRotateAndWithdrawal固定快照/摘要变化拒绝/归档；F journal-share；实际：真实固定分享创建/访客读取/撤销及恢复撤回通过；固定快照不追随新增/编辑、显式差异更新、归档退出有服务/API及mounted组件测试，不要求每分支另走人工流程。 证据：B:19,30,34–35；G/FE；共同待办：P0 |
+| AC26 | 动态分享新增、改标签和移除条件 | 规则内内容按授权更新；不符规则或被排除内容退出；无其他记录元信息泄漏 | 验证中 | 自动化：G `TestJournalDynamicSharesDoNotBackfillImportedHistory`；分享filter测试；实际：真实动态分享日期+父/子标签+排除预览，访客只见授权集合；修改来源标签后重新读取退出该记录，无相似前缀/旧年泄漏。固定手选与筛选细节已有API/组件回归。 证据：B:47；G/FE；共同待办：P0 |
+| AC27 | 到期、停用、错误提取码与附件直链 | 页面、数据、缩略图及媒体受同一授权；无绕过或泄漏 | 验证中 | 自动化：G journal_share + native/fileserver媒体share/owner；F visitor credentials omission/revocation；实际：回收预览/恢复原件、音视频、来源与旧分享撤回主路径通过；恢复PRIVATE，旧分享重新请求不再含被撤回记录。错误提取码拒绝/正确码读取已证；过期/轮换/媒体直链及期限/清理由隔离负向回归覆盖，未删除真实资料。 证据：B:21–25,30,34–35；R；G；共同待办：P0 |
+| AC28 | 普通记录、同步分区及未完成附件 | 普通内容不外发；已启用分区内容完整保存后才外发；目标在保存前可见 | 验证中 | 自动化：G AtomicPartition final commit；PartitionHTTPCompleteSave；E/I pending image gate；F目标显示；实际：普通/未完成附件保存门槛和分区目标显示有组件/事务实证；实际旧版恢复后普通编辑仍暂停，显式重新选择才发送当前正文，receiver仅两次合法签名upsert。历史不补发、重试/乱序/多目标/取消/撤回由本地真实HTTP接收器精确回归补足，社媒平台暂缓。 证据：B:34–35；G/DB；E/I；共同待办：P0 |
+| AC29 | 启用同步时分区已有历史内容 | 默认不补发；主动选择补发才产生对应任务 | 验证中 | 自动化：G `TestPartitionTargetsNeverReplayHistory`、ChangesRequireExplicitSendByDefault；实际：普通/未完成附件保存门槛和分区目标显示有组件/事务实证；实际旧版恢复后普通编辑仍暂停，显式重新选择才发送当前正文，receiver仅两次合法签名upsert。历史不补发、重试/乱序/多目标/取消/撤回由本地真实HTTP接收器精确回归补足，社媒平台暂缓。 证据：B:34–35；G/DB；E/I；共同待办：P0 |
+| AC30 | Webhook 超时、重复投递、乱序和多目标失败 | 事件稳定可去重；成功目标不重复创建；旧版本不覆盖新版本；本地内容不丢 | 验证中 | 自动化：G TargetsRetryIndependently、RetryIsBounded、PendingSurvivesRestart、RechecksPauseRevision、PauseCancelsInflight；实际：普通/未完成附件保存门槛和分区目标显示有组件/事务实证；实际旧版恢复后普通编辑仍暂停，显式重新选择才发送当前正文，receiver仅两次合法签名upsert。历史不补发、重试/乱序/多目标/取消/撤回由本地真实HTTP接收器精确回归补足，社媒平台暂缓。 证据：B:34–35；G/DB；E/I；共同待办：P0 |
+| AC31 | 暂停、移出、删除、归档及恢复 | 待发正文和重试停止；恢复不自动重发；外部撤回结果单独报告 | 验证中 | 自动化：G RechecksPauseRevisionAndDeletion、RestoreDoesNotReactivateMapping、RetractionHasNoDeletedContent；F partition-save普通编辑不复活；实际：普通/未完成附件保存门槛和分区目标显示有组件/事务实证；实际旧版恢复后普通编辑仍暂停，显式重新选择才发送当前正文，receiver仅两次合法签名upsert。历史不补发、重试/乱序/多目标/取消/撤回由本地真实HTTP接收器精确回归补足，社媒平台暂缓。 证据：B:34–35；G/DB；E/I；共同待办：P0 |
+| AC32 | Webhook 已接收但没有平台发布回执 | 显示已送达或发布结果未知；只有核验回执才显示已发布 | 验证中 | 自动化：G `TestPartitionPublishedRequiresMatchingReceipt`；实际：页面显示Webhook已送达、发布结果未知，与隔离接收器事件吻合；仅匹配核验回执才标已发布的其他分支由服务测试验证，不把协议投递冒称社媒发布。 证据：B:48；G；共同待办：P0 |
+| AC33 | 删除个人分区 | 保留记录并移至未分区；停止该分区外发，不连带删除生活资料 | 验证中 | 自动化：G `TestJournalPartitionHTTPCompleteSaveAndIsolation` 最后DELETE分区204并GetMemo断言原正文保留；外发停止由partition测试；实际：真实删除合成分区后编辑器归未分区；后续带授权HTTP200/exactName、独立预存SQLite快照对当前所有记录字段/附件/关系逐字节核验相同，mapping已不存在。早先401字段比较已作废，停止外发由服务回归补足。 证据：B:48–49；B34-corrected；G；共同待办：P0 |
+| AC34 | 日历颜色及记录量 | 随数量变化；编辑、分享、AI 和同步副本不增量；导入归入原日期 | 验证中 | 自动化：G originaldates/provenance/Calendar；C full calendar zone/scope/stats；实际：列表/日期日历/地图同范围一致；关闭颜色后0/11/6数量样本背景均透明，计数仍可读；键盘折叠/显示/日期跳转通过。编辑/分享/AI/同步不重复计数和原日期导入有精确统计回归。 证据：B:10,40,46；C/G；共同待办：P0 |
+| AC35 | 日历折叠、关闭颜色与键盘操作 | 主动设置有效；空白中性；非颜色方式可读；输入始终易达 | 验证中 | 自动化：F journal preference/calendar tests；C sidebar states；实际：列表/日期日历/地图同范围一致；关闭颜色后0/11/6数量样本背景均透明，计数仍可读；键盘折叠/显示/日期跳转通过。编辑/分享/AI/同步不重复计数和原日期导入有精确统计回归。 证据：B:10,40,46；C/G；共同待办：P0 |
+| AC36 | 恢复旧备份 / 导入到启用同步的实例 | 不复活旧分享或重放外发；已发布映射可核查，规则经明确恢复才启动 | 验证中 | 自动化：G BackupNewInstanceRoundtripAndNoReplay、BackupExistingInstancePauseAndCollision；ImportSuspensionDoesNotRetractOrReplay；P pause_restored_permissions；实际：真实版本恢复PRIVATE且暂停，旧分享重新请求无已撤回记录，普通编辑不重放；新鲜S3隔离应用授权核验及真实ZIP组织/映射保留和三DB导入暂停/不重放均通过。规则需明确恢复才启动。 证据：B:34–35；R；ZIP/ZIP-DB；G；共同待办：P0 |
+| AC37 | 首个社媒目标完整链路 | 所选平台上核实文字、媒体、更新/撤回能力及失败边界；只投递成功不替代发布验证 | 暂缓 | 实际：用户明确暂缓真实社媒接入与平台发布验证；本轮只验Webhook协议，不宣称旧J17整体全面通过。 证据：用户范围决定 |
