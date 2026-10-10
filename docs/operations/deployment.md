@@ -20,19 +20,20 @@
 
 现有流程：
 
-1. 更新 `internal/version/VERSION`，推送基础版本与其一致的 `MAJOR.MINOR.PATCH[-rc.N]` 标签；独立版本从 `1.0.0` 起，不带 `v` 前缀。
+1. 更新 `internal/version/VERSION` 并将改动合并到 `main`，推送指向该提交、基础版本与其一致的 `MAJOR.MINOR.PATCH[-rc.N]` 标签；独立版本从 `1.0.0` 起，不带 `v` 前缀。
 2. GitHub Actions 运行前后端检查，构建完整镜像，并做启动、持久化和升级验证。
 3. 升级闸门完成一致性快照和远端加密备份。
-4. 更新 `production/memos-journal` 分支的 `scripts/compose.production.yaml` 和版本记录。
-5. Dokploy 的 GitHub App 收到该分支事件，拉取固定 digest；检查公网源码身份与实际容器健康。
+4. 服务器上的受限发布入口将已核验模板中的镜像固定到 digest，更新原 Dokploy 应用的 Raw Compose，并直接调用部署 API。
+5. 等待对应 Dokploy 部署完成，检查公网源码身份、镜像 digest 与实际容器健康。
 6. 确认后恢复备份调度，保留发布回执。
 
-普通分支推送和 PR 合并不部署；RC 标签也走生产流程。详情见 [发布与恢复工具](../../scripts/README.md)。
+`main` 是唯一长期分支，Dokploy 关闭自动部署；普通分支推送和 PR 合并不部署；RC 标签也走生产流程。详情见 [发布与恢复工具](../../scripts/README.md)。
 
 开发构建显示 `1.0.0-dev.<提交摘要>`，正式构建显示标签版本。旧 `26.10.1`、`26.10.2` 是迁移阶段的发布记录，保留供升级核验和恢复追溯；后续迭代按 `1.0.1`、`1.1.0` 等语义版本推进。数据库迁移序号与产品版本分开，既有数据库不会因产品改为 `1.0.0` 而降级或重建。
 
-新建 Dokploy 环境可参考 `scripts/compose.dokploy.yaml`。生产声明使用固定 digest；模板里的镜像变量不能覆盖生产声明。
-镜像名称改变时，必须同时核对：GitHub App 的仓库、Dokploy repository/owner/branch/composePath、实际 Compose 镜像、镜像拉取权限、发布闸门允许的镜像仓库，以及回滚声明。
+新建 Dokploy 环境可参考 `scripts/compose.dokploy.yaml`。现有生产应用使用 Raw Compose、`autoDeploy=false`、`composePath=./docker-compose.yml`，清空自定义命令，保证环境文件与 Compose 同目录；仓库元数据指向 `EgoSay/kairos` / `main`；不再依赖生产分支事件。API Key 仅保存在服务器的 root 私有配置中，不进入 GitHub Actions。
+服务器安装的 Compose 模板必须与标签提交中的模板 SHA-256 一致；模板变更时先同步已审阅的服务器副本。这样构建期间即使 `main` 前进，也不会混用未经该次检查的部署配置。缺少凭据或模板不一致会在停写之前失败。
+镜像名称改变时，必须同时核对：实际 Compose 镜像、镜像拉取权限、发布闸门允许的镜像仓库，以及回滚配置。失败回滚会先等待部署结束、检查数据未变化，再恢复 Dokploy 配置和旧镜像；新写入和表结构变化不会被备份覆盖。
 
 首次发布新的 GHCR 包时，GitHub 默认将其设为私有，即使源码仓库是公开的。当前 Dokploy 方案使用公开镜像：首次推送后，在 Kairos 包的设置中将可见性设为 Public，再继续发布。流水线会使用不含登录凭据的临时 Docker 配置检查固定 digest 的清单；检查失败时会在冻结写入和更新生产声明之前停止。完成包权限配置后再重试，不能把 Actions 能推送镜像当作 Dokploy 能拉取的证据。[GitHub 镜像权限说明](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
 
@@ -45,7 +46,7 @@
 | 新镜像 | `ghcr.io/egosay/kairos` |
 | 现有 Dokploy appName / composeId | 保留，同一个应用继续挂载原数据 |
 | 现有生产服务名和数据卷 | 保留 `memos`、`memos-data` 及实际 Compose 项目前缀 |
-| 生产声明分支 | 保留 `production/memos-journal`，避免同时改变发布触发和数据绑定 |
+| 发布入口 | `main` 上的版本标签 → 检查和备份 → Dokploy API；保留原应用及数据绑定 |
 | 现有域名、Tunnel 和备份路径 | 保留，由运维按实际资源维护；不随品牌改名迁移私人数据 |
 | 数据目录与数据库名 | 保留 `/var/opt/memos` 和既有数据库文件名 |
 | 环境变量、API、档案格式 | 保留 `MEMOS_*`、既有 RPC/HTTP 名称与 MIME 类型 |
@@ -55,7 +56,7 @@
 
 `EgoSay/kairos` 是独立仓库；早期 Issues 和 PR 历史保存在 `EgoSay/memos`，对应关系见 [项目历史](../history.md)。旧库不再承担生产发布。
 
-仓库迁移沿用现有 Dokploy 应用、生产分支和固定镜像声明，重新核对 GitHub App 对新仓库的访问与 Actions 发布凭据。仅迁移源码仓库不升级应用，也不更换数据卷。后续 Kairos 镜像仍通过正式版本标签发布，并完成镜像拉取、备份和 Dokploy 实际部署验证。
+仓库迁移沿用现有 Dokploy 应用和固定镜像声明。后续发布入口改为 `main` 上的版本标签和直接 API 部署，生产分支只在整条链路及线上数据验证后删除。仅迁移源码仓库不升级应用，也不更换数据卷。后续 Kairos 镜像仍通过正式版本标签发布，并完成镜像拉取、备份和 Dokploy 实际部署验证。
 
 ## 数据保障
 

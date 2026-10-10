@@ -84,4 +84,108 @@ class RollbackPreservationTest(unittest.TestCase):
     command.assert_any_call('docker','start',gate.CONTAINER)
     command.assert_any_call('systemctl','start','memos-backup.timer')
 
+
+
+class DirectDeploymentTest(unittest.TestCase):
+ def setUp(self):
+  import json
+  self.directory=tempfile.TemporaryDirectory();self.addCleanup(self.directory.cleanup)
+  self.root=pathlib.Path(self.directory.name);self.source=self.root/'live';self.source.mkdir()
+  self.stage=self.root/'snapshot';(self.stage/'data').mkdir(parents=True)
+  for database in (self.source/'memos_prod.db',self.stage/'data/memos_prod.db'):
+   with closing(sqlite3.connect(database)) as db,db:
+    db.execute('CREATE TABLE memo(content TEXT)');db.execute("INSERT INTO memo VALUES('before')")
+  self.pending={'commit':'a'*40,'digest':'sha256:'+'b'*64,'repository':'ghcr.io/egosay/kairos',
+   'status':'prepared','source':str(self.source),'stage':str(self.stage),
+   'fingerprint':gate.fingerprint(self.source/'memos_prod.db'),
+   'previousImage':'ghcr.io/egosay/kairos@sha256:'+'c'*64,'previousVersion':'previous',
+   'dokploy':{'previousCompose':'before','candidateCompose':'candidate','protectedDigest':'guard'}}
+  self.config=self.root/'config.json';self.config.write_text(json.dumps({'instanceVersion':'previous'}))
+  self.write()
+ def write(self):
+  import json
+  (self.root/'pending.json').write_text(json.dumps(self.pending))
+ def test_post_timeout_keeps_identity_for_safe_recovery_and_cannot_be_reenqueued(self):
+  import json
+  from unittest.mock import patch
+  with patch.object(gate,'ROOT',self.root),patch.object(gate,'Dokploy') as client:
+   client.return_value.deploy.side_effect=TimeoutError('ambiguous POST')
+   with self.assertRaises(TimeoutError):gate.deploy()
+   pending=json.loads((self.root/'pending.json').read_text())
+   self.assertEqual(pending['status'],'deploying');self.assertIn('deploymentTitle',pending)
+   with self.assertRaisesRegex(RuntimeError,'prepared'):gate.deploy()
+   self.assertEqual(client.return_value.deploy.call_count,1)
+ def test_unobserved_or_running_deployment_does_not_stop_or_replace_data(self):
+  from unittest.mock import patch
+  self.pending['deploymentTitle']='uncertain';self.write()
+  with patch.object(gate,'ROOT',self.root),patch.object(gate,'verify'),patch.object(gate,'command') as command,patch.object(gate,'Dokploy') as client:
+   client.return_value.wait_terminal.side_effect=RuntimeError('outcome unknown')
+   with self.assertRaisesRegex(RuntimeError,'unknown'):gate.rollback()
+   command.assert_called_once_with('systemctl','start','memos-backup.timer');client.return_value.restore.assert_not_called()
+  self.assertTrue((self.root/'pending.json').exists())
+ def test_new_writes_leave_both_current_image_and_dokploy_declaration_intact(self):
+  from unittest.mock import patch
+  with closing(sqlite3.connect(self.source/'memos_prod.db')) as db,db:db.execute("UPDATE memo SET content='new memory'")
+  with patch.object(gate,'ROOT',self.root),patch.object(gate,'verify'),patch.object(gate,'command',return_value='') as command,patch.object(gate,'Dokploy') as client:
+   with self.assertRaisesRegex(RuntimeError,'preserved'):gate.rollback()
+   client.return_value.restore.assert_not_called()
+   self.assertFalse(any(call.args[:2]==('docker','compose') for call in command.call_args_list))
+  with closing(sqlite3.connect(self.source/'memos_prod.db')) as db:self.assertEqual(db.execute('SELECT content FROM memo').fetchone()[0],'new memory')
+ def test_safe_rollback_restores_declaration_checks_old_image_and_resumes_backups(self):
+  import json
+  from unittest.mock import patch
+  self.pending['deploymentTitle']='finished';self.write();events=[]
+  def command(*args):events.append(args);return ''
+  with patch.object(gate,'ROOT',self.root),patch.object(gate,'CONFIG',self.config),patch.object(gate,'verify'),patch.object(gate,'os') as os_mock,patch.object(gate,'command',side_effect=command),patch.object(gate,'Dokploy') as client,patch.object(gate,'wait_for_release') as healthy:
+   client.return_value.restore.side_effect=lambda _:events.append(('restore-declaration',))
+   self.assertEqual(gate.rollback()['status'],'rolled-back')
+   client.return_value.wait_terminal.assert_called_once_with('finished')
+   healthy.assert_called_once_with({'repository':'ghcr.io/egosay/kairos','digest':'sha256:'+'c'*64})
+   self.assertLess(events.index(('restore-declaration',)),next(i for i,event in enumerate(events) if event[:2]==('docker','compose')))
+   self.assertIn(('systemctl','start','memos-backup.timer'),events)
+  self.assertFalse((self.root/'pending.json').exists())
+  self.assertEqual(json.loads((self.root/'last-rollback.json').read_text())['status'],'rolled-back')
+  self.assertEqual(json.loads(self.config.read_text())['instanceVersion'],'previous')
+ def test_configuration_restore_failure_restarts_current_service_and_preserves_pending(self):
+  from unittest.mock import patch
+  with patch.object(gate,'ROOT',self.root),patch.object(gate,'verify'),patch.object(gate,'command',return_value='') as command,patch.object(gate,'Dokploy') as client:
+   client.return_value.restore.side_effect=RuntimeError('API unavailable')
+   with self.assertRaisesRegex(RuntimeError,'API unavailable'):gate.rollback()
+   command.assert_any_call('docker','start',gate.CONTAINER)
+   command.assert_any_call('systemctl','start','memos-backup.timer')
+   self.assertFalse(any(call.args[:2]==('docker','compose') for call in command.call_args_list))
+  self.assertTrue((self.root/'pending.json').exists())
+
+class PreflightFailureTest(unittest.TestCase):
+ def test_api_or_template_failure_occurs_before_snapshot_timer_or_container_mutation(self):
+  import json
+  from unittest.mock import patch
+  with tempfile.TemporaryDirectory() as directory:
+   root=pathlib.Path(directory);config=root/'config.json'
+   config.write_text(json.dumps({'source':str(root/'live'),'instanceVersion':'before'}))
+   replies=[json.dumps([{'Image':'previous'}]),json.dumps([{'RepoDigests':['ghcr.io/egosay/kairos@sha256:'+'c'*64]}])]
+   with patch.object(gate,'ROOT',root),patch.object(gate,'CONFIG',config),patch.object(gate,'command',side_effect=replies) as command,patch.object(gate,'Dokploy') as client,patch.object(gate,'snapshot') as snapshot:
+    client.return_value.prepare.side_effect=RuntimeError('preflight unavailable')
+    with self.assertRaisesRegex(RuntimeError,'preflight'):gate.prepare({'commit':'a'*40,'digest':'sha256:'+'b'*64,'repository':'ghcr.io/egosay/kairos'})
+    self.assertEqual(command.call_count,2);snapshot.assert_not_called()
+    self.assertFalse((root/'pending.json').exists())
+
+class WatchdogLockTest(unittest.TestCase):
+ def test_watchdog_waits_for_in_progress_gate_instead_of_losing_recovery_attempt(self):
+  import fcntl,os,subprocess,time
+  with tempfile.TemporaryDirectory() as directory:
+   root=pathlib.Path(directory)
+   with (root/'lock').open('a') as lock:
+    fcntl.flock(lock,fcntl.LOCK_EX)
+    code="import pathlib,sys;sys.path.insert(0,sys.argv[1]);import journal_release_gate as gate;gate.ROOT=pathlib.Path(sys.argv[2]);sys.argv=['gate','rollback'];gate.main()"
+    env={key:value for key,value in os.environ.items() if key!='SSH_ORIGINAL_COMMAND'}
+    child=subprocess.Popen([sys.executable,'-c',code,str(SCRIPTS),directory],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,env=env)
+    try:
+     with self.assertRaises(subprocess.TimeoutExpired):child.wait(timeout=0.3)
+     fcntl.flock(lock,fcntl.LOCK_UN)
+     out,error=child.communicate(timeout=10)
+     self.assertEqual(child.returncode,0,error);self.assertIn('no pending release',out)
+    finally:
+     if child.poll() is None:child.kill();child.communicate()
+
 if __name__=='__main__':unittest.main()

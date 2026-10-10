@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 """Restricted SSH gate: a stopped, verified pre-upgrade snapshot and timed rollback.
 
-Only prepare, confirm and rollback are accepted; this key cannot run a shell or
-read journal contents. Restore refuses to replace new content. Dokploy remains
-responsible for deployment; its release branch pins the exact verified digest.
+Only prepare, deploy, confirm and rollback are accepted; this key cannot run a
+shell or read journal contents. Restore refuses to replace new content. Dokploy
+deploys a fixed digest through its API; no deployment branch is involved.
 """
 import fcntl, hashlib, json, os, pathlib, re, shutil, sqlite3, subprocess, sys, time, signal
 from contextlib import closing
 from journal_snapshot import snapshot, verify
 from journal_cloud_backup import run as backup
+from journal_dokploy import Dokploy
 ROOT = pathlib.Path('/var/lib/memos-release')
 CONFIG = pathlib.Path('/etc/memos-backup/config.json')
 CONTAINER = 'memos-journal-ci55cj-memos-1'
 IMAGE_REPOSITORY = 'ghcr.io/egosay/kairos'
 LEGACY_IMAGE_REPOSITORY = 'ghcr.io/egosay/memos-journal'
-# Keep existing snapshots and already published release tags usable during migration.
+# Keep existing snapshots and previously deployed image identities usable for recovery.
 PREVIOUS_REPOSITORIES = (IMAGE_REPOSITORY, LEGACY_IMAGE_REPOSITORY)
 
 def command(*args):
@@ -31,9 +32,20 @@ def fingerprint(database):
     return digest.hexdigest()
 
 def validate(release):
-    if set(release) not in ({'commit', 'digest'}, {'commit', 'digest', 'repository'}) or release.get('repository', LEGACY_IMAGE_REPOSITORY) not in PREVIOUS_REPOSITORIES or not re.fullmatch('[a-f0-9]{40}', release['commit']) or (not re.fullmatch('sha256:[a-f0-9]{64}', release['digest'])):
+    required = {'commit', 'digest'}
+    optional = {'repository', 'composeSha256'}
+    if (not required <= set(release) or set(release) - required - optional
+            or release.get('repository', LEGACY_IMAGE_REPOSITORY) not in PREVIOUS_REPOSITORIES
+            or not re.fullmatch('[a-f0-9]{40}', release['commit'])
+            or not re.fullmatch('sha256:[a-f0-9]{64}', release['digest'])
+            or ('composeSha256' in release and not re.fullmatch('[a-f0-9]{64}', release['composeSha256']))):
         raise ValueError('invalid release')
     return release
+
+def save_pending(pending):
+    path = ROOT / 'pending.tmp'
+    path.write_text(json.dumps(pending))
+    path.replace(ROOT / 'pending.json')
 
 def wait_for_backup():
     deadline = time.monotonic() + 180
@@ -54,9 +66,11 @@ def prepare(release):
         raise ValueError('unexpected previous image')
     if (ROOT / 'pending.json').exists():
         raise RuntimeError('another release awaits confirmation')
+    # API access, application identity and template match are checked before downtime.
+    dokploy = Dokploy().prepare(release, image)
     stage = ROOT / ('before-' + release['commit'] + '-' + str(int(time.time())))
-    pending = {**release, 'status': 'preparing', 'previousImage': image, 'source': str(source), 'stage': str(stage), 'preparedTs': int(time.time())}
-    (ROOT / 'pending.json').write_text(json.dumps(pending))
+    pending = {**release, 'status': 'preparing', 'previousImage': image, 'source': str(source), 'stage': str(stage), 'preparedTs': int(time.time()), 'dokploy': dokploy, 'previousVersion': config['instanceVersion']}
+    save_pending(pending)
     command('systemd-run', '--collect', '--unit=memos-release-rollback', '--on-active=8m', '/usr/bin/python3', '/opt/memos-backup/journal_release_gate.py', 'rollback')
 
     def interrupted(*_):
@@ -71,11 +85,13 @@ def prepare(release):
         receipt = backup(config)
         if receipt.get('status') != 'success':
             raise RuntimeError('pre-upgrade backup not completed: ' + receipt.get('status', 'unknown'))
-        pending = {**release, 'status': 'prepared', 'previousImage': image, 'source': str(source), 'stage': str(stage), 'fingerprint': fingerprint(stage / 'data/memos_prod.db'), 'snapshotId': receipt['snapshotId'], 'preparedTs': int(time.time())}
+        pending = {**release, 'status': 'prepared', 'previousImage': image, 'source': str(source), 'stage': str(stage), 'fingerprint': fingerprint(stage / 'data/memos_prod.db'), 'snapshotId': receipt['snapshotId'], 'preparedTs': int(time.time()), 'dokploy': dokploy, 'previousVersion': config['instanceVersion']}
         network = next((n for n in previous['NetworkSettings']['Networks'] if n.startswith('memos-journal-ci55cj_')))
         compose = f'services:\n  memos:\n    image: {image}\n    restart: unless-stopped\n    init: true\n    mem_limit: 384m\n    cpus: 0.5\n    environment:\n      TZ: Asia/Shanghai\n      MEMOS_PORT: "5230"\n      MEMOS_DATA: /var/opt/memos\n      MEMOS_DRIVER: sqlite\n      MEMOS_INSTANCE_URL: https://memos.cjwdream.top\n    volumes:\n      - memos-data:/var/opt/memos\n    healthcheck:\n      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5230/healthz"]\n      interval: 10s\n      timeout: 5s\n      retries: 6\nvolumes:\n  memos-data:\n    external: true\n    name: memos-journal-ci55cj_memos-data\nnetworks:\n  default:\n    external: true\n    name: {network}\n'
         (ROOT / 'rollback.yaml').write_text(compose)
-        (ROOT / 'pending.json').write_text(json.dumps(pending))
+        save_pending(pending)
+        # Give deployment its full recovery window after a potentially slow backup.
+        command('systemctl', 'restart', 'memos-release-rollback.timer')
         return {'status': 'prepared', 'commit': release['commit'], 'snapshotId': receipt['snapshotId']}
     except Exception:
         command('docker', 'start', CONTAINER)
@@ -85,6 +101,20 @@ def prepare(release):
         raise
     finally:
         signal.alarm(0)
+
+def deploy():
+    pending = json.loads((ROOT / 'pending.json').read_text())
+    if pending['status'] != 'prepared' or 'dokploy' not in pending:
+        raise RuntimeError('a verified, prepared release is required')
+    client = Dokploy()
+    state = pending['dokploy']
+    client.update(state, state['previousCompose'], state['candidateCompose'])
+    pending['status'] = 'deploying'
+    pending['deploymentTitle'] = 'Kairos ' + pending['commit'][:12] + ' ' + pathlib.Path(pending['stage']).name
+    # Persist before POST: an interrupted response may have enqueued the deployment.
+    save_pending(pending)
+    client.deploy(pending['deploymentTitle'])
+    return {'status': 'queued', 'commit': pending['commit']}
 
 def wait_for_release(pending):
     # HTTP can be ready before Docker's first scheduled health check completes.
@@ -102,6 +132,12 @@ def wait_for_release(pending):
 
 def confirm():
     pending = json.loads((ROOT / 'pending.json').read_text())
+    if 'dokploy' in pending:
+        client = Dokploy()
+        result = client.wait_terminal(pending['deploymentTitle'])
+        if result['status'] != 'done':
+            raise RuntimeError('Dokploy deployment failed')
+        client.check(pending['dokploy'], pending['dokploy']['candidateCompose'])
     d = wait_for_release(pending)
     address = next(iter(d['NetworkSettings']['Networks'].values()))['IPAddress']
     profile = json.loads(command('curl', '--fail', '--silent', 'http://' + address + ':5230/api/v1/instance/profile'))
@@ -134,6 +170,12 @@ def rollback():
     source = pathlib.Path(pending['source'])
     stage = pathlib.Path(pending['stage'])
     verify(stage)
+    if pending.get('deploymentTitle'):
+        try:
+            Dokploy().wait_terminal(pending['deploymentTitle'])
+        except Exception:
+            command('systemctl', 'start', 'memos-backup.timer')
+            raise
     command('docker', 'stop', '-t', '30', CONTAINER)
     # A missing or incompatible table must preserve data and restore availability too.
     try:
@@ -147,12 +189,26 @@ def rollback():
         command('docker', 'start', CONTAINER)
         command('systemctl', 'start', 'memos-backup.timer')
         raise RuntimeError('rollback blocked: new content or changed data shape preserved')
+    if 'dokploy' in pending:
+        try:
+            Dokploy().restore(pending['dokploy'])
+        except Exception:
+            command('docker', 'start', CONTAINER)
+            command('systemctl', 'start', 'memos-backup.timer')
+            raise
     for p in source.iterdir():
         if p.name.startswith('memos_prod.db'):
             p.unlink()
     shutil.copy2(stage / 'data/memos_prod.db', source / 'memos_prod.db')
     os.chown(source / 'memos_prod.db', 10001, 10001)
     command('docker', 'compose', '-p', 'memos-journal-ci55cj', '-f', str(ROOT / 'rollback.yaml'), 'up', '-d', '--no-deps', 'memos')
+    if 'dokploy' in pending:
+        repository, digest = pending['previousImage'].split('@')
+        wait_for_release({'repository': repository, 'digest': digest})
+        config = json.loads(CONFIG.read_text())
+        config['instanceVersion'] = pending['previousVersion']
+        CONFIG.write_text(json.dumps(config))
+        CONFIG.chmod(0o600)
     (ROOT / 'last-rollback.json').write_text(json.dumps({**pending, 'status': 'rolled-back', 'completedTs': int(time.time())}))
     file.unlink()
     command('systemctl', 'stop', 'memos-release-rollback.timer')
@@ -163,11 +219,13 @@ def main():
     os.umask(63)
     ROOT.mkdir(mode=448, parents=True, exist_ok=True)
     action = os.environ.get('SSH_ORIGINAL_COMMAND') or (sys.argv[1] if len(sys.argv) > 1 else '')
-    if action not in ('prepare', 'confirm', 'rollback'):
+    if action not in ('prepare', 'deploy', 'confirm', 'rollback'):
         raise ValueError('command not allowed')
     with (ROOT / 'lock').open('a') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        result = prepare(json.loads(sys.stdin.read(1025))) if action == 'prepare' else confirm() if action == 'confirm' else rollback()
+        # A watchdog firing during confirmation must wait, not lose its one shot.
+        watchdog = action == 'rollback' and not os.environ.get('SSH_ORIGINAL_COMMAND')
+        fcntl.flock(lock, fcntl.LOCK_EX | (0 if watchdog else fcntl.LOCK_NB))
+        result = prepare(json.loads(sys.stdin.read(1025))) if action == 'prepare' else deploy() if action == 'deploy' else confirm() if action == 'confirm' else rollback()
         print(json.dumps(result))
 if __name__ == '__main__':
     try:

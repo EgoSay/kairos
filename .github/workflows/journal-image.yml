@@ -3,7 +3,7 @@ run-name: Deploy Kairos ${{ github.ref_name }}
 
 on:
   push:
-    # The parser validates MAJOR.MINOR.PATCH[-rc.N]; tags may point to any branch.
+    # The parser validates MAJOR.MINOR.PATCH[-rc.N]; the tagged commit must be on main.
     tags: ["[0-9]*.[0-9]*.[0-9]*"]
 
 concurrency:
@@ -23,11 +23,14 @@ jobs:
       image: ${{ steps.metadata.outputs.image }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - name: Validate release tag and resolve source commit
         id: metadata
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
+          git merge-base --is-ancestor HEAD origin/main
           bash scripts/release_version.sh version "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           # A release must match the version maintained on its source commit.
           test "${RELEASE_TAG%%-*}" = "$(cat internal/version/VERSION)"
@@ -45,7 +48,7 @@ jobs:
     needs: [release, frontend, backend]
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       packages: write
     steps:
       - uses: actions/checkout@v6
@@ -118,11 +121,12 @@ jobs:
               path.write_text(os.environ[env].replace('\r\n', '\n').rstrip() + '\n')
               path.chmod(0o600)
           PY
-            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo '::error::Deployment credentials are incomplete; refusing an image-only release.'
+            exit 1
           fi
       - name: Freeze writes and verify pre-upgrade backup
         id: prepare
-        if: steps.credentials.outputs.enabled == 'true'
         env:
           RELEASE_COMMIT: ${{ needs.release.outputs.commit }}
           RELEASE_DIGEST: ${{ steps.publish.outputs.digest }}
@@ -130,47 +134,26 @@ jobs:
           DEPLOY_HOST: ${{ secrets.MEMOS_DEPLOY_HOST }}
         run: |
           python3 - <<'PY' > "$RUNNER_TEMP/memos-release.json"
-          import json, os
-          print(json.dumps({'commit': os.environ['RELEASE_COMMIT'], 'digest': os.environ['RELEASE_DIGEST'], 'repository': os.environ['RELEASE_IMAGE']}))
+          import hashlib, json, os, pathlib
+          print(json.dumps({'commit': os.environ['RELEASE_COMMIT'], 'digest': os.environ['RELEASE_DIGEST'], 'repository': os.environ['RELEASE_IMAGE'], 'composeSha256': hashlib.sha256(pathlib.Path('scripts/compose.dokploy.yaml').read_bytes()).hexdigest()}))
           PY
           ssh -T -i "$RUNNER_TEMP/memos-key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$RUNNER_TEMP/memos-hosts" -o ConnectTimeout=15 root@"$DEPLOY_HOST" prepare < "$RUNNER_TEMP/memos-release.json"
-      - uses: actions/checkout@v6
-        if: steps.prepare.outcome == 'success'
-        with:
-          ref: production/memos-journal
-          path: production-state
-      - name: Publish fixed deployment declaration
-        id: declaration
-        if: steps.prepare.outcome == 'success'
+      - name: Deploy fixed image through Dokploy API
+        id: deploy
         env:
-          RELEASE_COMMIT: ${{ needs.release.outputs.commit }}
-          RELEASE_VERSION: ${{ needs.release.outputs.version }}
-          RELEASE_DIGEST: ${{ steps.publish.outputs.digest }}
+          DEPLOY_HOST: ${{ secrets.MEMOS_DEPLOY_HOST }}
         run: |
-          python3 - <<'PY'
-          import json, os, pathlib, re
-          digest = os.environ['RELEASE_DIGEST']
-          assert re.fullmatch('sha256:[a-f0-9]{64}', digest)
-          source = pathlib.Path('scripts/compose.dokploy.yaml').read_text()
-          pinned = re.sub(r'(?m)^    image: .*$', '    image: ghcr.io/egosay/kairos@' + digest, source, count=1)
-          pathlib.Path('production-state/scripts/compose.production.yaml').write_text(pinned)
-          pathlib.Path('production-state/.journal-release.json').write_text(json.dumps({'commit': os.environ['RELEASE_COMMIT'], 'digest': digest}))
-          PY
-          git -C production-state config user.name github-actions[bot]
-          git -C production-state config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git -C production-state add scripts/compose.production.yaml .journal-release.json
-          git -C production-state commit -m "Deploy verified journal $RELEASE_VERSION ($RELEASE_COMMIT)"
-          git -C production-state push origin HEAD:production/memos-journal
+          ssh -T -i "$RUNNER_TEMP/memos-key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$RUNNER_TEMP/memos-hosts" -o ConnectTimeout=15 root@"$DEPLOY_HOST" deploy
       - name: Verify public release and cancel rollback
         id: confirm
-        if: steps.declaration.outcome == 'success'
         env:
           DEPLOY_HOST: ${{ secrets.MEMOS_DEPLOY_HOST }}
           RELEASE_COMMIT: ${{ needs.release.outputs.commit }}
         run: |
           python3 - <<'PY'
           import json, os, time, urllib.request
-          for attempt in range(60):
+          deadline = time.monotonic() + 180
+          while time.monotonic() < deadline:
               try:
                   request = urllib.request.Request('https://memos.cjwdream.top/api/v1/instance/profile', headers={'User-Agent': 'Kairos-Deploy/1.0'})
                   with urllib.request.urlopen(request, timeout=10) as response:
@@ -186,18 +169,8 @@ jobs:
           ssh -T -i "$RUNNER_TEMP/memos-key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$RUNNER_TEMP/memos-hosts" -o ConnectTimeout=15 root@"$DEPLOY_HOST" confirm
       - name: Roll back failed release without discarding new content
         id: rollback
-        if: failure() && steps.prepare.outcome == 'success' && steps.confirm.outcome != 'success'
+        if: always() && steps.prepare.outcome == 'success' && steps.confirm.outcome != 'success'
         env:
           DEPLOY_HOST: ${{ secrets.MEMOS_DEPLOY_HOST }}
         run: |
           ssh -T -i "$RUNNER_TEMP/memos-key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$RUNNER_TEMP/memos-hosts" -o ConnectTimeout=15 root@"$DEPLOY_HOST" rollback > "$RUNNER_TEMP/memos-rollback.json"
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import json, os, pathlib
-          result = json.loads((pathlib.Path(os.environ['RUNNER_TEMP']) / 'memos-rollback.json').read_text())
-          print('restored=' + str(result.get('status') == 'rolled-back').lower())
-          PY
-      - name: Restore declaration only after safe data rollback
-        if: failure() && steps.declaration.outcome == 'success' && steps.rollback.outputs.restored == 'true'
-        run: |
-          git -C production-state revert --no-edit HEAD
-          git -C production-state push origin HEAD:production/memos-journal

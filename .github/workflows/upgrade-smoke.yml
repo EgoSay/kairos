@@ -28,6 +28,9 @@ on:
       - "scripts/entrypoint.sh"
       - "scripts/release_smoke_test.sh"
       - "scripts/release_version*"
+      - "scripts/journal_*.py"
+      - "scripts/tests/**"
+      - "scripts/compose.dokploy.yaml"
       - "scripts/install*"
       - ".github/workflows/journal-image.yml"
       - ".github/workflows/upgrade-smoke.yml"
@@ -45,6 +48,13 @@ env:
   PNPM_VERSION: "11.0.1"
 
 jobs:
+  release-tools:
+    name: Backup and deployment failure handling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
+
   migration-upgrade:
     name: Upgrade from previous stable (${{ matrix.driver }})
     runs-on: ubuntu-latest

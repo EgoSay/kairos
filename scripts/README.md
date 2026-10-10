@@ -9,8 +9,7 @@ node_modules and previously generated frontend files.
 
 `journal-image.yml` runs only when a release tag is pushed. Kairos starts at
 `1.0.0` and uses `MAJOR.MINOR.PATCH[-rc.N]`, for example `1.0.1`, `1.1.0` or
-`1.1.0-rc.1`, without a `v` prefix. A tag may point
-to a commit on any branch, provided that commit contains this workflow. Branch
+`1.1.0-rc.1`, without a `v` prefix. The tagged commit must be reachable from `origin/main` and contain this workflow. Branch
 pushes, PR merges, tag deletions and GitHub Release description edits do not
 deploy. There is no manual workflow-dispatch entry point; rerun a failed tag run
 when appropriate. Release-candidate tags also use this production pipeline.
@@ -32,26 +31,33 @@ restart-persistence and upgrade smoke tests, and publishes the release version,
 source commit and `production` image tags to `ghcr.io/egosay/kairos`.
 The application version comes from the release tag; the source identity always
 uses the checked-out commit, including for annotated tags. This avoids compiling on the
-application server. After the backup gate succeeds, CI pushes a pinned declaration
-to the separate production branch; Dokploy deploys only that branch.
+application server. After the backup gate succeeds, the server-side restricted
+SSH gate updates the existing Dokploy Compose with the verified image digest and
+calls `compose.deploy`. The API key never enters GitHub Actions.
 
-Configure Dokploy to read the `production/memos-journal` declaration branch,
-with path `./scripts/compose.production.yaml`. Development can use any branch;
-merging into `main` runs checks but does not deploy. Initialize the declaration branch with a verified
-image digest before enabling automatic deployment; CI updates only the pinned
-Compose file and its `.journal-release.json` identity. The parameterized
-`compose.dokploy.yaml` remains the template for controlled manual deployment.
-Enable push autodeploy only on `production/memos-journal`. Never point an
-autodeploying application at the development branch or the mutable `production`
-image tag. Dokploy 0.26.2 requires autoDeploy and a provider event for its generic
-webhook; an empty manual POST while autoDeploy is disabled returns 400. This
-pipeline instead uses the actual authenticated GitHub App push event. Set:
+`main` is the only long-lived branch. Dokploy uses **Raw Compose** with
+`autoDeploy=false`, `composePath=./docker-compose.yml`, and no custom command;
+retained repository metadata points to `EgoSay/kairos` / `main`. The raw path is
+required so Dokploy writes the private `.env` beside the actual Compose file.
+Raw mode ensures a release uses its verified Compose template, even if `main`
+advances during the build. Branch pushes and merges cannot start deployment.
+Keep the existing composeId, appName, environment, Tunnel and data volume.
+The gate changes only `composeFile` during releases; it does not write secrets or
+create an application. The public `production` image alias is never the deployment
+identity: the actual Compose always uses `ghcr.io/egosay/kairos@sha256:...`.
+
+Keep these values in Dokploy's private environment:
 
 ```dotenv
 MEMOS_INSTANCE_URL=https://journal.example.com
-MEMOS_IMAGE=ghcr.io/egosay/kairos:production
 MEMOS_TUNNEL_TOKEN=<dedicated remotely managed Cloudflare Tunnel token>
 ```
+
+The source template is `scripts/compose.dokploy.yaml`; install the reviewed copy
+at `/opt/memos-backup/compose.dokploy.yaml`. CI submits its SHA-256. A mismatch,
+expired API key, unexpected application identity or enabled autodeploy fails
+before writes are paused. When changing the template, update this server copy
+from the reviewed release commit first. Ordinary product changes need no such step.
 
 For an explicitly authorized release, tag the reviewed source commit and push
 that one tag (replace the example version and commit before running):
@@ -96,15 +102,17 @@ bash scripts/release_smoke_test.sh \
   --candidate-image kairos:verify --previous-image neosmemo/memos:0.31.0
 ```
 
-For a failed pending release, use the restricted rollback gate described below
-before changing the declaration branch: pushing that branch triggers deployment.
-Only revert its declaration after the gate confirms a safe data rollback. If the
-database changed or the outcome is unknown, preserve it and inspect the private
-release receipts. A rollback after an already confirmed release needs a separate
-compatibility and data-recovery assessment; do not invoke the pending-release gate
-as a general restore tool. The pinned production Compose does not use the
-`MEMOS_IMAGE` template variable. Do not run an older image against an incompatible
-migration or overwrite new writes; restore into a new volume when recovery is needed.
+For a failed pending release, use the restricted rollback gate described below.
+It waits for the matching Dokploy deployment to finish before touching data.
+Only after the unchanged-data check succeeds does it restore the previous
+Dokploy Compose and exact running image. An unknown queue result, configuration
+drift or new data blocks destructive rollback and retains private receipts.
+The watchdog uses the same path; recovery does not depend on a CI runner or
+another Git push. Do not manually redeploy an old digest over new writes.
+
+A rollback after an already confirmed release needs a separate compatibility and
+data-recovery assessment; the pending-release gate is not a general restore tool.
+Restore to a new volume when schema compatibility or preservation requires it.
 
 ## Backups
 
@@ -197,19 +205,36 @@ Configure GitHub Actions secrets `MEMOS_PREDEPLOY_SSH_KEY`,
 `MEMOS_DEPLOY_KNOWN_HOSTS` and `MEMOS_DEPLOY_HOST`.
 The SSH public key must use `restrict` with the forced command
 `/usr/bin/python3 /opt/memos-backup/journal_release_gate.py`; it permits only
-`prepare`, `confirm` and `rollback`, never a shell or arbitrary target.
-Install this script beside the backup modules on the approved Kairos server.
-Kairos prepare requests include the fixed image repository as well as commit and digest.
-Only the Kairos and legacy personal-journal repositories are accepted; old tagged
-workflows without the repository field continue to confirm their exact legacy image.
+`prepare`, `deploy`, `confirm` and `rollback`, never a shell or arbitrary target.
+Install `journal_release_gate.py` and `journal_dokploy.py` beside the backup
+modules on the approved Kairos server. Store the API settings in
+`/etc/memos-backup/dokploy.json`, owned by root with mode `0600`:
 
-After all CI and image smoke checks pass, the gate stops only Kairos writes,
-retains a verified local snapshot and completes encrypted R2 backup. The release
-declaration then pins the published digest and its GitHub App push event deploys
-only the Kairos Compose configured for that branch. Public profile identity and private access are checked before confirmation;
-confirmation also verifies the running digest and Docker health. An eight minute
-guard restores availability if the pipeline is interrupted; preparation itself
-has a six minute deadline. No whole-host restart is used.
+```json
+{"url":"http://127.0.0.1:3000","composeId":"EXISTING_COMPOSE_ID","apiKey":"PRIVATE_API_KEY"}
+```
+
+Use the existing application ID, never a new installation's ID. The URL is the
+server's own Dokploy API; validate its reachable address for that installation.
+Manage the key's expiry and rotation in Dokploy; do not commit it or print it in
+CI. Dokploy account/organization permissions determine its actual API scope;
+the gate restricts its use to this existing Compose. Missing GitHub deployment
+credentials fail the workflow instead of reporting an image-only release as success.
+
+Prepare requests include the commit, repository, digest and template SHA-256.
+Historical tags remain release records, but their branch-based workflows must
+not be rerun after migration. Use a new main-based tag for a new deployment.
+Previous Kairos and legacy personal-journal images remain valid recovery targets.
+
+After all CI and image smoke checks pass, the gate verifies API access and
+configuration, stops only Kairos writes, retains a verified local snapshot and
+completes encrypted R2 backup. `deploy` updates the pinned Raw Compose and calls
+the authenticated Dokploy API. The private receipt records the exact deployment
+title before the POST so a lost response cannot authorize a blind retry.
+Confirmation requires the matching Dokploy job to finish successfully, the public
+and internal source identities to agree, private access mode, the running digest,
+and Docker health. An eight minute watchdog handles interrupted releases;
+preparation has a six minute deadline. No whole-host restart is used.
 
 Rollback restores the previous snapshot and exact image only while the logical
 database and its shape are unchanged. If the new version accepted content,
