@@ -36,7 +36,9 @@ SSH gate updates the existing Dokploy Compose with the verified image digest and
 calls `compose.deploy`. The API key never enters GitHub Actions.
 
 `main` is the only long-lived branch. Dokploy uses **Raw Compose** with
-`autoDeploy=false`; retained repository metadata points to `EgoSay/kairos` / `main`.
+`autoDeploy=false`, `composePath=./docker-compose.yml`, and no custom command;
+retained repository metadata points to `EgoSay/kairos` / `main`. The raw path is
+required so Dokploy writes the private `.env` beside the actual Compose file.
 Raw mode ensures a release uses its verified Compose template, even if `main`
 advances during the build. Branch pushes and merges cannot start deployment.
 Keep the existing composeId, appName, environment, Tunnel and data volume.

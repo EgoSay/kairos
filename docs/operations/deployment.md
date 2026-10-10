@@ -31,7 +31,7 @@
 
 开发构建显示 `1.0.0-dev.<提交摘要>`，正式构建显示标签版本。旧 `26.10.1`、`26.10.2` 是迁移阶段的发布记录，保留供升级核验和恢复追溯；后续迭代按 `1.0.1`、`1.1.0` 等语义版本推进。数据库迁移序号与产品版本分开，既有数据库不会因产品改为 `1.0.0` 而降级或重建。
 
-新建 Dokploy 环境可参考 `scripts/compose.dokploy.yaml`。现有生产应用使用 Raw Compose、`autoDeploy=false`，仓库元数据指向 `EgoSay/kairos` / `main`；不再依赖生产分支事件。API Key 仅保存在服务器的 root 私有配置中，不进入 GitHub Actions。
+新建 Dokploy 环境可参考 `scripts/compose.dokploy.yaml`。现有生产应用使用 Raw Compose、`autoDeploy=false`、`composePath=./docker-compose.yml`，清空自定义命令，保证环境文件与 Compose 同目录；仓库元数据指向 `EgoSay/kairos` / `main`；不再依赖生产分支事件。API Key 仅保存在服务器的 root 私有配置中，不进入 GitHub Actions。
 服务器安装的 Compose 模板必须与标签提交中的模板 SHA-256 一致；模板变更时先同步已审阅的服务器副本。这样构建期间即使 `main` 前进，也不会混用未经该次检查的部署配置。缺少凭据或模板不一致会在停写之前失败。
 镜像名称改变时，必须同时核对：实际 Compose 镜像、镜像拉取权限、发布闸门允许的镜像仓库，以及回滚配置。失败回滚会先等待部署结束、检查数据未变化，再恢复 Dokploy 配置和旧镜像；新写入和表结构变化不会被备份覆盖。
 

@@ -31,7 +31,7 @@ class DokployTest(unittest.TestCase):
         self.previous = template.read_text().replace('${MEMOS_IMAGE}', self.previous_image)
         self.live = {'composeId': 'existing', 'appName': dokploy.APP_NAME, 'sourceType': 'raw',
                      'branch': 'main', 'autoDeploy': False, 'composeType': 'docker-compose',
-                     'composeFile': self.previous, 'env': 'PRIVATE_TOKEN=kept',
+                     'composeFile': self.previous, 'composePath': './docker-compose.yml', 'command': '', 'env': 'PRIVATE_TOKEN=kept',
                      'composeStatus': 'done', 'deployments': []}
         self.release = {'repository': 'ghcr.io/egosay/kairos', 'digest': 'sha256:' + 'b' * 64,
                         'composeSha256': hashlib.sha256(template.read_bytes()).hexdigest()}
@@ -55,7 +55,8 @@ class DokployTest(unittest.TestCase):
 
     def test_wrong_application_autodeploy_and_source_are_rejected(self):
         for field, value in [('appName', 'new-empty-app'), ('autoDeploy', True), ('branch', 'production/old'),
-                             ('sourceType', 'github'), ('composeType', 'stack'), ('composeId', 'other')]:
+                             ('sourceType', 'github'), ('composeType', 'stack'), ('composeId', 'other'),
+                             ('composePath', './scripts/old-compose.yml'), ('command', 'custom compose command')]:
             with self.subTest(field=field), patch.object(self.client, 'request', return_value={**self.live, field: value}):
                 with self.assertRaises(RuntimeError):
                     self.client.prepare(self.release, self.previous_image)

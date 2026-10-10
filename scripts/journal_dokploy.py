@@ -17,7 +17,7 @@ TEMPLATE = Path('/opt/memos-backup/compose.dokploy.yaml')
 APP_NAME = 'memos-journal-ci55cj'
 IMAGE = re.compile(r'(?m)^    image: (.+)$')
 PROTECTED = ('composeId', 'appName', 'env', 'composeType', 'sourceType', 'branch',
-             'autoDeploy', 'environmentId', 'serverId', 'mounts', 'domains',
+             'autoDeploy', 'composePath', 'command', 'environmentId', 'serverId', 'mounts', 'domains',
              'randomize', 'isolatedDeployment', 'isolatedDeploymentsVolume', 'suffix')
 
 
@@ -46,7 +46,9 @@ class Dokploy:
         value = self.request('compose.one')
         if (value['composeId'] != self.config['composeId'] or value['appName'] != APP_NAME
                 or value['sourceType'] != 'raw' or value['branch'] != 'main'
-                or value['autoDeploy'] is not False or value['composeType'] != 'docker-compose'):
+                or value['autoDeploy'] is not False or value['composeType'] != 'docker-compose'
+                or value['composePath'] not in ('./docker-compose.yml', 'docker-compose.yml')
+                or value.get('command')):
             raise RuntimeError('unexpected Dokploy application configuration')
         return value
 
