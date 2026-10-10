@@ -1,10 +1,14 @@
 from contextlib import closing
+from datetime import datetime, timezone
+from email.utils import format_datetime
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import io
 import json
 from pathlib import Path
 import sqlite3
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import Mock, patch
 
@@ -103,6 +107,87 @@ class RestoreApplicationVerificationTest(unittest.TestCase):
             self.assertEqual(1, start.call_count)
             api.close()
             process.kill.assert_called_once()
+
+    def response_server(self, replies):
+        calls = []
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                calls.append((self.path, self.headers.get('Authorization')))
+                status, headers, body = replies.pop(0)
+                self.send_response(status)
+                for name, value in headers.items():
+                    self.send_header(name, value)
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *_):
+                pass
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(thread.join)
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        return verifier.API('http://127.0.0.1:' + str(server.server_port)), calls
+
+    def test_host_transport_retries_real_429_then_checks_success_and_permissions(self):
+        api, calls = self.response_server([(429, {'Retry-After': '7'}, b'limited'), (200, {}, b'{}'),
+                                          (429, {'Retry-After': '2'}, b'limited'), (403, {}, b'forbidden')])
+        with patch.object(verifier.time, 'sleep') as sleep:
+            self.assertEqual((200, {}), api.get('/record', 'synthetic-token'))
+            self.assertEqual((403, None), api.get('/record', 'outsider-token'))
+        self.assertEqual([7, 2], [call.args[0] for call in sleep.call_args_list])
+        self.assertEqual(2, api.rate_limit_retries)
+        self.assertEqual(9, api.rate_limit_wait_seconds)
+        self.assertEqual([('/record', 'Bearer synthetic-token')] * 2 + [('/record', 'Bearer outsider-token')] * 2, calls)
+
+    def test_host_transport_accepts_http_date_and_retries_binary_request(self):
+        now = 1791648000
+        retry_date = format_datetime(datetime.fromtimestamp(now + 9, timezone.utc), usegmt=True)
+        api, _ = self.response_server([(429, {'Retry-After': retry_date}, b'limited'), (200, {}, b'original bytes')])
+        with patch.object(verifier.time, 'time', return_value=now), patch.object(verifier.time, 'sleep') as sleep:
+            self.assertEqual((200, verifier.sha(b'original bytes')), api.get('/file', 'synthetic-token', digest=True))
+        sleep.assert_called_once_with(9)
+
+    def test_host_transport_limits_retries_and_does_not_accept_rate_limit_as_denial(self):
+        api, calls = self.response_server([(429, {'Retry-After': '1'}, b'limited')] * 4)
+        with patch.object(verifier.time, 'sleep') as sleep, self.assertRaisesRegex(verifier.VerificationFailure, 'rate limit retry budget'):
+            api.get('/private', 'outsider-token')
+        self.assertEqual(4, len(calls))
+        self.assertEqual(3, sleep.call_count)
+        for retry_after in ('121', 'not a date'):
+            with self.subTest(retry_after=retry_after):
+                api, calls = self.response_server([(429, {'Retry-After': retry_after}, b'limited')])
+                with patch.object(verifier.time, 'sleep') as sleep, self.assertRaises(verifier.VerificationFailure):
+                    api.get('/private')
+                sleep.assert_not_called()
+                self.assertEqual(1, len(calls))
+        api, _ = self.response_server([(429, {}, b'limited'), (403, {}, b'forbidden')])
+        with patch.object(verifier.time, 'sleep') as sleep:
+            self.assertEqual((403, None), api.get('/private'))
+        sleep.assert_called_once_with(60)
+
+    def test_exec_transport_closes_idle_connection_before_retry_and_bounds_total_wait(self):
+        first = Mock(stdin=io.BytesIO(), stdout=io.BytesIO(b'HTTP/1.1 429 Too Many Requests\r\nRetry-After: 60\r\nContent-Length: 0\r\n\r\n'))
+        second = Mock(stdin=io.BytesIO(), stdout=io.BytesIO(b'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n'))
+        api = verifier.DockerAPI('isolated-fixture')
+        def wait(seconds):
+            self.assertEqual(60, seconds)
+            first.kill.assert_called_once()
+            self.assertIsNone(api.process)
+        with patch.object(verifier.subprocess, 'Popen', side_effect=[first, second]) as start, patch.object(verifier.time, 'sleep', side_effect=wait):
+            self.assertEqual((200, verifier.sha(b'abc')), api.get('/file', 'synthetic-token', digest=True))
+            self.assertEqual(2, start.call_count)
+            self.assertEqual(first.stdin.getvalue(), second.stdin.getvalue())
+            api.close()
+        third = Mock(stdin=io.BytesIO(), stdout=io.BytesIO(b'HTTP/1.1 429 Too Many Requests\r\nRetry-After: 60\r\nContent-Length: 0\r\n\r\n'))
+        api.rate_limit_wait_seconds = 599
+        with patch.object(verifier.subprocess, 'Popen', return_value=third), patch.object(verifier.time, 'sleep') as sleep:
+            with self.assertRaisesRegex(verifier.VerificationFailure, 'total rate limit wait budget'):
+                api.get('/private')
+            sleep.assert_not_called()
+            self.assertIsNone(api.process)
 
     def test_verification_checks_real_fields_and_refuses_content_or_permission_mismatch(self):
         self.prepare()

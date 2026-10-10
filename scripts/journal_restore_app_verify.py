@@ -10,9 +10,11 @@ from __future__ import annotations
 import argparse
 from contextlib import closing
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import hashlib
 import http.client
 import json
+import math
 import os
 from pathlib import Path
 import secrets
@@ -219,28 +221,72 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-class API:
+def retry_after_seconds(value):
+    """Honor an HTTP Retry-After without allowing an unbounded operator wait."""
+    if value is None:
+        return 60  # A conservative fallback for older gateways omitting metadata.
+    value = value.strip()
+    if value.isascii() and value.isdigit():
+        seconds = int(value)
+    else:
+        try:
+            deadline = parsedate_to_datetime(value)
+            require(deadline.tzinfo is not None, 'rate limit Retry-After must have a timezone')
+            seconds = math.ceil(deadline.timestamp() - time.time())
+        except (TypeError, ValueError, OverflowError):
+            raise VerificationFailure('rate limit Retry-After is invalid') from None
+    require(seconds <= 120, 'rate limit Retry-After exceeds the 120 second wait limit')
+    return max(1, seconds)
+
+
+class RateLimitedAPI:
+    def __init__(self):
+        self.rate_limit_retries = 0
+        self.rate_limit_wait_seconds = 0
+
+    def close(self):
+        pass
+
+    def get(self, path, token=None, *, digest=False):
+        for attempt in range(4):
+            status, value, retry_after = self.get_once(path, token, digest=digest)
+            if status != 429:
+                return status, value
+            # nc has an idle timeout. Do not leave its stream open throughout a
+            # Retry-After sleep, or the next request will use a dead connection.
+            self.close()
+            require(attempt < 3, 'rate limit retry budget exhausted; verification incomplete')
+            seconds = retry_after_seconds(retry_after)
+            require(self.rate_limit_wait_seconds + seconds <= 600, 'total rate limit wait budget exhausted; verification incomplete')
+            self.rate_limit_retries += 1
+            self.rate_limit_wait_seconds += seconds
+            time.sleep(seconds)
+
+
+class API(RateLimitedAPI):
     def __init__(self, base):
+        super().__init__()
         self.base = base.rstrip('/')
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
 
-    def get(self, path, token=None, *, digest=False):
+    def get_once(self, path, token=None, *, digest=False):
         headers = {'Authorization': 'Bearer ' + token} if token else {}
         request = urllib.request.Request(self.base + path, headers=headers)
         try:
             response = self.opener.open(request, timeout=30)
         except urllib.error.HTTPError as error:
+            retry_after = error.headers.get('Retry-After')
             error.close()
-            return error.code, None
+            return error.code, None, retry_after
         with response:
             if digest:
                 value = hashlib.sha256()
                 for chunk in iter(lambda: response.read(1024 * 1024), b''):
                     value.update(chunk)
-                return response.status, value.hexdigest()
+                return response.status, value.hexdigest(), response.headers.get('Retry-After')
             raw = response.read(16 * 1024 * 1024 + 1)
             require(len(raw) <= 16 * 1024 * 1024, 'API response exceeded the verification limit')
-            return response.status, json.loads(raw)
+            return response.status, json.loads(raw), response.headers.get('Retry-After')
 
 
 class PipeSocket:
@@ -262,10 +308,11 @@ class PipeSocket:
         pass
 
 
-class DockerAPI:
+class DockerAPI(RateLimitedAPI):
     """Read-only HTTP via container loopback; credentials travel only over stdin."""
 
     def __init__(self, container):
+        super().__init__()
         self.container = container
         self.process = None
 
@@ -275,7 +322,7 @@ class DockerAPI:
             self.process.communicate()
             self.process = None
 
-    def get(self, path, token=None, *, digest=False):
+    def get_once(self, path, token=None, *, digest=False):
         require(path.startswith('/') and '\r' not in path and '\n' not in path
                 and (not token or ('\r' not in token and '\n' not in token)), 'invalid verification HTTP request')
         if self.process is None:
@@ -305,7 +352,7 @@ class DockerAPI:
                     result = json.loads(raw) if status == 200 else None
                 if response.will_close:
                     self.close()
-                return status, result
+                return status, result, response.getheader('Retry-After')
         except (OSError, http.client.HTTPException):
             self.close()
             raise VerificationFailure('isolated container HTTP connection failed') from None
@@ -403,7 +450,8 @@ def verify_api(work, prepared, expected, credentials, isolation, api):
         require(file_hash(work / 'data' / name) == digest, 'retained media or historical original changed')
     require(file_hash(Path(prepared['restore']) / 'data' / DATABASE) == prepared['sourceDatabaseSha256'], 'original restore was changed')
     evidence.update(applicationVerified=True, status='success', dataHashes=expected['tableHashes'],
-                    retainedFilesVerified=len(expected['fileHashes']), evidenceScope='isolated app copy; no live instance writes; not personal acceptance')
+                    retainedFilesVerified=len(expected['fileHashes']), evidenceScope='isolated app copy; no live instance writes; not personal acceptance',
+                    rateLimitRetries=api.rate_limit_retries, rateLimitWaitSeconds=api.rate_limit_wait_seconds)
     atomic_json(work / 'application-report.json', evidence)
     return evidence
 

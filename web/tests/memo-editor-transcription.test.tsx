@@ -7,7 +7,10 @@ import { transcriptionService } from "@/components/MemoEditor/services";
 import { AttachmentSchema } from "@/types/proto/api/v1/attachment_service_pb";
 import { MemoSchema, Visibility } from "@/types/proto/api/v1/memo_service_pb";
 
-vi.mock("@/hooks/useUserQueries", () => ({ useTagCounts: () => ({ data: {} }) }));
+vi.mock("@/hooks/useUserQueries", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/useUserQueries")>()),
+  useTagCounts: () => ({ data: {} }),
+}));
 vi.mock("@/hooks/useCurrentUser", () => ({ default: () => ({ name: "users/1" }) }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ userGeneralSetting: {} }) }));
 vi.mock("@/contexts/InstanceContext", () => ({

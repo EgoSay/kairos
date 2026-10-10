@@ -415,6 +415,14 @@ URL. Protected database tables and all retained media, including history-only
 originals, must remain unchanged. Archived-owner records stay in the table/hash
 checks and are explicitly counted as excluded from authenticated API verification.
 
+Both HTTP transports respect `429 Retry-After` (seconds or HTTP date). Each
+request permits at most three retries, each wait is capped at 120 seconds, and
+the complete run permits at most 600 seconds of rate-limit waiting. A missing
+header uses 60 seconds; an invalid header or exhausted budget fails verification.
+The exec transport closes its `nc` stream before waiting and reconnects afterward,
+so the idle timeout cannot corrupt the retry. Reports include retry/wait totals.
+Rate limits stay enabled, and a 429 is never counted as a passed permission denial.
+
 `application-report.json` is private and carries the snapshot ID, tested image
 identity, profile version/commit, counts, hashes and scope. A failed rerun clears
 prior success. Original credential rows are checked absent before preparation;

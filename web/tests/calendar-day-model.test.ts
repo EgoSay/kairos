@@ -8,8 +8,8 @@ import { type Memo, MemoSchema } from "@/types/proto/api/v1/memo_service_pb";
 const memoAt = (hour: number, overrides: MessageInitShape<typeof MemoSchema> = {}): Memo =>
   create(MemoSchema, {
     name: `memos/${hour}`,
-    createTime: timestampFromDate(new Date(2026, 7, 2, hour)),
-    updateTime: timestampFromDate(new Date(2026, 7, 3, hour)),
+    createTime: timestampFromDate(new Date(`2026-08-02T${String(hour).padStart(2, "0")}:00:00+08:00`)),
+    updateTime: timestampFromDate(new Date(`2026-08-03T${String(hour).padStart(2, "0")}:00:00+08:00`)),
     ...overrides,
   });
 const image = (name: string) => create(AttachmentSchema, { name: `attachments/${name}`, filename: `${name}.jpg`, type: "image/jpeg" });
@@ -17,12 +17,23 @@ const pdf = create(AttachmentSchema, { name: "attachments/doc", filename: "doc.p
 const day = (memos: Memo[]) => buildCalendarMonthModel(memos, "create_time")["2026-08-02"];
 
 describe("calendar day snapshots", () => {
-  it("groups by local day and keeps every memo in chronological order", () => {
+  it("groups by the journal day and keeps every memo in chronological order", () => {
     const memos = Array.from({ length: 24 }, (_, i) => memoAt(i, { content: `memo ${i}` })).reverse();
     const summary = day(memos);
     expect(summary.memos).toHaveLength(24);
     expect(summary.memos[0].name).toBe("memos/0");
     expect(summary.excerpt?.text).toBe("memo 0");
+  });
+
+  it("uses the configured journal timezone across midnight independently of the browser timezone", () => {
+    const before = memoAt(0, { name: "memos/before", createTime: timestampFromDate(new Date("2026-08-01T15:59:59Z")) });
+    const after = memoAt(0, { name: "memos/after", createTime: timestampFromDate(new Date("2026-08-01T16:00:00Z")) });
+    const shanghai = buildCalendarMonthModel([after, before], "create_time", { timezone: "Asia/Shanghai" });
+    expect(shanghai["2026-08-01"].memos.map((memo) => memo.name)).toEqual(["memos/before"]);
+    expect(shanghai["2026-08-02"].memos.map((memo) => memo.name)).toEqual(["memos/after"]);
+    const utc = buildCalendarMonthModel([after, before], "create_time", { timezone: "UTC" });
+    expect(Object.keys(utc)).toEqual(["2026-08-01"]);
+    expect(utc["2026-08-01"].memos.map((memo) => memo.name)).toEqual(["memos/before", "memos/after"]);
   });
 
   it("uses memo identity to choose the same sample when timestamps tie", () => {
