@@ -3,8 +3,8 @@ run-name: Deploy Kairos ${{ github.ref_name }}
 
 on:
   push:
-    # The parser below validates YY.MM[.N][-rc.N]; tags may point to any branch.
-    tags: ["[1-9][0-9].*"]
+    # The parser validates MAJOR.MINOR.PATCH[-rc.N]; tags may point to any branch.
+    tags: ["[0-9]*.[0-9]*.[0-9]*"]
 
 concurrency:
   group: personal-journal-production
@@ -29,6 +29,8 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           bash scripts/release_version.sh version "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          # A release must match the version maintained on its source commit.
+          test "${RELEASE_TAG%%-*}" = "$(cat internal/version/VERSION)"
           # Use the checked-out commit for both lightweight and annotated tags.
           echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           owner=$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
@@ -47,6 +49,9 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          # Resolve the previous published release, including the CalVer transition.
+          fetch-depth: 0
       - name: Verify snapshot consistency and backup failure handling
         run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
       - uses: docker/setup-buildx-action@v3
@@ -69,7 +74,7 @@ jobs:
           cache-from: type=gha,scope=journal
           cache-to: type=gha,scope=journal,mode=max
       - name: Verify bundled frontend and restart persistence
-        run: bash scripts/release_smoke_test.sh --candidate-image kairos:verify --previous-image neosmemo/memos:0.31.0
+        run: bash scripts/release_smoke_test.sh --candidate-image kairos:verify --previous-image "$(bash scripts/release_version.sh previous-image .)"
       - name: Publish verified image
         id: publish
         env:

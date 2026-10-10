@@ -1,19 +1,24 @@
 ---
 name: release
 description: >
-  Release the Kairos private journal through a CalVer tag: verify the candidate,
+  Release the Kairos private journal through a semantic version tag: verify the candidate,
   push an authorized tag, watch Kairos Image, and verify the deployed
   source commit and image digest. Use for an explicitly requested Kairos release
   or release candidate; changing release configuration is not itself a release.
 metadata:
   owner: "EgoSay"
-  version: "2.1.0"
+  version: "2.2.0"
   last-reviewed: "2026-10-10"
 ---
 
 # Kairos release
 
-Pushing a `YY.MM[.N][-rc.N]` tag triggers `.github/workflows/journal-image.yml`.
+Pushing a `MAJOR.MINOR.PATCH[-rc.N]` tag triggers `.github/workflows/journal-image.yml`.
+Kairos starts at `1.0.0`; tags have no `v` prefix. Set `internal/version/VERSION`
+to the intended stable version; the release tag base must match it. Development
+builds use `VERSION-dev.<12-character commit>`. Database schema numbering remains
+independent and must not be reset.
+
 The workflow validates the version, runs frontend/backend checks, builds and
 smoke-tests the complete image, publishes to `ghcr.io/egosay/kairos`,
 verifies the pre-upgrade snapshot/R2 backup, and updates the pinned
@@ -35,6 +40,14 @@ never started; publishing credentials do not prove Dokploy pull access.
 Already published tags retain legacy request compatibility. New Kairos requests
 include the repository and must confirm the exact requested repository and digest.
 Both approved repositories remain usable as previous images for rollback.
+Preserve `main` and `production/memos-journal` during branch cleanup. Temporary
+branches may be removed after merge and verification; published tags and stored
+production history are not disposable branches.
+
+The published transition tags `26.10.1` and `26.10.2` remain historical records.
+Previous-release resolution prefers independent semantic releases over those
+numerically larger tags. The first `1.0.0` image must pass the actual `26.10.2`
+upgrade smoke test; separate upgrade CI retains the original database baseline.
 
 ## Candidate and authorization
 
@@ -59,7 +72,7 @@ Both approved repositories remain usable as previous images for rollback.
 
 1. Fetch the relevant remote refs and inspect tags. Validate the chosen version
    with `bash scripts/release_version.sh version <tag>`; use the existing
-   `YY.MM[.N][-rc.N]` convention, such as `26.10.1` or `26.10-rc.1`.
+   `MAJOR.MINOR.PATCH[-rc.N]` convention, such as `1.0.0` or `1.1.0-rc.1`.
 2. Confirm the tag is unused and points to the intended reviewed commit.
    Inspect available CI results for that exact commit; run relevant checks
    when missing. Upgrade checks can be run through `upgrade-smoke.yml` on the

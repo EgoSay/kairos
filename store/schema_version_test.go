@@ -10,7 +10,26 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/mod/semver"
+
+	"github.com/EgoSay/kairos/internal/profile"
 )
+
+func TestApplicationVersionDoesNotRenumberSchema(t *testing.T) {
+	for _, driver := range []string{"sqlite", "mysql", "postgres"} {
+		t.Run(driver, func(t *testing.T) {
+			cfg := &profile.Profile{Driver: driver, Version: "26.10.2"}
+			s := &Store{profile: cfg}
+			existing, err := s.GetCurrentSchemaVersion()
+			require.NoError(t, err)
+			for _, applicationVersion := range []string{"1.0.0", "1.1.0-rc.1", "1.0.0-dev.abcdef123456"} {
+				cfg.Version = applicationVersion
+				current, err := s.GetCurrentSchemaVersion()
+				require.NoError(t, err)
+				require.Equal(t, existing, current, "product version reset must preserve the schema target")
+			}
+		})
+	}
+}
 
 func TestCompareSchemaVersions(t *testing.T) {
 	for _, tc := range []struct {

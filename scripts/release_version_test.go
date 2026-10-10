@@ -13,10 +13,14 @@ import (
 )
 
 func TestDevelopmentVersion(t *testing.T) {
-	for _, tc := range []struct{ date, version string }{
-		{"2026-09-27T14:58:52Z", "26.09"},
-		{"2026-10-01T00:30:00+08:00", "26.09"},
-		{"2026-12-31T23:30:00-08:00", "27.01"},
+	base, err := os.ReadFile("../internal/version/VERSION")
+	require.NoError(t, err)
+	original := version.Version
+	t.Cleanup(func() { version.Version = original })
+	for _, tc := range []struct{ date string }{
+		{"2026-09-27T14:58:52Z"},
+		{"2026-10-01T00:30:00+08:00"},
+		{"2026-12-31T23:30:00-08:00"},
 	} {
 		t.Run(tc.date, func(t *testing.T) {
 			repo := t.TempDir()
@@ -33,7 +37,11 @@ func TestDevelopmentVersion(t *testing.T) {
 				cmd.Env = append(os.Environ(), "TZ=Pacific/Honolulu")
 				out, err := cmd.CombinedOutput()
 				require.NoError(t, err, string(out))
-				require.Equal(t, tc.version+"\n", string(out))
+				revision, err := exec.Command("git", "-C", repo, "rev-parse", "HEAD").Output()
+				require.NoError(t, err)
+				require.Equal(t, strings.TrimSpace(string(base))+"-dev."+string(revision[:12])+"\n", string(out))
+				version.Version = strings.TrimSpace(string(out))
+				require.NoError(t, version.Validate())
 			}
 			runGit("init", "-b", "main")
 			runGit("commit", "--allow-empty", "-m", "source")
@@ -58,13 +66,13 @@ func TestReleaseVersions(t *testing.T) {
 	for _, tc := range []struct {
 		tag, series, prerelease, images string
 	}{
-		{"26.09", "26.09", "false", "26.09\nstable\n"},
-		{"26.09.1", "26.09", "false", "26.09.1\n26.09\nstable\n"},
-		{"26.09.10", "26.09", "false", "26.09.10\n26.09\nstable\n"},
-		{"26.10.1", "26.10", "false", "26.10.1\n26.10\nstable\n"},
-		{"27.01", "27.01", "false", "27.01\nstable\n"},
-		{"26.09-rc.1", "26.09", "true", "26.09-rc.1\n"},
-		{"26.09.1-rc.2", "26.09", "true", "26.09.1-rc.2\n"},
+		{"1.0.0", "1.0", "false", "1.0.0\n1.0\nstable\n"},
+		{"1.0.1", "1.0", "false", "1.0.1\n1.0\nstable\n"},
+		{"1.0.10", "1.0", "false", "1.0.10\n1.0\nstable\n"},
+		{"1.10.0", "1.10", "false", "1.10.0\n1.10\nstable\n"},
+		{"2.0.0", "2.0", "false", "2.0.0\n2.0\nstable\n"},
+		{"1.0.0-rc.1", "1.0", "true", "1.0.0-rc.1\n"},
+		{"1.1.0-rc.2", "1.1", "true", "1.1.0-rc.2\n"},
 	} {
 		t.Run(tc.tag, func(t *testing.T) {
 			out, err := exec.Command("bash", "release_version.sh", "version", tc.tag).CombinedOutput()
@@ -75,7 +83,7 @@ func TestReleaseVersions(t *testing.T) {
 			require.Equal(t, tc.images, string(out))
 		})
 	}
-	for _, tag := range []string{"v0.31.0", "v26.09", "v26.09.1", "v26.09-rc.1", "26.9", "26.00", "26.13", "2026.09", "26.09.0", "26.09.01", "26.09-rc.0", "26.09-rc.01", "26.09beta", "26.09.1+build"} {
+	for _, tag := range []string{"v1.0.0", "1.0", "26.10", "01.0.0", "1.00.0", "1.0.01", "1.0.0-rc.0", "1.0.0-rc.01", "1.0.0-dev.abcdef123456", "1.0.0+build", "1.0.0beta"} {
 		out, err := exec.Command("bash", "release_version.sh", "version", tag).CombinedOutput()
 		require.Error(t, err, tag)
 		require.Contains(t, string(out), "Unsupported release tag")
@@ -88,9 +96,8 @@ func TestReleaseTagsMatchBinaryVersions(t *testing.T) {
 	original := version.Version
 	t.Cleanup(func() { version.Version = original })
 	for _, tag := range []string{
-		"26.09", "26.09.1", "26.09.10", "27.01", "26.09-rc.1", "26.09.1-rc.2",
-		"v26.09", "0.31.0", "26.9", "26.00", "26.13", "2026.09", "26.09.0", "26.09.01", "26.09-rc.0", "26.09-rc.01",
-		"26.09-dev.1", "26.09-dirty", "26.09beta", "26.09.1+build", "dev",
+		"1.0.0", "1.0.1", "1.0.10", "1.10.0", "2.0.0", "1.0.0-rc.1", "1.1.0-rc.2",
+		"v1.0.0", "1.0", "26.10", "01.0.0", "1.00.0", "1.0.01", "1.0.0-rc.0", "1.0.0-rc.01", "1.0.0beta", "1.0.0+build", "dev",
 	} {
 		scriptErr := exec.Command("bash", "release_version.sh", "version", tag).Run()
 		version.Version = tag
@@ -126,32 +133,31 @@ func TestPreviousReleaseImage(t *testing.T) {
 	runGit("tag", "v0.30.0")
 	runGit("commit", "--allow-empty", "-m", "baseline")
 	runGit("tag", "v0.31.0")
-	runGit("commit", "--allow-empty", "-m", "first calendar release")
-	runGit("tag", "26.09")
+	runGit("commit", "--allow-empty", "-m", "legacy journal release")
+	runGit("tag", "26.10.1")
 	check("v0.31.0")
-	runGit("commit", "--allow-empty", "-m", "point release")
-	runGit("tag", "26.09.2")
-	check("26.09")
-	runGit("commit", "--allow-empty", "-m", "tenth point release")
-	runGit("tag", "26.09.10")
+	runGit("commit", "--allow-empty", "-m", "transition release")
+	runGit("tag", "26.10.2")
+	check("26.10.1")
+	runGit("commit", "--allow-empty", "-m", "independent Kairos release")
+	runGit("tag", "1.0.0")
+	check("26.10.2")
+	runGit("commit", "--allow-empty", "-m", "patch release")
+	runGit("tag", "1.0.1")
+	check("1.0.0")
+	runGit("commit", "--allow-empty", "-m", "tenth patch release")
+	runGit("tag", "1.0.10")
 	runGit("tag", "99.99")
 	runGit("commit", "--allow-empty", "-m", "release candidate")
-	runGit("tag", "26.10-rc.1")
-	check("26.09.10")
+	runGit("tag", "1.1.0-rc.1")
+	check("1.0.10")
 	runGit("commit", "--allow-empty", "-m", "after release candidate")
-	check("26.09.10")
+	check("1.0.10")
 	runGit("checkout", "--orphan", "unrelated")
 	runGit("commit", "--allow-empty", "-m", "unrelated release")
-	runGit("tag", "29.01")
+	runGit("tag", "9.0.0")
 	runGit("checkout", "main")
-	check("26.09.10")
-	runGit("tag", "26.10")
-	runGit("commit", "--allow-empty", "-m", "pre-Kairos release")
-	runGit("tag", "26.10.1")
-	check("26.10")
-	runGit("commit", "--allow-empty", "-m", "next year")
-	runGit("tag", "27.01")
-	check("26.10.1")
+	check("1.0.10")
 	// The floor excludes pre-baseline tags even if no supported release exists.
 	repo = t.TempDir()
 	runGit("init", "-b", "main")

@@ -20,7 +20,7 @@
 
 现有流程：
 
-1. 推送符合 `YY.MM[.N][-rc.N]` 的版本标签。
+1. 更新 `internal/version/VERSION`，推送基础版本与其一致的 `MAJOR.MINOR.PATCH[-rc.N]` 标签；独立版本从 `1.0.0` 起，不带 `v` 前缀。
 2. GitHub Actions 运行前后端检查，构建完整镜像，并做启动、持久化和升级验证。
 3. 升级闸门完成一致性快照和远端加密备份。
 4. 更新 `production/memos-journal` 分支的 `scripts/compose.production.yaml` 和版本记录。
@@ -28,6 +28,8 @@
 6. 确认后恢复备份调度，保留发布回执。
 
 普通分支推送和 PR 合并不部署；RC 标签也走生产流程。详情见 [发布与恢复工具](../../scripts/README.md)。
+
+开发构建显示 `1.0.0-dev.<提交摘要>`，正式构建显示标签版本。旧 `26.10.1`、`26.10.2` 是迁移阶段的发布记录，保留供升级核验和恢复追溯；后续迭代按 `1.0.1`、`1.1.0` 等语义版本推进。数据库迁移序号与产品版本分开，既有数据库不会因产品改为 `1.0.0` 而降级或重建。
 
 新建 Dokploy 环境可参考 `scripts/compose.dokploy.yaml`。生产声明使用固定 digest；模板里的镜像变量不能覆盖生产声明。
 镜像名称改变时，必须同时核对：GitHub App 的仓库、Dokploy repository/owner/branch/composePath、实际 Compose 镜像、镜像拉取权限、发布闸门允许的镜像仓库，以及回滚声明。

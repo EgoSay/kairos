@@ -38,7 +38,7 @@ Run from the repository root unless a command starts with `cd`.
 
 ```bash
 # Backend
-go run -buildvcs=true ./cmd/memos --port 8081 # Start backend with commit-derived CalVer
+go run -buildvcs=true ./cmd/memos --port 8081 # Start backend with a source-qualified development version
 go test ./...                      # Run all Go tests
 go test -v ./store/...             # Store tests, including DB drivers via TestContainers
 go test -v -race ./server/...      # Server tests with race detector
@@ -142,10 +142,12 @@ Black-box service tests live in `server/api/v1/test/`, unit tests next to the co
 
 ## CI Reference
 
-- Releases are cut by pushing a `YY.MM[.N][-rc.N]` tag. To cut, promote, or check a release, follow
+- Kairos releases start at `1.0.0` and use `MAJOR.MINOR.PATCH[-rc.N]` tags without a `v` prefix. To cut, promote, or check a release, follow
   `.agents/skills/release/SKILL.md`. `journal-image.yml` deploys the tagged commit from any branch;
   ordinary branch pushes and PR merges never start production deployment. RC tags deploy too.
-- Development builds use the HEAD committer date in UTC as `YY.MM`; release builds inject the CalVer tag.
+- Set `internal/version/VERSION` to the target stable version before release; the tag's base must match it.
+- Development builds use `VERSION-dev.<12-char commit>`; release builds inject the exact semantic version tag.
+- Keep `main` and the Dokploy declaration branch `production/memos-journal`. Delete merged temporary branches after checking for unique commits and active worktrees; do not remove published tags or rewrite history as branch cleanup.
 - `go build` embeds Git metadata automatically; `go run` needs `-buildvcs=true`. Builds without Git metadata must inject
   `github.com/EgoSay/kairos/internal/version.Version` through `-ldflags`.
 - Docker excludes `.git`; pass `--build-arg VERSION="$(bash scripts/release_version.sh development-version)"` and
