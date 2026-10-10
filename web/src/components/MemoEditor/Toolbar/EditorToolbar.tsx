@@ -23,6 +23,7 @@ export const EditorToolbar: FC<EditorToolbarProps> = ({
   viewToggles,
   onInsertImages,
   onInsertTag,
+  onReturnToEditor,
 }) => {
   const t = useTranslate();
   const { actions, dispatch } = useEditorContext();
@@ -90,6 +91,7 @@ export const EditorToolbar: FC<EditorToolbarProps> = ({
     <div className="flex w-full min-w-0 flex-row items-end justify-between gap-2">
       <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center justify-start gap-0.5">
         <InsertMenu
+          onReturnToEditor={onReturnToEditor}
           isUploading={isUploading}
           isSaving={committing}
           location={location}

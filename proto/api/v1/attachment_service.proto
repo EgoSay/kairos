@@ -184,6 +184,8 @@ message Attachment {
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.resource_reference) = {type: "memos.api.v1/User"}
   ];
+  // Output only. The linked record deletion timestamp, only in the owner trash list.
+  google.protobuf.Timestamp delete_time = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 message CreateAttachmentRequest {
@@ -277,6 +279,9 @@ message ListAttachmentsRequest {
   // Optional. The order to sort results by.
   // Example: "create_time desc" or "filename asc"
   string order_by = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. List only the caller's trashed record attachments. The default excludes trash.
+  bool only_trash = 7 [(google.api.field_behavior) = OPTIONAL];
 
   reserved 5, 6;
   reserved "space", "unassigned";

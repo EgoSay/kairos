@@ -29,6 +29,7 @@ export interface EditorController {
   updateUploadAnchor(descriptor: UploadAnchorDescriptor): void;
   resolveUploadAnchor(id: string, markdown: string): void;
   cancelUploadAnchor(id: string): void;
+  getUploadAnchorPosition?(id: string): number | undefined;
   getCursor(): number;
   setCursor(position: number): void;
   scrollToCursor(): void;
@@ -51,6 +52,8 @@ export interface EditorController {
 export interface FormattingController {
   /** Run a catalog command (e.g. "bold", "heading2", "link"). */
   run(command: EditorCommandId, ctx?: EditorCommandContext): void;
+  /** Link URL at the current selection, when editing an existing Markdown link. */
+  getLink?(): string | undefined;
   /** Snapshot of which marks/blocks are active at the current selection. */
   getActiveFormats(): ActiveFormatState;
   /** Register a listener fired on every transaction/selection change. Returns an unsubscribe. */

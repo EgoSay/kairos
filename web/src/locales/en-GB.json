@@ -190,6 +190,9 @@
       "bold": "Bold",
       "italic": "Italic",
       "strikethrough": "Strikethrough",
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Code block",
       "bullet-list": "Bullet list",
       "ordered-list": "Numbered list",
@@ -344,6 +347,7 @@
     "back-to-top": "Back to Top"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "Access token copied to clipboard",
       "access-token-deleted": "Access token `{{description}}` deleted",

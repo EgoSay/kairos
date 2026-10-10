@@ -180,6 +180,9 @@
       "transcribing": "Транскрибування..."
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Блок коду",
       "link": "Посилання",
       "heading": "Заголовок",
@@ -344,6 +347,7 @@
     "back-to-top": "На початок"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "Токен доступу скопійовано в буфер обміну",
       "access-token-deleted": "Токен доступу `{{description}}` видалено",

@@ -779,7 +779,9 @@ type PersonalAccessTokensUserSetting_PersonalAccessToken struct {
 	// When the token was created
 	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// When the token was last used
-	LastUsedAt    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_used_at,json=lastUsedAt,proto3" json:"last_used_at,omitempty"`
+	LastUsedAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_used_at,json=lastUsedAt,proto3" json:"last_used_at,omitempty"`
+	// Restricted Agent credential; absent/false preserves existing PAT behavior.
+	ReadOnly      bool `protobuf:"varint,7,opt,name=read_only,json=readOnly,proto3" json:"read_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -854,6 +856,13 @@ func (x *PersonalAccessTokensUserSetting_PersonalAccessToken) GetLastUsedAt() *t
 		return x.LastUsedAt
 	}
 	return nil
+}
+
+func (x *PersonalAccessTokensUserSetting_PersonalAccessToken) GetReadOnly() bool {
+	if x != nil {
+		return x.ReadOnly
+	}
+	return false
 }
 
 type MemoViewsUserSetting_MemoView struct {
@@ -1139,9 +1148,9 @@ const file_store_user_setting_proto_rawDesc = "" +
 	"\vdevice_type\x18\x03 \x01(\tR\n" +
 	"deviceType\x12\x0e\n" +
 	"\x02os\x18\x04 \x01(\tR\x02os\x12\x18\n" +
-	"\abrowser\x18\x05 \x01(\tR\abrowser\"\xa3\x03\n" +
+	"\abrowser\x18\x05 \x01(\tR\abrowser\"\xc0\x03\n" +
 	"\x1fPersonalAccessTokensUserSetting\x12X\n" +
-	"\x06tokens\x18\x01 \x03(\v2@.memos.store.PersonalAccessTokensUserSetting.PersonalAccessTokenR\x06tokens\x1a\xa5\x02\n" +
+	"\x06tokens\x18\x01 \x03(\v2@.memos.store.PersonalAccessTokensUserSetting.PersonalAccessTokenR\x06tokens\x1a\xc2\x02\n" +
 	"\x13PersonalAccessToken\x12\x19\n" +
 	"\btoken_id\x18\x01 \x01(\tR\atokenId\x12\x1d\n" +
 	"\n" +
@@ -1152,7 +1161,8 @@ const file_store_user_setting_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12<\n" +
 	"\flast_used_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"lastUsedAt\"\xb4\x02\n" +
+	"lastUsedAt\x12\x1b\n" +
+	"\tread_only\x18\a \x01(\bR\breadOnly\"\xb4\x02\n" +
 	"\x14MemoViewsUserSetting\x12I\n" +
 	"\n" +
 	"memo_views\x18\x01 \x03(\v2*.memos.store.MemoViewsUserSetting.MemoViewR\tmemoViews\x1a\xd0\x01\n" +

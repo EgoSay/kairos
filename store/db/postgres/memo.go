@@ -114,6 +114,9 @@ func validatePostgresMemoSpaceMember(ctx context.Context, tx *sql.Tx, spaceID, u
 
 func (d *DB) ListMemos(ctx context.Context, find *store.FindMemo) ([]*store.Memo, error) {
 	where, args := []string{"1 = 1"}, []any{}
+	if find.ExcludeTrashed {
+		where = append(where, "NOT EXISTS (SELECT 1 FROM journal_document trash WHERE trash.owner_id = memo.creator_id AND trash.kind = 'trash' AND trash.document_key = memo.uid)")
+	}
 
 	engine, err := filter.DefaultEngine()
 	if err != nil {
@@ -184,7 +187,8 @@ func (d *DB) ListMemos(ctx context.Context, find *store.FindMemo) ([]*store.Memo
 	}
 	orderBy := []string{}
 	if find.OrderByPinned {
-		orderBy = append(orderBy, "pinned DESC")
+		orderBy = append(orderBy, "CASE WHEN memo.pinned AND memo.row_status = 'NORMAL' THEN 1 ELSE 0 END DESC",
+			"CASE WHEN memo.pinned AND memo.row_status = 'NORMAL' THEN memo.created_ts ELSE NULL END DESC")
 	}
 	if find.OrderByUpdatedTs {
 		orderBy = append(orderBy, "updated_ts "+order)

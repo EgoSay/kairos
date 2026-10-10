@@ -12,11 +12,13 @@ import { useSpaceContext } from "@/contexts/SpaceContext";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useMemoViews } from "@/hooks/useUserQueries";
 import { getMemoViewId, isMemoCollectionRoute } from "@/lib/memo-views";
+import { buildMemoCreatorFilter } from "@/lib/resource-names";
 import { extractSpaceUidFromName, formatSpaceUidForDisplay } from "@/lib/space-display";
 import { cn } from "@/lib/utils";
 import { getCollectionCreator, withCollectionCreator } from "@/router/routes";
 import { useTranslate } from "@/utils/i18n";
 import { getRouteActionPolicy, getSidebarRouteKind } from "./routes";
+import SearchFacetPanel, { searchDateError } from "./SearchFacetPanel";
 
 export type QuickFindMode = "text" | "cel";
 
@@ -85,10 +87,13 @@ const QuickFindDialog = () => {
   const currentUser = useCurrentUser();
   const { data: memoViews = [] } = useMemoViews(currentUser?.name);
   const { filters, setFilters, setMemoView, memoView } = useMemoFilterContext();
-  const { duplicateSpaceTitles, selectedSpace, selectedSpaceName } = useSpaceContext();
+  const { duplicateSpaceTitles, selectedSpace, selectedSpaceName, memoFilter } = useSpaceContext();
   const { quickFindOpen, setQuickFindOpen } = useAppSidebar();
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<QuickFindMode>("text");
+  const [facets, setFacets] = useState<MemoFilter[]>([]);
+  const [showFacets, setShowFacets] = useState(false);
+  const [allOwn, setAllOwn] = useState(false);
   const hintId = useId();
   const viewApplies = isMemoCollectionRoute(location.pathname);
   const selectedMemoView = viewApplies ? memoViews.find((item) => getMemoViewId(item.name) === memoView) : undefined;
@@ -110,10 +115,26 @@ const QuickFindDialog = () => {
     const active = readQuickFindQuery(filters);
     setMode(active.mode);
     setQuery(active.query);
-  }, [filters, quickFindOpen]);
+    setFacets(
+      getRouteActionPolicy(location.pathname, location.search).searchScope === "all"
+        ? []
+        : filters.filter((filter) => !isSearchFilter(filter)),
+    );
+    setShowFacets(false);
+    setAllOwn(false);
+  }, [filters, quickFindOpen, location.pathname, location.search]);
 
   const submitQuery = () => {
-    const submission = resolveQuickFindSubmission(location.pathname, query, filters, mode, location.search);
+    if (searchDateError(facets)) return;
+    // Keep edited facets even when the original route did not have a collection.
+    const selectedFilters = buildQuickFindFilters(query, facets, true, mode);
+    const submission = resolveQuickFindSubmission(location.pathname, query, facets, mode, location.search);
+    submission.filters = selectedFilters;
+    if (allOwn) submission.destination = `/${getFilterSearch(selectedFilters)}`;
+    else if (submission.destination) {
+      const routePolicy = getRouteActionPolicy(location.pathname, location.search);
+      submission.destination = `${routePolicy.searchDestination}${withCollectionCreator(getFilterSearch(selectedFilters), routePolicy.searchScope === "route-collection" ? getCollectionCreator(location.search) : undefined)}`;
+    }
 
     if (submission.destination) {
       setMemoView(undefined);
@@ -150,7 +171,7 @@ const QuickFindDialog = () => {
     <Dialog open={quickFindOpen} onOpenChange={setQuickFindOpen}>
       <DialogContent
         size="lg"
-        className="top-[12vh]! translate-y-0! overflow-hidden border-border/70 p-0! shadow-xl sm:top-[16vh]! [&>div:first-child]:gap-0!"
+        className="top-[8vh]! max-h-[84dvh] translate-y-0! overflow-y-auto border-border/70 p-0! shadow-xl [&>div:first-child]:gap-0!"
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">{t("common.search")}</DialogTitle>
@@ -169,10 +190,11 @@ const QuickFindDialog = () => {
                   type="button"
                   role="tab"
                   aria-selected={mode === value}
+                  title={value === "cel" ? t("search.expression-mode") : undefined}
                   onClick={() => setMode(value)}
                   className={cn(tabsTriggerVariants({ variant: "segmented", active: mode === value }), "h-6 px-2 py-0 text-xs")}
                 >
-                  {value === "cel" ? t("search.expression-mode") : t("search.text")}
+                  {value === "cel" ? "高级搜索" : t("search.text")}
                 </button>
               ))}
             </div>
@@ -221,6 +243,39 @@ const QuickFindDialog = () => {
                 aria-label={t("common.search")}
               >
                 <CornerDownLeftIcon className="size-3.5" />
+              </Button>
+            </div>
+          )}
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2">
+            <Button type="button" variant="ghost" size="sm" aria-expanded={showFacets} onClick={() => setShowFacets(!showFacets)}>
+              筛选{facets.length ? ` (${facets.length})` : ""}
+            </Button>
+            {currentUser && (
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                搜索范围
+                <select
+                  aria-label="搜索范围"
+                  className="max-w-48 rounded border bg-background p-1 text-foreground"
+                  value={allOwn ? "own" : "current"}
+                  onChange={(event) => setAllOwn(event.target.value === "own")}
+                >
+                  <option value="current">当前范围：{compactScopeLabel}</option>
+                  <option value="own">全部本人记录</option>
+                </select>
+              </label>
+            )}
+          </div>
+          {showFacets && (
+            <SearchFacetPanel
+              filters={facets}
+              onChange={setFacets}
+              scopeFilter={allOwn ? buildMemoCreatorFilter(currentUser?.name ?? "") : memoFilter}
+            />
+          )}
+          {showFacets && (
+            <div className="flex justify-end border-t p-3">
+              <Button type="submit" disabled={Boolean(searchDateError(facets))}>
+                应用筛选
               </Button>
             </div>
           )}

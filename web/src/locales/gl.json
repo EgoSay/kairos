@@ -180,6 +180,9 @@
       "transcribing": "Transcribindo..."
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Bloque de código",
       "heading": "Título",
       "paragraph": "Parágrafo",
@@ -344,6 +347,7 @@
     "back-to-top": "Volver arriba"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "Token de acceso copiado ao portapapeis",
       "access-token-deleted": "Eliminouse o token de acceso `{{description}}`",

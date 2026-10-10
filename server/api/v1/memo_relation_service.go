@@ -40,7 +40,7 @@ func (s *APIV1Service) SetMemoRelations(ctx context.Context, request *v1pb.SetMe
 		return nil, err
 	}
 	updatedTsSec := time.Now().Unix()
-	if err := s.applyMemoMutation(ctx, memo, nil, &store.UpdateMemo{ID: memo.ID, UpdatedTs: &updatedTsSec}, nil, &relations); err != nil {
+	if err := s.applyMemoMutation(ctx, memo, nil, &store.UpdateMemo{ID: memo.ID, UpdatedTs: &updatedTsSec}, nil, &relations, false); err != nil {
 		return nil, err
 	}
 	_, _, memoMessage, err := s.buildUpdatedMemoState(ctx, memo.ID)
@@ -53,6 +53,16 @@ func (s *APIV1Service) SetMemoRelations(ctx context.Context, request *v1pb.SetMe
 }
 
 func (s *APIV1Service) prepareMemoRelations(ctx context.Context, memo *store.Memo, relations []*v1pb.MemoRelation) ([]*store.MemoRelation, error) {
+	return s.prepareMemoRelationsWithAvailability(ctx, memo, relations, false)
+}
+
+// Saving text may drop unavailable optional targets; malformed relations still fail.
+// The database repeats availability checks before committing and returns only saved links.
+func (s *APIV1Service) prepareMemoRelationsForSave(ctx context.Context, memo *store.Memo, relations []*v1pb.MemoRelation) ([]*store.MemoRelation, error) {
+	return s.prepareMemoRelationsWithAvailability(ctx, memo, relations, true)
+}
+
+func (s *APIV1Service) prepareMemoRelationsWithAvailability(ctx context.Context, memo *store.Memo, relations []*v1pb.MemoRelation, skipUnavailable bool) ([]*store.MemoRelation, error) {
 	prepared := make([]*store.MemoRelation, 0, len(relations))
 	seenRelatedMemoIDs := make(map[int32]struct{}, len(relations))
 	for _, relation := range relations {
@@ -77,14 +87,20 @@ func (s *APIV1Service) prepareMemoRelations(ctx context.Context, memo *store.Mem
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid related memo name: %v", err)
 		}
-		relatedMemo, err := s.Store.GetMemo(ctx, &store.FindMemo{UID: &relatedMemoUID})
+		relatedMemo, err := s.Store.GetMemo(ctx, &store.FindMemo{UID: &relatedMemoUID, ExcludeTrashed: true})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to get related memo")
 		}
 		if relatedMemo == nil {
+			if skipUnavailable {
+				continue
+			}
 			return nil, status.Errorf(codes.NotFound, "related memo not found")
 		}
 		if err := s.checkMemoReadAccess(ctx, relatedMemo); err != nil {
+			if skipUnavailable && (status.Code(err) == codes.NotFound || status.Code(err) == codes.PermissionDenied) {
+				continue
+			}
 			return nil, err
 		}
 		if _, ok := seenRelatedMemoIDs[relatedMemo.ID]; ok {

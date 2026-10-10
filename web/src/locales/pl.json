@@ -162,6 +162,9 @@
       "task-list": "Lista zadań",
       "link": "Link",
       "more": "Więcej",
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Blok kodu",
       "strikethrough": "Przekreślenie"
     },
@@ -344,6 +347,7 @@
     "back-to-top": "Powrót na górę"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "Token dostępu skopiowany do schowka",
       "access-token-deleted": "Token dostępu `{{description}}` został usunięty",

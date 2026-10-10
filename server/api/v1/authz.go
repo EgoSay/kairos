@@ -17,6 +17,9 @@ import (
 // (Connect: CodeUnauthenticated, gRPC-Gateway: HTTP 401).
 var ErrUnauthenticated = errors.New("authentication required")
 
+// ErrReadOnlyCredential rejects operations outside the Agent's read contract.
+var ErrReadOnlyCredential = errors.New("Agent credential permits owner-only journal reads")
+
 // Authorizer is the single source of truth for method-level access control.
 //
 // It authenticates a request from its Authorization header and decides whether the
@@ -91,13 +94,22 @@ func (a *Authorizer) Authenticate(ctx context.Context, authHeader string) *auth.
 // permitted and ErrUnauthenticated otherwise.
 //
 // Policy:
-//   - Authenticated caller (access token or PAT): always permitted here.
+//   - Restricted Agent PAT: only the explicit owner-read allowlist.
+//   - Other authenticated caller (access token or PAT): permitted here.
 //   - Anonymous + protected method: denied.
 //   - Anonymous + auth-bootstrap method: permitted on every instance.
 //   - Anonymous + other public method: permitted only when the stored access mode
 //     is PUBLIC.
 func (a *Authorizer) CheckAccess(ctx context.Context, procedure string, result *auth.AuthResult) error {
 	if result != nil {
+		if result.ReadOnly {
+			switch procedure {
+			case "/memos.api.v1.AuthService/GetCurrentUser", "/memos.api.v1.JournalService/AgentRead":
+				return nil
+			default:
+				return ErrReadOnlyCredential
+			}
+		}
 		return nil
 	}
 	if !IsPublicMethod(procedure) {

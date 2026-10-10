@@ -218,6 +218,9 @@
       "trigger": "Nahrajte zvuk"
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Blok kódu",
       "link": "Odkaz",
       "heading": "Nadpis",
@@ -382,6 +385,7 @@
     "back-to-top": "Späť na začiatok"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "Prístupový token bol skopírovaný do schránky",
       "access-token-deleted": "Prístupový token `{{description}}` bol odstránený",

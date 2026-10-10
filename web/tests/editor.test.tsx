@@ -1,7 +1,9 @@
+import { EditorView } from "@codemirror/view";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import Editor from "@/components/MemoEditor/Editor";
+import { livePreview } from "@/components/MemoEditor/Editor/livePreview";
 import type { EditorController } from "@/components/MemoEditor/types/editorController";
 
 const queries = vi.hoisted(() => ({
@@ -139,5 +141,34 @@ describe("Editor", () => {
 
     expect(container.querySelector(".cm-content")).toHaveAttribute("aria-placeholder", "有什么想法？");
     expect(container.querySelector(".cm-placeholder")).toHaveTextContent("有什么想法？");
+  });
+  it("defers visual/source switching until composition ends and keeps selection and original content", async () => {
+    const ref = createRef<EditorController>();
+    const onChange = vi.fn();
+    const props = {
+      ref,
+      className: "x",
+      initialContent: "中文草稿\n\n**旧 Markdown**",
+      placeholder: "memo",
+      onContentChange: onChange,
+      onFiles: vi.fn(),
+      onSubmit: vi.fn(),
+    };
+    const { container, rerender } = render(<Editor {...props} />);
+    const content = container.querySelector<HTMLElement>(".cm-content")!;
+    const view = EditorView.findFromDOM(content)!;
+    view.dispatch({ selection: { anchor: 1, head: 3 } });
+    fireEvent.compositionStart(content);
+    rerender(<Editor {...props} sourceMode />);
+    expect(view.state.field(livePreview, false)).toBeDefined();
+    fireEvent.compositionEnd(content);
+    await waitFor(() => expect(view.state.field(livePreview, false)).toBeUndefined());
+    expect(view.state.selection.main.anchor).toBe(1);
+    expect(view.state.selection.main.head).toBe(3);
+    expect(ref.current?.getMarkdown()).toBe(props.initialContent);
+    rerender(<Editor {...props} />);
+    expect(view.state.field(livePreview, false)).toBeDefined();
+    expect(ref.current?.getMarkdown()).toBe(props.initialContent);
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

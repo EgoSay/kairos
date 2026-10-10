@@ -1,7 +1,9 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 import dayjs from "dayjs";
 import { useMemo } from "react";
+import { useMemoFilterContext } from "@/contexts/MemoFilterContext";
 import { type MemoTimeBasis, useView } from "@/contexts/ViewContext";
+import { searchIncludesArchived } from "@/lib/memo-search";
 import { State } from "@/types/proto/api/v1/common_pb";
 import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
 
@@ -37,6 +39,8 @@ export const hoistMemoToFront = (memos: Memo[], name: string | null): Memo[] => 
 export const useMemoSorting = (options: UseMemoSortingOptions = {}): UseMemoSortingResult => {
   const { pinnedFirst = false, state = State.NORMAL } = options;
   const { orderByTimeAsc, timeBasis } = useView();
+  const { filters } = useMemoFilterContext();
+  const includeArchived = state !== State.ARCHIVED && searchIncludesArchived(filters);
 
   // Generate orderBy string for API
   const orderBy = useMemo(() => {
@@ -48,11 +52,16 @@ export const useMemoSorting = (options: UseMemoSortingOptions = {}): UseMemoSort
   const listSort = useMemo(() => {
     return (memos: Memo[]): Memo[] => {
       return memos
-        .filter((memo) => memo.state === state)
+        .filter((memo) => memo.state === state || (includeArchived && memo.state === State.ARCHIVED))
         .sort((a, b) => {
           // First, sort by pinned status if enabled
-          if (pinnedFirst && a.pinned !== b.pinned) {
-            return b.pinned ? 1 : -1;
+          const aPinned = a.pinned && a.state === State.NORMAL;
+          const bPinned = b.pinned && b.state === State.NORMAL;
+          if (pinnedFirst && aPinned !== bPinned) {
+            return bPinned ? 1 : -1;
+          }
+          if (pinnedFirst && aPinned && bPinned) {
+            return Number((b.createTime?.seconds ?? 0n) - (a.createTime?.seconds ?? 0n));
           }
 
           // Then sort by the selected time field.
@@ -61,7 +70,7 @@ export const useMemoSorting = (options: UseMemoSortingOptions = {}): UseMemoSort
           return orderByTimeAsc ? dayjs(aTime).unix() - dayjs(bTime).unix() : dayjs(bTime).unix() - dayjs(aTime).unix();
         });
     };
-  }, [pinnedFirst, state, orderByTimeAsc, timeBasis]);
+  }, [pinnedFirst, state, orderByTimeAsc, timeBasis, includeArchived]);
 
   return { listSort, orderBy };
 };

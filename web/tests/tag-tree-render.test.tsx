@@ -97,11 +97,8 @@ describe("TagTree rendering", () => {
     expect(branchLabelButton).toHaveClass("text-start");
     expect(branchLabelButton.querySelector("svg")).not.toBeInTheDocument();
 
-    // A branch reads as a plain tag at rest: the slot holds the # mark and only swaps in the
-    // chevron while the row is hovered or holds focus.
-    const [restMark, hoverChevron] = Array.from(disclosure.querySelectorAll("svg"));
-    expect(restMark).toHaveClass("group-hover:hidden", "group-has-[:focus-visible]:hidden");
-    expect(hoverChevron).toHaveClass("hidden", "group-hover:block", "group-has-[:focus-visible]:block");
+    // Disclosure stays visible on touch screens without hover.
+    expect(disclosure.querySelector("svg")).not.toHaveClass("hidden");
 
     fireEvent.click(disclosure);
     expect(onTagClick).not.toHaveBeenCalled();
@@ -118,21 +115,17 @@ describe("TagTree rendering", () => {
     }
   });
 
-  it("gives a structural row one control that both labels and toggles it", () => {
-    render(<TagTree tagAmounts={[["personal/travel/singapore", 1]]} scope="home" onTagClick={vi.fn()} />);
-
-    // The row is the disclosure, so it is the only tab stop on that line.
-    const personalDisclosure = screen.getByLabelText(/common\.(expand|collapse) personal$/);
-    expect(personalDisclosure).toHaveAttribute("aria-expanded", "false");
-    const personalLabel = screen.getByText("personal");
-    const chevron = personalDisclosure.querySelector("svg") as SVGElement;
-    expect(chevron.compareDocumentPosition(personalLabel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-
-    fireEvent.click(personalDisclosure);
+  it("lets structural parents filter independently of disclosure", () => {
+    const onTagClick = vi.fn();
+    render(<TagTree tagAmounts={[["personal/travel/singapore", 1]]} scope="home" onTagClick={onTagClick} />);
+    const disclosure = screen.getByLabelText("common.expand #personal");
+    fireEvent.click(screen.getByRole("button", { name: "#personal" }));
+    expect(onTagClick).toHaveBeenCalledWith("personal");
+    expect(screen.queryByText("travel")).not.toBeInTheDocument();
+    fireEvent.click(disclosure);
+    expect(onTagClick).toHaveBeenCalledTimes(1);
     expect(screen.getByText("travel")).toBeVisible();
-    expect(screen.getByLabelText("common.collapse personal")).toHaveAttribute("aria-expanded", "true");
-
-    fireEvent.click(screen.getByText("travel").closest("button") as HTMLButtonElement);
+    fireEvent.click(screen.getByLabelText("common.expand #personal/travel"));
     expect(screen.getByText("singapore")).toBeVisible();
   });
 

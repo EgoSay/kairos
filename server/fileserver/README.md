@@ -9,12 +9,15 @@ GET /file/attachments/:uid[/:filename]   # attachment binary
     ?thumbnail=true                      # JPEG thumbnail for supported image types
     ?motion=true                         # embedded motion-photo video clip
     ?share_token={uid}                   # access via a memo share link
+    ?trash=true                          # explicit owner-only recovery preview
 GET /file/users/:identifier/avatar       # user avatar (by username)
 ```
 
 ## Authentication
 
 Handled by `server/auth` (see [authenticator.go](../auth/authenticator.go) and [token.go](../auth/token.go) for the constants and token formats). Priority: `Authorization: Bearer` header (access token or personal access token) first, then the refresh token cookie. See `getCurrentUser` in [fileserver.go](fileserver.go).
+
+Dedicated `kairos_agent_` credentials only authorize journal text reads. Every native file route rejects this prefix before public/share access or cookie fallback, including expired, revoked, and invalid credentials. This restriction covers attachment originals, thumbnails, motion clips, and avatars; ordinary PAT/session behavior is unchanged.
 
 ## Authorization
 
@@ -24,7 +27,8 @@ Attachment access follows memo visibility, evaluated by `core/access.CheckMemoRe
 - Protected memo: any authenticated user
 - Private memo: creator only
 - Valid `share_token`: grants access to that memo's attachments
-- Unlinked attachment (no memo): creator or admin only
+- Unlinked attachment (no memo): creator only
+- Trashed record: ordinary/share URLs remain unavailable. An explicit `trash=true` request requires the active record owner and cannot combine a share token; bytes and thumbnails remain private and non-cacheable.
 
 Avatars are public on instances that allow anonymous access; private instances require authentication.
 
@@ -34,7 +38,7 @@ Avatars are public on instances that allow anonymous access; private instances r
 - **Thumbnails** are generated at max 600px, cached in `{data_dir}/.thumbnail_cache/`, with a semaphore capping concurrent generation. Images with HDR/wide-gamut metadata are served as originals, since re-encoding would strip it.
 - **Motion photos** have their embedded video extracted and cached in `{data_dir}/.motion_cache/`.
 - **XSS prevention**: script-capable MIME types are rewritten to `application/octet-stream`, non-media files get `Content-Disposition: attachment`, and all responses carry `X-Content-Type-Options: nosniff` plus a restrictive `Content-Security-Policy`.
-- **Caching**: public attachments get `public, no-cache`; private ones `private, no-store`; avatars and thumbnails `public, max-age=3600`.
+- **Caching**: public attachments get `public, no-cache`; private ones `private, no-store`; avatars `public, max-age=3600`; thumbnails retain their parent attachment’s access/cache policy.
 
 ## Testing
 

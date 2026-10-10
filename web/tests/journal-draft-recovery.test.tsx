@@ -7,6 +7,7 @@ import { RecordConflict } from "@/components/MemoEditor/components/RecordConflic
 import { useDurableDraft } from "@/components/MemoEditor/hooks/useDurableDraft";
 import { createInitialState, EditorProvider, type EditorState, useEditorContext } from "@/components/MemoEditor/state";
 import { type JournalDraft, journalDrafts } from "@/lib/journal-drafts";
+import { AttachmentSchema } from "@/types/proto/api/v1/attachment_service_pb";
 import { MemoSchema } from "@/types/proto/api/v1/memo_service_pb";
 
 const service = vi.hoisted(() => ({ save: vi.fn(), getMemo: vi.fn() }));
@@ -51,6 +52,55 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("durable draft recovery", () => {
+  it("resolves persisted inline image positions before syncing an offline pending record", async () => {
+    URL.createObjectURL = vi.fn(() => "blob:photo");
+    URL.revokeObjectURL = vi.fn();
+    const entry = draft("pending:image", "pending", "前后");
+    entry.state.localFiles = [
+      {
+        file: new File(["photo"], "photo.png", { type: "image/png" }),
+        clientId: "photo",
+        inlineUpload: {
+          id: "job",
+          position: 1,
+          representative: true,
+          attachment: create(AttachmentSchema, { name: "attachments/photo", filename: "photo.png", type: "image/png" }),
+        },
+      },
+    ];
+    vi.mocked(journalDrafts.pending).mockResolvedValue([entry]);
+    vi.mocked(journalDrafts.list).mockResolvedValue([entry]);
+    mount(<PendingRecords owner="users/alice" draftKey="home" />);
+    await waitFor(() => expect(service.save).toHaveBeenCalledOnce());
+    const saved = service.save.mock.calls[0][0];
+    expect(saved.content).toBe("前\n\n![photo](/file/attachments/photo)\n\n后");
+    expect(saved.localFiles).toEqual([]);
+    expect(saved.ui.pendingInlineImageInsertions).toBe(0);
+    expect(saved.metadata.attachments.map((item: { name: string }) => item.name)).toEqual(["attachments/photo"]);
+  });
+
+  it("cancels pending synchronization on owner teardown without deleting or advancing records", async () => {
+    const first = draft("pending:first", "pending", "first");
+    const second = draft("pending:second", "pending", "second");
+    let complete!: () => void;
+    service.save.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          complete = () => resolve({ memoName: "memos/first" });
+        }),
+    );
+    vi.mocked(journalDrafts.pending).mockResolvedValue([first, second]);
+    vi.mocked(journalDrafts.list).mockResolvedValue([first, second]);
+    const mounted = mount(<PendingRecords owner="users/alice" draftKey="home" />);
+    await waitFor(() => expect(service.save).toHaveBeenCalledTimes(1));
+    const signal = service.save.mock.calls[0][2] as AbortSignal;
+    mounted.unmount();
+    expect(signal.aborted).toBe(true);
+    await act(async () => complete());
+    expect(service.save).toHaveBeenCalledTimes(1);
+    expect(journalDrafts.remove).not.toHaveBeenCalled();
+  });
+
   it("retains the edit target and removes a deliberately cleared draft", async () => {
     const baseline = create(MemoSchema, { name: "memos/existing", content: "old" });
     mount(null, { ...createInitialState(), content: "local revision", baselineMemo: baseline }, true);

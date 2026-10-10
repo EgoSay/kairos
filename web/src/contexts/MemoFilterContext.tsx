@@ -4,6 +4,17 @@ import { useLocation, useSearchParams } from "react-router-dom";
 
 export type FilterFactor =
   | "tagSearch"
+  | "tagExclude"
+  | "tagMatch"
+  | "tagExact"
+  | "untagged"
+  | "dateStart"
+  | "dateEnd"
+  | "partition"
+  | "includeArchived"
+  | "property.hasImage"
+  | "property.hasAudio"
+  | "property.hasAttachment"
   | "visibility"
   | "contentSearch"
   | "celSearch"

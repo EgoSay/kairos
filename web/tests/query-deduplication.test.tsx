@@ -152,10 +152,12 @@ describe("query deduplication", () => {
     expect(clients.getUser).not.toHaveBeenCalled();
   });
 
-  it("reuses memo list data and canonical detail queries when resolving relations", async () => {
+  it("revalidates list snippets while deduplicating canonical relation detail requests", async () => {
     const cachedMemo = { name: "memos/cached", snippet: "Already in the list" } as Memo;
     const missingMemo = { name: "memos/missing", snippet: "Fetched once" } as Memo;
-    clients.getMemo.mockResolvedValue(missingMemo);
+    clients.getMemo.mockImplementation(async ({ name }) =>
+      name === cachedMemo.name ? { ...cachedMemo, snippet: "Freshly checked" } : missingMemo,
+    );
 
     const queryClient = createQueryClient();
     queryClient.setQueryData(memoKeys.list({}), {
@@ -171,13 +173,15 @@ describe("query deduplication", () => {
       { wrapper: createWrapper(queryClient) },
     );
 
+    expect(result.current.first[cachedMemo.name]).toBeUndefined();
     await waitFor(() => {
-      expect(result.current.first[cachedMemo.name]?.snippet).toBe(cachedMemo.snippet);
+      expect(result.current.first[cachedMemo.name]?.snippet).toBe("Freshly checked");
       expect(result.current.first[missingMemo.name]?.snippet).toBe(missingMemo.snippet);
       expect(result.current.second[missingMemo.name]?.snippet).toBe(missingMemo.snippet);
     });
 
-    expect(clients.getMemo).toHaveBeenCalledTimes(1);
+    expect(clients.getMemo).toHaveBeenCalledTimes(2);
+    expect(clients.getMemo).toHaveBeenCalledWith({ name: cachedMemo.name }, { signal: expect.any(AbortSignal) });
     expect(clients.getMemo).toHaveBeenCalledWith({ name: missingMemo.name }, { signal: expect.any(AbortSignal) });
   });
 });

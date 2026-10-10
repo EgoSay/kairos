@@ -109,6 +109,8 @@ message PersonalAccessTokensUserSetting {
     google.protobuf.Timestamp created_at = 5;
     // When the token was last used
     google.protobuf.Timestamp last_used_at = 6;
+    // Restricted Agent credential; absent/false preserves existing PAT behavior.
+    bool read_only = 7;
   }
   repeated PersonalAccessToken tokens = 1;
 }

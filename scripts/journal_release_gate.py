@@ -8,7 +8,7 @@ deploys a fixed digest through its API; no deployment branch is involved.
 import fcntl, hashlib, json, os, pathlib, re, shutil, sqlite3, subprocess, sys, time, signal
 from contextlib import closing
 from journal_snapshot import snapshot, verify
-from journal_cloud_backup import run as backup
+from journal_cloud_backup import atomic_json, run as backup
 from journal_dokploy import Dokploy
 ROOT = pathlib.Path('/var/lib/memos-release')
 CONFIG = pathlib.Path('/etc/memos-backup/config.json')
@@ -18,8 +18,16 @@ LEGACY_IMAGE_REPOSITORY = 'ghcr.io/egosay/memos-journal'
 # Keep existing snapshots and previously deployed image identities usable for recovery.
 PREVIOUS_REPOSITORIES = (IMAGE_REPOSITORY, LEGACY_IMAGE_REPOSITORY)
 
+class RollbackBlocked(RuntimeError):
+    """Recovery needs inspection because automatic replacement is unsafe."""
+
 def command(*args):
     return subprocess.run(args, check=True, capture_output=True, text=True, timeout=60).stdout
+
+def resume_backup_schedule(pending):
+    # Release downtime must not silently undo an administrator's R08 pause.
+    # Receipts from before configurable scheduling used an always-on timer.
+    command('systemctl', 'start' if pending.get('backupEnabled', True) else 'stop', 'memos-backup.timer')
 
 def fingerprint(database):
     digest = hashlib.sha256()
@@ -67,9 +75,11 @@ def prepare(release):
     if (ROOT / 'pending.json').exists():
         raise RuntimeError('another release awaits confirmation')
     # API access, application identity and template match are checked before downtime.
-    dokploy = Dokploy().prepare(release, image)
+    client = Dokploy()
+    dokploy = client.prepare(release, image)
+    client.prepare_rollback(dokploy, previous, image, ROOT / 'rollback.yaml')
     stage = ROOT / ('before-' + release['commit'] + '-' + str(int(time.time())))
-    pending = {**release, 'status': 'preparing', 'previousImage': image, 'source': str(source), 'stage': str(stage), 'preparedTs': int(time.time()), 'dokploy': dokploy, 'previousVersion': config['instanceVersion']}
+    pending = {**release, 'status': 'preparing', 'previousImage': image, 'source': str(source), 'stage': str(stage), 'preparedTs': int(time.time()), 'dokploy': dokploy, 'previousVersion': config['instanceVersion'], 'backupEnabled': config.get('enabled', True)}
     save_pending(pending)
     command('systemd-run', '--collect', '--unit=memos-release-rollback', '--on-active=8m', '/usr/bin/python3', '/opt/memos-backup/journal_release_gate.py', 'rollback')
 
@@ -81,23 +91,20 @@ def prepare(release):
     try:
         wait_for_backup()
         command('docker', 'stop', '-t', '30', CONTAINER)
-        report = snapshot(source, stage, pathlib.Path(config['logicalRoot']))
+        report = snapshot(source, stage, pathlib.Path(config['logicalRoot']), config.get('storageHelper'))
         receipt = backup(config)
         if receipt.get('status') != 'success':
             raise RuntimeError('pre-upgrade backup not completed: ' + receipt.get('status', 'unknown'))
-        pending = {**release, 'status': 'prepared', 'previousImage': image, 'source': str(source), 'stage': str(stage), 'fingerprint': fingerprint(stage / 'data/memos_prod.db'), 'snapshotId': receipt['snapshotId'], 'preparedTs': int(time.time()), 'dokploy': dokploy, 'previousVersion': config['instanceVersion']}
-        network = next((n for n in previous['NetworkSettings']['Networks'] if n.startswith('memos-journal-ci55cj_')))
-        compose = f'services:\n  memos:\n    image: {image}\n    restart: unless-stopped\n    init: true\n    mem_limit: 384m\n    cpus: 0.5\n    environment:\n      TZ: Asia/Shanghai\n      MEMOS_PORT: "5230"\n      MEMOS_DATA: /var/opt/memos\n      MEMOS_DRIVER: sqlite\n      MEMOS_INSTANCE_URL: https://memos.cjwdream.top\n    volumes:\n      - memos-data:/var/opt/memos\n    healthcheck:\n      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5230/healthz"]\n      interval: 10s\n      timeout: 5s\n      retries: 6\nvolumes:\n  memos-data:\n    external: true\n    name: memos-journal-ci55cj_memos-data\nnetworks:\n  default:\n    external: true\n    name: {network}\n'
-        (ROOT / 'rollback.yaml').write_text(compose)
+        pending = {**pending, 'status': 'prepared', 'fingerprint': fingerprint(stage / 'data/memos_prod.db'), 'snapshotId': receipt['snapshotId'], 'preparedTs': int(time.time())}
         save_pending(pending)
         # Give deployment its full recovery window after a potentially slow backup.
         command('systemctl', 'restart', 'memos-release-rollback.timer')
         return {'status': 'prepared', 'commit': release['commit'], 'snapshotId': receipt['snapshotId']}
     except Exception:
         command('docker', 'start', CONTAINER)
+        resume_backup_schedule(pending)
         command('systemctl', 'stop', 'memos-release-rollback.timer')
         (ROOT / 'pending.json').unlink(missing_ok=True)
-        command('systemctl', 'start', 'memos-backup.timer')
         raise
     finally:
         signal.alarm(0)
@@ -143,77 +150,140 @@ def confirm():
     profile = json.loads(command('curl', '--fail', '--silent', 'http://' + address + ':5230/api/v1/instance/profile'))
     if profile.get('commit') != pending['commit'] or profile.get('needsSetup') or profile.get('accessMode') != 'INSTANCE_ACCESS_MODE_PRIVATE':
         raise RuntimeError('release identity or private mode mismatch')
-    command('systemctl', 'stop', 'memos-release-rollback.timer')
+    # A failed schedule restart must leave both pending state and the watchdog
+    # intact. CI can retry confirmation or use the release-bound rollback.
+    resume_backup_schedule(pending)
     config = json.loads(CONFIG.read_text())
     config['instanceVersion'] = pending['commit']
-    CONFIG.write_text(json.dumps(config))
-    CONFIG.chmod(384)
-    (ROOT / 'last-deployment.json').write_text(json.dumps({**pending, 'status': 'confirmed', 'confirmedTs': int(time.time())}))
+    atomic_json(CONFIG, config)
+    atomic_json(ROOT / 'last-deployment.json', {**pending, 'status': 'confirmed', 'confirmedTs': int(time.time())})
+    command('systemctl', 'stop', 'memos-release-rollback.timer')
     (ROOT / 'pending.json').unlink()
-    command('systemctl', 'start', 'memos-backup.timer')
     for old in sorted(ROOT.glob('before-*'), key=lambda p: p.stat().st_mtime, reverse=True)[3:]:
         if old.is_dir():
             shutil.rmtree(old)
     return {'status': 'confirmed', 'commit': pending['commit'], 'preUpgradeSnapshot': pending['snapshotId']}
 
-def rollback():
+def container_exists():
+    # A successful, empty list means absence. Daemon/permission failures must
+    # propagate; matching human-readable Docker error strings is not reliable.
+    return bool(command('docker', 'container', 'ls', '--all', '--filter',
+                        'name=^/' + CONTAINER + '$', '--format', '{{.ID}}').strip())
+
+def stop_for_rollback():
+    if not container_exists():
+        return False
+    try:
+        command('docker', 'stop', '-t', '30', CONTAINER)
+    except subprocess.CalledProcessError:
+        # Compose can remove the container between the query and stop. Only a
+        # second successful query proving absence permits recovery to continue.
+        if container_exists():
+            raise
+        return False
+    return True
+
+def matches_release(actual, expected):
+    return (all(actual.get(key) == expected.get(key) for key in ('commit', 'digest'))
+            and actual.get('repository', LEGACY_IMAGE_REPOSITORY) == expected.get('repository', LEGACY_IMAGE_REPOSITORY)
+            and ('composeSha256' not in expected or actual.get('composeSha256') == expected['composeSha256']))
+
+def completed_rollback(release):
+    receipt_file = ROOT / 'last-rollback.json'
+    if not receipt_file.exists():
+        raise RuntimeError('no rollback receipt for requested release')
+    receipt = json.loads(receipt_file.read_text())
+    if receipt.get('status') != 'rolled-back' or not matches_release(receipt, release):
+        raise RuntimeError('no matching rollback receipt for requested release')
+    # A matching historical receipt is not proof of the current declaration or
+    # running service. Never consume it after a different release or manual edit.
+    if 'dokploy' not in receipt:
+        raise RuntimeError('rollback receipt has no verified Dokploy declaration')
+    Dokploy().check(receipt['dokploy'], receipt['dokploy']['previousCompose'])
+    repository, digest = receipt['previousImage'].split('@')
+    wait_for_release({'repository': repository, 'digest': digest})
+    return {'status': 'already-rolled-back', 'commit': receipt['commit'],
+            'image': receipt['previousImage'], 'completedTs': receipt['completedTs']}
+
+def rollback(release=None):
+    if release is not None:
+        validate(release)
     file = ROOT / 'pending.json'
     if not file.exists():
-        return {'status': 'no pending release'}
+        return completed_rollback(release) if release is not None else {'status': 'no pending release'}
     pending = json.loads(file.read_text())
+    if release is not None and not matches_release(pending, release):
+        raise RuntimeError('rollback release identity differs from pending release')
+    try:
+        return rollback_pending(pending)
+    except Exception as error:
+        # Resuming the online backup timer does not waive its own consistency
+        # checks. Try even if Docker, the API or health verification failed,
+        # without allowing a secondary timer error to hide the original cause.
+        backup_error = None
+        try:
+            resume_backup_schedule(pending)
+        except Exception as timer_error:
+            backup_error = type(timer_error).__name__ + ': ' + str(timer_error)
+        (ROOT / 'last-rollback-attempt.json').write_text(json.dumps({
+            'commit': pending.get('commit'), 'digest': pending.get('digest'),
+            'status': 'blocked' if isinstance(error, RollbackBlocked) else 'failed',
+            'requiresIntervention': True, 'errorType': type(error).__name__,
+            'message': str(error), 'backupResumeError': backup_error, 'attemptTs': int(time.time()),
+        }))
+        raise
+
+def rollback_pending(pending):
+    file = ROOT / 'pending.json'
     if pending.get('status') == 'preparing':
         command('docker', 'start', CONTAINER)
+        resume_backup_schedule(pending)
         command('systemctl', 'stop', 'memos-release-rollback.timer')
         file.unlink()
-        command('systemctl', 'start', 'memos-backup.timer')
         return {'status': 'preparation-aborted', 'previousImage': pending['previousImage']}
     source = pathlib.Path(pending['source'])
     stage = pathlib.Path(pending['stage'])
     verify(stage)
     if pending.get('deploymentTitle'):
-        try:
-            Dokploy().wait_terminal(pending['deploymentTitle'])
-        except Exception:
-            command('systemctl', 'start', 'memos-backup.timer')
-            raise
-    command('docker', 'stop', '-t', '30', CONTAINER)
+        Dokploy().wait_terminal(pending['deploymentTitle'])
+    stopped = stop_for_rollback()
     # A missing or incompatible table must preserve data and restore availability too.
     try:
         unchanged = fingerprint(source / 'memos_prod.db') == pending['fingerprint']
     except Exception:
-        command('docker', 'start', CONTAINER)
-        command('systemctl', 'start', 'memos-backup.timer')
-        raise RuntimeError('rollback blocked: unreadable data shape preserved')
+        if stopped:
+            command('docker', 'start', CONTAINER)
+        raise RollbackBlocked('rollback blocked: unreadable data shape preserved; inspect before manual recovery')
     # Preserve writes or transformations accepted by the new version.
     if not unchanged:
-        command('docker', 'start', CONTAINER)
-        command('systemctl', 'start', 'memos-backup.timer')
-        raise RuntimeError('rollback blocked: new content or changed data shape preserved')
+        if stopped:
+            command('docker', 'start', CONTAINER)
+        raise RollbackBlocked('rollback blocked: new content or changed data shape preserved; inspect before manual recovery')
     if 'dokploy' in pending:
         try:
             Dokploy().restore(pending['dokploy'])
         except Exception:
-            command('docker', 'start', CONTAINER)
-            command('systemctl', 'start', 'memos-backup.timer')
+            if stopped:
+                command('docker', 'start', CONTAINER)
             raise
-    for p in source.iterdir():
-        if p.name.startswith('memos_prod.db'):
-            p.unlink()
-    shutil.copy2(stage / 'data/memos_prod.db', source / 'memos_prod.db')
-    os.chown(source / 'memos_prod.db', 10001, 10001)
+    # The logical fingerprint has already proved that the live SQLite database
+    # exactly matches the pre-release state. Keep that database and its WAL in
+    # place: replacing identical data creates an unnecessary failure window and
+    # can make an otherwise retryable rollback lose its only live database.
     command('docker', 'compose', '-p', 'memos-journal-ci55cj', '-f', str(ROOT / 'rollback.yaml'), 'up', '-d', '--no-deps', 'memos')
+    repository, digest = pending['previousImage'].split('@')
+    wait_for_release({'repository': repository, 'digest': digest})
     if 'dokploy' in pending:
-        repository, digest = pending['previousImage'].split('@')
-        wait_for_release({'repository': repository, 'digest': digest})
         config = json.loads(CONFIG.read_text())
         config['instanceVersion'] = pending['previousVersion']
-        CONFIG.write_text(json.dumps(config))
-        CONFIG.chmod(0o600)
-    (ROOT / 'last-rollback.json').write_text(json.dumps({**pending, 'status': 'rolled-back', 'completedTs': int(time.time())}))
-    file.unlink()
+        atomic_json(CONFIG, config)
+    resume_backup_schedule(pending)
     command('systemctl', 'stop', 'memos-release-rollback.timer')
-    command('systemctl', 'start', 'memos-backup.timer')
-    return {'status': 'rolled-back', 'image': pending['previousImage']}
+    receipt = ROOT / 'last-rollback.tmp'
+    receipt.write_text(json.dumps({**pending, 'status': 'rolled-back', 'completedTs': int(time.time())}))
+    receipt.replace(ROOT / 'last-rollback.json')
+    file.unlink()
+    return {'status': 'rolled-back', 'commit': pending.get('commit'), 'image': pending['previousImage']}
 
 def main():
     os.umask(63)
@@ -225,7 +295,13 @@ def main():
         # A watchdog firing during confirmation must wait, not lose its one shot.
         watchdog = action == 'rollback' and not os.environ.get('SSH_ORIGINAL_COMMAND')
         fcntl.flock(lock, fcntl.LOCK_EX | (0 if watchdog else fcntl.LOCK_NB))
-        result = prepare(json.loads(sys.stdin.read(1025))) if action == 'prepare' else deploy() if action == 'deploy' else confirm() if action == 'confirm' else rollback()
+        if action == 'rollback':
+            # Restricted SSH callers identify the release they own. The local
+            # watchdog has no stdin and recovers the currently pending release.
+            release = None if watchdog else json.loads(sys.stdin.read(1025))
+            result = rollback(release)
+        else:
+            result = prepare(json.loads(sys.stdin.read(1025))) if action == 'prepare' else deploy() if action == 'deploy' else confirm()
         print(json.dumps(result))
 if __name__ == '__main__':
     try:

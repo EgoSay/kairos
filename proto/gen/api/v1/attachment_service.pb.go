@@ -612,7 +612,9 @@ type Attachment struct {
 	MediaMetadata *MediaMetadata `protobuf:"bytes,10,opt,name=media_metadata,json=mediaMetadata,proto3" json:"media_metadata,omitempty"`
 	// Output only. The user who uploaded this attachment, which may differ from
 	// the creator of the linked memo. Format: users/{user}.
-	Creator       string `protobuf:"bytes,11,opt,name=creator,proto3" json:"creator,omitempty"`
+	Creator string `protobuf:"bytes,11,opt,name=creator,proto3" json:"creator,omitempty"`
+	// Output only. The linked record deletion timestamp, only in the owner trash list.
+	DeleteTime    *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=delete_time,json=deleteTime,proto3" json:"delete_time,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -722,6 +724,13 @@ func (x *Attachment) GetCreator() string {
 		return x.Creator
 	}
 	return ""
+}
+
+func (x *Attachment) GetDeleteTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DeleteTime
+	}
+	return nil
 }
 
 type CreateAttachmentRequest struct {
@@ -1061,7 +1070,9 @@ type ListAttachmentsRequest struct {
 	Filter string `protobuf:"bytes,3,opt,name=filter,proto3" json:"filter,omitempty"`
 	// Optional. The order to sort results by.
 	// Example: "create_time desc" or "filename asc"
-	OrderBy       string `protobuf:"bytes,4,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
+	OrderBy string `protobuf:"bytes,4,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
+	// Optional. List only the caller's trashed record attachments. The default excludes trash.
+	OnlyTrash     bool `protobuf:"varint,7,opt,name=only_trash,json=onlyTrash,proto3" json:"only_trash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1122,6 +1133,13 @@ func (x *ListAttachmentsRequest) GetOrderBy() string {
 		return x.OrderBy
 	}
 	return ""
+}
+
+func (x *ListAttachmentsRequest) GetOnlyTrash() bool {
+	if x != nil {
+		return x.OnlyTrash
+	}
+	return false
 }
 
 type ListAttachmentsResponse struct {
@@ -1422,7 +1440,7 @@ const file_api_v1_attachment_service_proto_rawDesc = "" +
 	"\x10_altitude_meters\"T\n" +
 	"\rVideoMetadata\x12.\n" +
 	"\x10duration_seconds\x18\x01 \x01(\x01H\x00R\x0fdurationSeconds\x88\x01\x01B\x13\n" +
-	"\x11_duration_seconds\"\xbf\x04\n" +
+	"\x11_duration_seconds\"\x81\x05\n" +
 	"\n" +
 	"Attachment\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\bR\x04name\x12@\n" +
@@ -1438,7 +1456,9 @@ const file_api_v1_attachment_service_proto_rawDesc = "" +
 	"\x0emedia_metadata\x18\n" +
 	" \x01(\v2\x1b.memos.api.v1.MediaMetadataB\x06\xe0A\x01\xe0A\x05R\rmediaMetadata\x123\n" +
 	"\acreator\x18\v \x01(\tB\x19\xe0A\x03\xfaA\x13\n" +
-	"\x11memos.api.v1/UserR\acreator:O\xeaAL\n" +
+	"\x11memos.api.v1/UserR\acreator\x12@\n" +
+	"\vdelete_time\x18\f \x01(\v2\x1a.google.protobuf.TimestampB\x03\xe0A\x03R\n" +
+	"deleteTime:O\xeaAL\n" +
 	"\x17memos.api.v1/Attachment\x12\x18attachments/{attachment}*\vattachments2\n" +
 	"attachmentB\a\n" +
 	"\x05_memo\"\x82\x01\n" +
@@ -1467,13 +1487,15 @@ const file_api_v1_attachment_service_proto_rawDesc = "" +
 	"\n" +
 	"attachment\x18\x03 \x01(\v2\x18.memos.api.v1.AttachmentR\n" +
 	"attachment\x12$\n" +
-	"\x0emax_chunk_size\x18\x04 \x01(\x05R\fmaxChunkSize\"\xba\x01\n" +
+	"\x0emax_chunk_size\x18\x04 \x01(\x05R\fmaxChunkSize\"\xde\x01\n" +
 	"\x16ListAttachmentsRequest\x12 \n" +
 	"\tpage_size\x18\x01 \x01(\x05B\x03\xe0A\x01R\bpageSize\x12\"\n" +
 	"\n" +
 	"page_token\x18\x02 \x01(\tB\x03\xe0A\x01R\tpageToken\x12\x1b\n" +
 	"\x06filter\x18\x03 \x01(\tB\x03\xe0A\x01R\x06filter\x12\x1e\n" +
-	"\border_by\x18\x04 \x01(\tB\x03\xe0A\x01R\aorderByJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x05spaceR\n" +
+	"\border_by\x18\x04 \x01(\tB\x03\xe0A\x01R\aorderBy\x12\"\n" +
+	"\n" +
+	"only_trash\x18\a \x01(\bB\x03\xe0A\x01R\tonlyTrashJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x05spaceR\n" +
 	"unassigned\"}\n" +
 	"\x17ListAttachmentsResponse\x12:\n" +
 	"\vattachments\x18\x01 \x03(\v2\x18.memos.api.v1.AttachmentR\vattachments\x12&\n" +
@@ -1562,32 +1584,33 @@ var file_api_v1_attachment_service_proto_depIdxs = []int32{
 	19, // 6: memos.api.v1.Attachment.create_time:type_name -> google.protobuf.Timestamp
 	2,  // 7: memos.api.v1.Attachment.motion_media:type_name -> memos.api.v1.MotionMedia
 	3,  // 8: memos.api.v1.Attachment.media_metadata:type_name -> memos.api.v1.MediaMetadata
-	8,  // 9: memos.api.v1.CreateAttachmentRequest.attachment:type_name -> memos.api.v1.Attachment
-	11, // 10: memos.api.v1.UploadAttachmentRequest.spec:type_name -> memos.api.v1.UploadAttachmentSpec
-	8,  // 11: memos.api.v1.UploadAttachmentSpec.attachment:type_name -> memos.api.v1.Attachment
-	8,  // 12: memos.api.v1.UploadAttachmentResponse.attachment:type_name -> memos.api.v1.Attachment
-	8,  // 13: memos.api.v1.ListAttachmentsResponse.attachments:type_name -> memos.api.v1.Attachment
-	8,  // 14: memos.api.v1.UpdateAttachmentRequest.attachment:type_name -> memos.api.v1.Attachment
-	20, // 15: memos.api.v1.UpdateAttachmentRequest.update_mask:type_name -> google.protobuf.FieldMask
-	9,  // 16: memos.api.v1.AttachmentService.CreateAttachment:input_type -> memos.api.v1.CreateAttachmentRequest
-	10, // 17: memos.api.v1.AttachmentService.UploadAttachment:input_type -> memos.api.v1.UploadAttachmentRequest
-	13, // 18: memos.api.v1.AttachmentService.ListAttachments:input_type -> memos.api.v1.ListAttachmentsRequest
-	15, // 19: memos.api.v1.AttachmentService.GetAttachment:input_type -> memos.api.v1.GetAttachmentRequest
-	16, // 20: memos.api.v1.AttachmentService.UpdateAttachment:input_type -> memos.api.v1.UpdateAttachmentRequest
-	17, // 21: memos.api.v1.AttachmentService.DeleteAttachment:input_type -> memos.api.v1.DeleteAttachmentRequest
-	18, // 22: memos.api.v1.AttachmentService.BatchDeleteAttachments:input_type -> memos.api.v1.BatchDeleteAttachmentsRequest
-	8,  // 23: memos.api.v1.AttachmentService.CreateAttachment:output_type -> memos.api.v1.Attachment
-	12, // 24: memos.api.v1.AttachmentService.UploadAttachment:output_type -> memos.api.v1.UploadAttachmentResponse
-	14, // 25: memos.api.v1.AttachmentService.ListAttachments:output_type -> memos.api.v1.ListAttachmentsResponse
-	8,  // 26: memos.api.v1.AttachmentService.GetAttachment:output_type -> memos.api.v1.Attachment
-	8,  // 27: memos.api.v1.AttachmentService.UpdateAttachment:output_type -> memos.api.v1.Attachment
-	21, // 28: memos.api.v1.AttachmentService.DeleteAttachment:output_type -> google.protobuf.Empty
-	21, // 29: memos.api.v1.AttachmentService.BatchDeleteAttachments:output_type -> google.protobuf.Empty
-	23, // [23:30] is the sub-list for method output_type
-	16, // [16:23] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	19, // 9: memos.api.v1.Attachment.delete_time:type_name -> google.protobuf.Timestamp
+	8,  // 10: memos.api.v1.CreateAttachmentRequest.attachment:type_name -> memos.api.v1.Attachment
+	11, // 11: memos.api.v1.UploadAttachmentRequest.spec:type_name -> memos.api.v1.UploadAttachmentSpec
+	8,  // 12: memos.api.v1.UploadAttachmentSpec.attachment:type_name -> memos.api.v1.Attachment
+	8,  // 13: memos.api.v1.UploadAttachmentResponse.attachment:type_name -> memos.api.v1.Attachment
+	8,  // 14: memos.api.v1.ListAttachmentsResponse.attachments:type_name -> memos.api.v1.Attachment
+	8,  // 15: memos.api.v1.UpdateAttachmentRequest.attachment:type_name -> memos.api.v1.Attachment
+	20, // 16: memos.api.v1.UpdateAttachmentRequest.update_mask:type_name -> google.protobuf.FieldMask
+	9,  // 17: memos.api.v1.AttachmentService.CreateAttachment:input_type -> memos.api.v1.CreateAttachmentRequest
+	10, // 18: memos.api.v1.AttachmentService.UploadAttachment:input_type -> memos.api.v1.UploadAttachmentRequest
+	13, // 19: memos.api.v1.AttachmentService.ListAttachments:input_type -> memos.api.v1.ListAttachmentsRequest
+	15, // 20: memos.api.v1.AttachmentService.GetAttachment:input_type -> memos.api.v1.GetAttachmentRequest
+	16, // 21: memos.api.v1.AttachmentService.UpdateAttachment:input_type -> memos.api.v1.UpdateAttachmentRequest
+	17, // 22: memos.api.v1.AttachmentService.DeleteAttachment:input_type -> memos.api.v1.DeleteAttachmentRequest
+	18, // 23: memos.api.v1.AttachmentService.BatchDeleteAttachments:input_type -> memos.api.v1.BatchDeleteAttachmentsRequest
+	8,  // 24: memos.api.v1.AttachmentService.CreateAttachment:output_type -> memos.api.v1.Attachment
+	12, // 25: memos.api.v1.AttachmentService.UploadAttachment:output_type -> memos.api.v1.UploadAttachmentResponse
+	14, // 26: memos.api.v1.AttachmentService.ListAttachments:output_type -> memos.api.v1.ListAttachmentsResponse
+	8,  // 27: memos.api.v1.AttachmentService.GetAttachment:output_type -> memos.api.v1.Attachment
+	8,  // 28: memos.api.v1.AttachmentService.UpdateAttachment:output_type -> memos.api.v1.Attachment
+	21, // 29: memos.api.v1.AttachmentService.DeleteAttachment:output_type -> google.protobuf.Empty
+	21, // 30: memos.api.v1.AttachmentService.BatchDeleteAttachments:output_type -> google.protobuf.Empty
+	24, // [24:31] is the sub-list for method output_type
+	17, // [17:24] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_attachment_service_proto_init() }

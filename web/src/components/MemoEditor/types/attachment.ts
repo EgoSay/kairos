@@ -21,6 +21,12 @@ export interface AttachmentItem {
 
 export interface LocalFile {
   readonly clientId?: string;
+  readonly inlineUpload?: {
+    readonly id: string;
+    readonly position: number;
+    readonly representative: boolean;
+    readonly attachment?: Attachment;
+  };
   readonly file: File;
   readonly previewUrl: string;
   readonly origin?: "audio_recording" | "upload";

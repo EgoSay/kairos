@@ -25,7 +25,15 @@ const (
 
 	// RefreshTokenIDContextKey stores the refresh token ID.
 	RefreshTokenIDContextKey
+	// ReadOnlyContextKey carries the validated Agent credential restriction.
+	ReadOnlyContextKey
 )
+
+// IsReadOnly reports whether the request uses a restricted Agent credential.
+func IsReadOnly(ctx context.Context) bool {
+	readOnly, ok := ctx.Value(ReadOnlyContextKey).(bool)
+	return ok && readOnly
+}
 
 // GetUserID retrieves the authenticated user's ID from the context.
 // Returns 0 if no user ID is set (unauthenticated request).
@@ -89,6 +97,7 @@ func ApplyToContext(ctx context.Context, result *AuthResult) context.Context {
 	if result == nil {
 		return ctx
 	}
+	ctx = context.WithValue(ctx, ReadOnlyContextKey, result.ReadOnly)
 	if result.Claims != nil {
 		ctx = SetUserClaimsInContext(ctx, result.Claims)
 		ctx = context.WithValue(ctx, UserIDContextKey, result.Claims.UserID)

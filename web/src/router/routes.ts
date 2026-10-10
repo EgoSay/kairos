@@ -26,6 +26,7 @@ export const ROUTES = {
   JOURNAL_SHARES: "/journal/shares",
   JOURNAL_TRASH: "/journal/trash",
   JOURNAL_BACKUP: "/journal/backup",
+  JOURNAL_BACKUP_STATUS: "/journal/backup/status",
 } as const;
 
 /** Router pattern for the calendar: month and day are optional so `/calendar` can redirect. */

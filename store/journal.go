@@ -21,6 +21,13 @@ type JournalDocument struct {
 	UpdatedTs int64           `json:"updatedTs"`
 }
 
+// JournalDocumentMutation checks or writes a document in a record transaction.
+type JournalDocumentMutation struct {
+	Document        *JournalDocument
+	ExpectedVersion int64
+	CheckOnly       bool
+}
+
 // FindJournalDocument bounds queries by owner and resource kind.
 // A nil owner is reserved for trusted background processing.
 type FindJournalDocument struct {
@@ -41,10 +48,17 @@ func (s *Store) ListJournalDocuments(ctx context.Context, find *FindJournalDocum
 
 // PutJournalDocument creates with expectedVersion zero, or updates with a version match.
 func (s *Store) PutJournalDocument(ctx context.Context, doc *JournalDocument, expectedVersion int64) (*JournalDocument, error) {
-	if doc == nil || doc.OwnerID <= 0 || len(doc.Kind) == 0 || len(doc.Kind) > 64 || len(doc.Key) == 0 || len(doc.Key) > 128 || !json.Valid(doc.Payload) || expectedVersion < 0 {
-		return nil, errors.New("invalid journal document")
+	if err := validateJournalDocument(doc, expectedVersion); err != nil {
+		return nil, err
 	}
 	return s.driver.PutJournalDocument(ctx, doc, expectedVersion)
+}
+
+func validateJournalDocument(doc *JournalDocument, expectedVersion int64) error {
+	if doc == nil || doc.OwnerID <= 0 || len(doc.Kind) == 0 || len(doc.Kind) > 64 || len(doc.Key) == 0 || len(doc.Key) > 128 || !json.Valid(doc.Payload) || expectedVersion < 0 {
+		return errors.New("invalid journal document")
+	}
+	return nil
 }
 
 // DeleteJournalDocument deletes a matching version; -1 deliberately ignores version.

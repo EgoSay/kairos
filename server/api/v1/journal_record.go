@@ -490,6 +490,7 @@ func (s *APIV1Service) purgeJournalRevisions(ctx context.Context, owner int32, u
 	if err != nil {
 		return err
 	}
+	originals := map[string]struct{}{}
 	for _, doc := range docs {
 		var revision journalrecord.Revision
 		if err := json.Unmarshal(doc.Payload, &revision); err != nil {
@@ -500,12 +501,14 @@ func (s *APIV1Service) purgeJournalRevisions(ctx context.Context, owner int32, u
 			return err
 		}
 		for _, attachment := range memo.Attachments {
-			originalUID := strings.TrimPrefix(attachment.Name, "attachments/")
-			if path, err := attachmentOriginalPath(s.Profile.Data, originalUID); err == nil {
-				_ = os.Remove(path)
-			}
+			originals[strings.TrimPrefix(attachment.Name, "attachments/")] = struct{}{}
 		}
-		if err := s.Store.DeleteJournalDocument(ctx, owner, "revision", doc.Key, -1); err != nil {
+		if err := s.Store.DeleteJournalDocument(ctx, owner, "revision", doc.Key, doc.Version); err != nil {
+			return err
+		}
+	}
+	for originalUID := range originals {
+		if err := s.removeUnreferencedJournalOriginal(ctx, originalUID); err != nil {
 			return err
 		}
 	}

@@ -1,7 +1,9 @@
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -129,6 +131,83 @@ class DokployTest(unittest.TestCase):
         self.assertEqual(request.full_url, 'http://127.0.0.1:3000/api/compose.one?composeId=existing')
         self.assertEqual(request.get_header('X-api-key'), 'private-test-key')
         self.assertEqual(urlopen.call_args.kwargs['timeout'], 20)
+
+    def rollback_fixture(self):
+        previous = {'Config': {'Labels': {'com.docker.compose.project': dokploy.APP_NAME,
+                                          'com.docker.compose.service': 'memos'},
+                               'Env': ['MEMOS_DATA=/var/opt/memos', 'MEMOS_BACKUP_SOCKET=/run/kairos-backup/agent.sock',
+                                       'LITERAL_SECRET=synthetic$secret=with=equals']},
+                    'Mounts': [{'Type': 'volume', 'Name': 'existing-journal-data', 'Source': '/host/data',
+                                'Destination': '/var/opt/memos', 'RW': True},
+                               {'Type': 'bind', 'Source': '/run/kairos-backup', 'Destination': '/run/kairos-backup', 'RW': False}],
+                    'NetworkSettings': {'Networks': {'existing-network': {}}}}
+        resolved = {'services': {'memos': {'image': self.previous_image, 'restart': 'unless-stopped',
+                                          'environment': {'OLD': 'declared'}, 'init': True, 'mem_limit': '384m',
+                                          'security_opt': ['no-new-privileges:true'],
+                                          'healthcheck': {'test': ['CMD', '/bin/true']},
+                                          'depends_on': {'other': {'condition': 'service_started'}},
+                                          'networks': {'default': {'aliases': ['memos']}},
+                                          'volumes': [{'type': 'volume', 'source': 'data', 'target': '/var/opt/memos'},
+                                                      {'type': 'bind', 'source': '/old/socket', 'target': '/run/kairos-backup'}]},
+                                  'other': {'image': 'synthetic:other', 'environment': {'UNRELATED_SECRET': 'do-not-copy'}}},
+                    'volumes': {'data': {'name': 'declared-data'}}, 'networks': {'default': {'name': 'existing-network'}}}
+        return previous, resolved
+
+    def test_rollback_uses_previous_service_and_actual_environment_mounts_networks(self):
+        previous, resolved = self.rollback_fixture()
+        target = self.root / 'rollback.yaml'; state = {'previousCompose': self.previous}
+        def render(args, **kwargs):
+            path = Path(args[args.index('-f') + 1])
+            value = resolved if path.name == 'compose.yaml' else json.loads(path.read_text())
+            self.assertNotIn('PRIVATE_TOKEN=kept', args)
+            self.assertNotIn('UNRELATED_HOST_ENV', kwargs['env'])
+            return subprocess.CompletedProcess(args, 0, json.dumps(value), '')
+        with patch.object(self.client, 'check', return_value=self.live) as check, \
+                patch.object(dokploy.subprocess, 'run', side_effect=render), patch.dict(os.environ, {'UNRELATED_HOST_ENV': 'private'}):
+            self.client.prepare_rollback(state, previous, self.previous_image, target)
+        check.assert_called_once_with(state, self.previous)
+        rollback = json.loads(target.read_text()); service = rollback['services']['memos']
+        self.assertEqual(set(rollback['services']), {'memos'})
+        self.assertEqual(service['image'], self.previous_image)
+        self.assertEqual(service['pull_policy'], 'never')
+        self.assertEqual(service['environment']['MEMOS_BACKUP_SOCKET'], '/run/kairos-backup/agent.sock')
+        self.assertEqual(service['environment']['LITERAL_SECRET'], 'synthetic$$secret=with=equals')
+        self.assertNotIn('depends_on', service)
+        self.assertEqual(service['security_opt'], ['no-new-privileges:true'])
+        self.assertEqual(service['healthcheck'], resolved['services']['memos']['healthcheck'])
+        self.assertEqual(service['volumes'][0]['source'], 'existing-journal-data')
+        self.assertEqual(rollback['volumes'], {'existing-journal-data': {'name': 'existing-journal-data', 'external': True}})
+        self.assertTrue(service['volumes'][1]['read_only'])
+        self.assertFalse(service['volumes'][1]['bind']['create_host_path'])
+        self.assertEqual(service['networks'], {'existing-network': {'aliases': ['memos']}})
+        self.assertTrue(rollback['networks']['existing-network']['external'])
+        self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+        self.assertNotIn('UNRELATED_SECRET', target.read_text())
+        self.assertFalse(list(self.root.glob('.rollback-compose-*')))
+
+    def test_rollback_render_failure_is_sanitized_and_keeps_previous_artifact(self):
+        previous, _ = self.rollback_fixture()
+        target = self.root / 'rollback.yaml'; target.write_text('previous verified artifact')
+        with patch.object(self.client, 'check', return_value=self.live), \
+                patch.object(dokploy.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, '', 'PRIVATE_SECRET')):
+            with self.assertRaisesRegex(RuntimeError, 'not be resolved safely') as raised:
+                self.client.prepare_rollback({'previousCompose': self.previous}, previous, self.previous_image, target)
+        self.assertNotIn('PRIVATE_SECRET', str(raised.exception))
+        self.assertEqual(target.read_text(), 'previous verified artifact')
+        self.assertFalse(list(self.root.glob('.rollback-compose-*')))
+
+    def test_rollback_rejects_missing_data_mount_or_wrong_container_before_downtime(self):
+        for missing in ('mount', 'identity', 'image'):
+            previous, resolved = self.rollback_fixture()
+            if missing == 'mount': previous['Mounts'] = []
+            if missing == 'identity': previous['Config']['Labels']['com.docker.compose.project'] = 'another-project'
+            if missing == 'image': resolved['services']['memos']['image'] = 'synthetic:wrong'
+            target = self.root / 'rollback.yaml'
+            with self.subTest(missing=missing), patch.object(self.client, 'check', return_value=self.live), \
+                    patch.object(dokploy.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, json.dumps(resolved), '')):
+                with self.assertRaises(RuntimeError):
+                    self.client.prepare_rollback({'previousCompose': self.previous}, previous, self.previous_image, target)
+            self.assertFalse(target.exists())
 
 
 if __name__ == '__main__':

@@ -629,6 +629,9 @@ message ListAllUserStatsRequest {
   // Uses the same filter syntax as ListMemos.
   string filter = 2 [(google.api.field_behavior) = OPTIONAL];
 
+  // Optional. Count the current caller's normal and archived records, excluding trash.
+  bool include_archived = 5 [(google.api.field_behavior) = OPTIONAL];
+
   reserved 3, 4;
   reserved "space", "unassigned";
 }
@@ -948,6 +951,9 @@ message PersonalAccessToken {
 
   // Output only. The last used timestamp.
   google.protobuf.Timestamp last_used_at = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // True limits this credential to owner-only journal reads; false preserves legacy access.
+  bool read_only = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 message ListPersonalAccessTokensRequest {
@@ -986,6 +992,9 @@ message CreatePersonalAccessTokenRequest {
 
   // Optional. Expiration duration in days (0 = never expires).
   int32 expires_in_days = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Creates an Agent credential restricted to journal reads, with a finite expiration.
+  bool read_only = 4 [(google.api.field_behavior) = OPTIONAL];
 }
 
 message CreatePersonalAccessTokenResponse {

@@ -320,7 +320,7 @@ func (i *memoImporter) replaceMemo(record *memoexport.Memo, existing *store.Memo
 		return err
 	}
 	err = i.bindAttachments(existing, append(names, added...), added, func(prepared *preparedMemoAttachments, required []int32) error {
-		return i.service.applyMemoMutation(i.ctx, existing, prepared, update, required, nil)
+		return i.service.applyMemoMutation(i.ctx, existing, prepared, update, required, nil, false)
 	})
 	if err != nil {
 		return err
@@ -640,7 +640,7 @@ func (i *memoImporter) applyRelations(written writtenMemo) error {
 	if len(relations) == 0 {
 		return nil
 	}
-	return i.service.applyMemoMutation(i.ctx, memo, nil, nil, nil, &relations)
+	return i.service.applyMemoMutation(i.ctx, memo, nil, nil, nil, &relations, false)
 }
 
 // Imported history cannot silently enter a previously authorized dynamic share.

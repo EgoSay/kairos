@@ -180,6 +180,9 @@
       "transcribing": "მიმდინარეობს ტრანსკრიფცია..."
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "კოდის ბლოკი",
       "link": "ლინკი",
       "heading": "სათაური",
@@ -344,6 +347,7 @@
     "back-to-top": "ზემოთ დაბრუნება"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "წვდომის ტოკენი დაკოპირდა",
       "access-token-deleted": "წვდომის ტოკენი `{{description}}` წაიშალა",

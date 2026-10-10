@@ -18,6 +18,9 @@ const AttachmentThumb = ({ item, className }: { item: AttachmentLibraryListItem;
       <div className={cn("overflow-hidden rounded-xl bg-muted/35", className)}>
         <img
           src={getAttachmentThumbnailUrl(item.attachment)}
+          onError={(event) => {
+            if (event.currentTarget.src !== item.sourceUrl) event.currentTarget.src = item.sourceUrl;
+          }}
           alt={item.attachment.filename}
           className="h-full w-full object-cover"
           loading="lazy"
@@ -61,10 +64,11 @@ export const AttachmentDocumentRows = ({ items, creators }: { items: AttachmentL
             <div className="truncate text-sm font-medium text-foreground" title={item.attachment.filename}>
               {item.attachment.filename}
             </div>
+            <p className="text-xs text-muted-foreground">此文件可下载后使用支持的应用打开</p>
             <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
               <AttachmentMetadataLine className="min-w-0 max-w-full" items={[item.fileTypeLabel, item.fileSizeLabel, item.createdLabel]} />
               <AttachmentCreator creatorName={item.attachment.creator} user={creators?.get(item.attachment.creator)} />
-              <AttachmentSourceChip memoName={item.memoName} />
+              <AttachmentSourceChip memoName={item.memoName} trashed={Boolean(item.attachment.deleteTime)} />
             </div>
           </div>
 
@@ -93,7 +97,7 @@ export const AttachmentAudioRows = ({ items, creators }: { items: AttachmentLibr
             <div className="min-w-0 flex flex-wrap items-center gap-1.5">
               <AttachmentMetadataLine className="min-w-0 max-w-full" items={[item.createdLabel]} />
               <AttachmentCreator creatorName={item.attachment.creator} user={creators?.get(item.attachment.creator)} />
-              <AttachmentSourceChip memoName={item.memoName} />
+              <AttachmentSourceChip memoName={item.memoName} trashed={Boolean(item.attachment.deleteTime)} />
             </div>
             <AttachmentOpenButton href={item.sourceUrl} />
           </div>

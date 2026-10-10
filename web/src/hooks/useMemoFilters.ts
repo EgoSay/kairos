@@ -3,11 +3,14 @@ import { type MemoFilter, useMemoFilterContext } from "@/contexts/MemoFilterCont
 import { type MemoTimeBasis, useView } from "@/contexts/ViewContext";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useMemoViews } from "@/hooks/useUserQueries";
-import { buildTimestampRangeFilter, getLocalDayTimestampRange, getTimeBasisField } from "@/lib/calendar-utils";
+import { buildTimestampRangeFilter, getTimeBasisField } from "@/lib/calendar-utils";
 import { combineCELFilters } from "@/lib/cel-filter";
+import { journalDayRange } from "@/lib/journal";
+import { buildSearchFacetConditions } from "@/lib/memo-search";
 import { getMemoViewId } from "@/lib/memo-views";
 import { buildMemoCreatorFilter, getVisibilityName } from "@/lib/resource-names";
 import { Visibility } from "@/types/proto/api/v1/memo_service_pb";
+import { useJournalPreferences } from "./useJournalQueries";
 
 const escapeFilterValue = (value: string): string => JSON.stringify(value);
 
@@ -26,6 +29,7 @@ interface BuildMemoFilterOptions {
   visibilities?: Visibility[];
   /** Which timestamp a `displayTime` day filter selects on; defaults to creation time. */
   timeBasis?: MemoTimeBasis;
+  timezone?: string;
 }
 
 export const buildMemoFilter = ({
@@ -35,6 +39,7 @@ export const buildMemoFilter = ({
   selectedMemoViewFilter,
   visibilities,
   timeBasis = "create_time",
+  timezone = "Asia/Shanghai",
 }: BuildMemoFilterOptions): string | undefined => {
   const conditions: string[] = [];
 
@@ -54,8 +59,6 @@ export const buildMemoFilter = ({
       conditions.push(`content.contains(${escapeFilterValue(filter.value)})`);
     } else if (filter.factor === "celSearch") {
       conditions.push(filter.value);
-    } else if (filter.factor === "tagSearch") {
-      conditions.push(`tag in [${escapeFilterValue(filter.value)}]`);
     } else if (filter.factor === "pinned") {
       if (includePinned) {
         conditions.push(`pinned`);
@@ -69,12 +72,14 @@ export const buildMemoFilter = ({
     } else if (filter.factor === "property.hasLocation") {
       conditions.push(`has_location`);
     } else if (filter.factor === "displayTime") {
-      const range = getLocalDayTimestampRange(filter.value);
+      const range = journalDayRange(filter.value, timezone);
       if (range) {
-        conditions.push(buildTimestampRangeFilter(getTimeBasisField(timeBasis), range));
+        conditions.push(buildTimestampRangeFilter(getTimeBasisField(timeBasis), { startTimestamp: range.start, endTimestamp: range.end }));
       }
     }
   }
+
+  conditions.push(...buildSearchFacetConditions(filters, timezone));
 
   if (visibilities && visibilities.length > 0) {
     const visibilityValues = visibilities.map((visibility) => `"${getVisibilityName(visibility)}"`).join(", ");
@@ -101,6 +106,7 @@ export const useMemoFilters = (options: UseMemoFiltersOptions = {}): string | un
   const selectedMemoViewFilter = useSelectedMemoViewFilter();
   // The sidebar calendar buckets days by this basis, so a picked day must select on it too.
   const { timeBasis } = useView();
+  const { data: preferences } = useJournalPreferences();
 
   return useMemo(
     () =>
@@ -111,7 +117,8 @@ export const useMemoFilters = (options: UseMemoFiltersOptions = {}): string | un
         selectedMemoViewFilter: includeMemoViews ? selectedMemoViewFilter : undefined,
         visibilities,
         timeBasis,
+        timezone: preferences?.timezone,
       }),
-    [creatorName, filters, includePinned, includeMemoViews, selectedMemoViewFilter, visibilities, timeBasis],
+    [creatorName, filters, includePinned, includeMemoViews, selectedMemoViewFilter, visibilities, timeBasis, preferences?.timezone],
   );
 };

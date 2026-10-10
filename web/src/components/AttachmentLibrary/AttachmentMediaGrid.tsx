@@ -54,7 +54,16 @@ const AttachmentMediaCard = ({ item, creator, onPreview }: { item: AttachmentLib
               badgeClassName="left-3 top-3"
             />
           ) : (
-            <img src={item.posterUrl} alt={item.filename} className="h-full w-full object-cover" loading="lazy" decoding="async" />
+            <img
+              src={item.posterUrl}
+              alt={`${item.filename}（无法显示时可打开或下载原件）`}
+              className="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+              onError={(event) => {
+                if (event.currentTarget.src !== item.sourceUrl) event.currentTarget.src = item.sourceUrl;
+              }}
+            />
           )}
         </div>
       </div>
@@ -78,7 +87,7 @@ const AttachmentMediaCard = ({ item, creator, onPreview }: { item: AttachmentLib
         />
         <AttachmentCreator creatorName={item.primaryAttachment.creator} user={creator} />
         <div className="flex items-center justify-between gap-2">
-          <AttachmentSourceChip memoName={item.memoName} />
+          <AttachmentSourceChip memoName={item.memoName} trashed={Boolean(item.primaryAttachment.deleteTime)} />
           <AttachmentOpenButton href={item.sourceUrl} />
         </div>
       </div>

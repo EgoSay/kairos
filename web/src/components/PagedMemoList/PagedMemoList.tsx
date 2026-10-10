@@ -12,6 +12,7 @@ import { useInfiniteMemos } from "@/hooks/useMemoQueries";
 import { hoistMemoToFront } from "@/hooks/useMemoSorting";
 import { combineCELFilters } from "@/lib/cel-filter";
 import { DEFAULT_LIST_MEMOS_PAGE_SIZE, LOADING_INDICATOR_DELAY_MS } from "@/lib/constants";
+import { searchIncludesArchived } from "@/lib/memo-search";
 import { cn } from "@/lib/utils";
 import { State } from "@/types/proto/api/v1/common_pb";
 import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
@@ -155,6 +156,7 @@ const PagedMemoList = (props: Props) => {
     useInfiniteMemos(
       {
         state: props.state || State.NORMAL,
+        includeArchived: props.state !== State.ARCHIVED && searchIncludesArchived(filters),
         orderBy: props.orderBy || "create_time desc",
         filter: combineCELFilters(props.contextFilter, props.filter),
         pageSize: props.pageSize || DEFAULT_LIST_MEMOS_PAGE_SIZE,
@@ -172,15 +174,18 @@ const PagedMemoList = (props: Props) => {
   const showLoader = useDelayedFlag(isDisplayPending, LOADING_INDICATOR_DELAY_MS);
 
   // Flatten pages into a single array of memos
-  const memos = useMemo(() => data?.pages.flatMap((page) => page.memos) || [], [data]);
+  const memos = useMemo(
+    () => [...new Map(data?.pages.flatMap((page) => page.memos).map((memo) => [memo.name, memo]) ?? []).values()],
+    [data],
+  );
 
   // Apply custom sorting if provided, otherwise use memos directly, then hoist
   // a freshly created memo to the very top so it stays visible above pins.
   const { newMemoName } = useNewMemo();
   const sortedMemoList = useMemo(() => {
     const sorted = props.listSort ? props.listSort(memos) : memos;
-    return hoistMemoToFront(sorted, newMemoName);
-  }, [memos, props.listSort, newMemoName]);
+    return props.orderBy?.includes("pinned desc") ? sorted : hoistMemoToFront(sorted, newMemoName);
+  }, [memos, props.listSort, props.orderBy, newMemoName]);
 
   // Auto-fetch hook: fetches more content when page isn't scrollable
   useAutoFetchWhenNotScrollable({

@@ -180,6 +180,9 @@
       "transcribing": "लिप्यंतरण सुरू आहे..."
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "कोड ब्लॉक",
       "link": "लिंक",
       "heading": "शीर्षक",
@@ -339,6 +342,7 @@
     "back-to-top": "परत वर जा"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "member": {
       "admin": "ॲडमिन",
       "archive-member": "संग्रहण सदस्य",

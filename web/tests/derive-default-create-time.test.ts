@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { deriveDefaultCreateTimeFromFilters } from "@/components/MemoEditor/utils/deriveDefaultCreateTime";
+import { deriveDefaultCreateTimeFromDate, deriveDefaultCreateTimeFromFilters } from "@/components/MemoEditor/utils/deriveDefaultCreateTime";
 import type { MemoFilter } from "@/contexts/MemoFilterContext";
+import { journalDate } from "@/lib/journal";
 
 describe("deriveDefaultCreateTimeFromFilters", () => {
   const now = new Date(2026, 4, 2, 14, 32, 10); // 2026-05-02 14:32:10 local
@@ -71,5 +72,18 @@ describe("deriveDefaultCreateTimeFromFilters", () => {
       expect(resultTimeOnly).toBeGreaterThanOrEqual(beforeTimeOnly);
       expect(resultTimeOnly).toBeLessThanOrEqual(afterTimeOnly);
     }
+  });
+});
+
+describe("calendar creation in Kairos timezone", () => {
+  it.each([
+    ["2026-10-01", "Asia/Shanghai", "2026-10-10T23:45:00Z"],
+    ["2026-03-08", "America/New_York", "2026-03-10T03:59:59Z"],
+    ["2026-11-01", "America/New_York", "2026-11-02T04:59:59Z"],
+  ])("never shifts a record composed on %s out of %s's date", (date, timezone, now) => {
+    const result = deriveDefaultCreateTimeFromDate(date, new Date(now), timezone);
+    expect(result).toBeDefined();
+    expect(journalDate(result!, timezone)).toBe(date);
+    expect(deriveDefaultCreateTimeFromFilters([{ factor: "displayTime", value: date }], new Date(now), timezone)).toEqual(result);
   });
 });

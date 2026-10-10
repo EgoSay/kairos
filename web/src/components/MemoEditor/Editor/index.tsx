@@ -8,6 +8,7 @@ import { createController } from "./controller";
 import "./editor.css";
 import { buildEditorExtensions, type EditorFileOrigin, placeholderCompartment } from "./extensions";
 import { createFormattingController } from "./formatting";
+import { livePreview, previewCompartment } from "./livePreview";
 
 interface EditorProps {
   className: string;
@@ -20,6 +21,7 @@ interface EditorProps {
   /** Invoked by the in-editor save shortcut (Cmd/Ctrl+Enter). */
   onSubmit: () => void;
   isFocusMode?: boolean;
+  sourceMode?: boolean;
 }
 
 const Editor = forwardRef(function Editor(props: EditorProps, ref: React.ForwardedRef<EditorController>) {
@@ -33,11 +35,13 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
     onFiles,
     onSubmit,
     isFocusMode,
+    sourceMode = false,
   } = props;
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const controllerRef = useRef<EditorController | null>(null);
   const applyingExternalContentRef = useRef(false);
+  const pendingSourceModeRef = useRef<boolean | null>(null);
   const pendingExternalContentRef = useRef<string | null>(null);
   const onChangeRef = useRef(onContentChange);
   onChangeRef.current = onContentChange;
@@ -78,6 +82,7 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
         doc: initialContent,
         extensions: buildEditorExtensions({
           placeholder,
+          sourceMode,
           onChange: (md) => {
             if (!applyingExternalContentRef.current) onChangeRef.current(md);
           },
@@ -97,6 +102,10 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
       // replacing the document with a deferred external value.
       queueMicrotask(() => {
         if (viewRef.current !== view || view.compositionStarted) return;
+        if (pendingSourceModeRef.current !== null) {
+          view.dispatch({ effects: previewCompartment.reconfigure(pendingSourceModeRef.current ? [] : livePreview) });
+          pendingSourceModeRef.current = null;
+        }
         const pendingContent = pendingExternalContentRef.current;
         if (pendingContent === null) return;
         applyExternalContent(pendingContent);
@@ -116,6 +125,16 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
     // Mount once; external sync handled below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useLayoutEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    if (view.compositionStarted) {
+      pendingSourceModeRef.current = sourceMode;
+      return;
+    }
+    view.dispatch({ effects: previewCompartment.reconfigure(sourceMode ? [] : livePreview) });
+  }, [sourceMode]);
 
   useLayoutEffect(() => {
     if (placeholderRef.current === placeholder) return;
@@ -142,6 +161,7 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
     <div
       className={cn("relative flex w-full flex-col items-start justify-start bg-inherit", isFocusMode && "min-h-0 flex-1", className)}
       data-focus-mode={isFocusMode || undefined}
+      data-source-mode={sourceMode || undefined}
     >
       <div ref={hostRef} className={cn("w-full text-base", isFocusMode && "min-h-0 flex-1")} />
     </div>

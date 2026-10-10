@@ -62,6 +62,9 @@ type FindAttachment struct {
 	Limit            *int
 	Offset           *int
 	SkipDefaultLimit bool
+	// ExcludeTrashed and OnlyTrashed apply journal tombstones before pagination.
+	ExcludeTrashed bool
+	OnlyTrashed    bool
 }
 
 type UpdateAttachment struct {

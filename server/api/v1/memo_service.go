@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	stderrors "errors"
 	"log/slog"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -46,8 +45,24 @@ func (s *APIV1Service) CreateMemo(ctx context.Context, request *v1pb.CreateMemoR
 	if err != nil {
 		return nil, err
 	}
+	// Preserve stable-ID retry semantics before checking a mapping that may
+	// already have been created by the first successful transaction.
+	if request.JournalPartition != nil && request.MemoId != "" {
+		existing, err := s.Store.GetMemo(ctx, &store.FindMemo{UID: &memoUID})
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to inspect memo retry: %v", err)
+		}
+		if existing != nil {
+			return nil, status.Errorf(codes.AlreadyExists, "memo with ID %q already exists", memoUID)
+		}
+	}
 
 	prepared, err := s.prepareMemoCreate(ctx, user, request.Memo, memoUID)
+	if err != nil {
+		return nil, err
+	}
+
+	journalDocuments, err := s.prepareMemoPartitionSave(ctx, user, prepared.memo, request.JournalPartition)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +75,7 @@ func (s *APIV1Service) CreateMemo(ctx context.Context, request *v1pb.CreateMemoR
 		return nil, err
 	}
 
-	if err := s.createMemoWithMutation(ctx, user, prepared.memo, nil, prepared.attachments, prepared.requiredAttachmentIDs, prepared.referenceRelations); err != nil {
+	if err := s.createMemoWithMutation(ctx, user, prepared.memo, nil, prepared.attachments, prepared.requiredAttachmentIDs, prepared.referenceRelations, journalDocuments...); err != nil {
 		if provenance != nil {
 			existing, findErr := s.Store.GetMemo(ctx, &store.FindMemo{UID: &memoUID})
 			if findErr == nil && (existing == nil || existing.CreatorID != user.ID) {
@@ -102,6 +117,7 @@ func (s *APIV1Service) ListMemos(ctx context.Context, request *v1pb.ListMemosReq
 	memoFind := &store.FindMemo{
 		// Exclude comments by default.
 		ExcludeComments: true,
+		ExcludeTrashed:  true,
 	}
 	accessScope, currentUser, err := s.resolveMemoAccessScope(ctx)
 	if err != nil {
@@ -113,7 +129,12 @@ func (s *APIV1Service) ListMemos(ctx context.Context, request *v1pb.ListMemosReq
 	}
 	memoFind.Access = accessScope
 
-	if request.State == v1pb.State_ARCHIVED {
+	if request.IncludeArchived {
+		if currentUser == nil {
+			return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+		}
+		memoFind.CreatorID = &currentUser.ID
+	} else if request.State == v1pb.State_ARCHIVED {
 		state := store.Archived
 		memoFind.RowStatus = &state
 		// Archived memos are only visible to their creator.
@@ -308,7 +329,8 @@ func (s *APIV1Service) UpdateMemo(ctx context.Context, request *v1pb.UpdateMemoR
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid memo name: %v", err)
 	}
-	if request.UpdateMask == nil || len(request.UpdateMask.Paths) == 0 {
+	updateMask := request.GetUpdateMask().GetPaths()
+	if len(updateMask) == 0 && request.JournalPartition == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "update mask is required")
 	}
 
@@ -334,8 +356,8 @@ func (s *APIV1Service) UpdateMemo(ctx context.Context, request *v1pb.UpdateMemoR
 	update := &store.UpdateMemo{
 		ID: memo.ID,
 	}
-	updatePaths := make(map[string]bool, len(request.UpdateMask.Paths))
-	for _, path := range request.UpdateMask.Paths {
+	updatePaths := make(map[string]bool, len(updateMask))
+	for _, path := range updateMask {
 		updatePaths[path] = true
 	}
 	lifecycleOnly := updatePaths["space"]
@@ -411,6 +433,11 @@ func (s *APIV1Service) UpdateMemo(ctx context.Context, request *v1pb.UpdateMemoR
 		}
 	}
 
+	journalDocuments, err := s.prepareMemoPartitionSave(ctx, user, memo, request.JournalPartition)
+	if err != nil {
+		return nil, err
+	}
+
 	previousContent := memo.Content
 	contentUpdated := false
 	attachmentsUpdated := false
@@ -421,7 +448,7 @@ func (s *APIV1Service) UpdateMemo(ctx context.Context, request *v1pb.UpdateMemoR
 		proto.Merge(nextMemo.Payload, memo.Payload)
 	}
 
-	for _, path := range request.UpdateMask.Paths {
+	for _, path := range updateMask {
 		// Collaboration fields were validated together above so placement and
 		// audience transitions cannot be observed independently.
 		if path == "visibility" || path == "space" {
@@ -488,7 +515,7 @@ func (s *APIV1Service) UpdateMemo(ctx context.Context, request *v1pb.UpdateMemoR
 	}
 	var preparedRelations []*store.MemoRelation
 	if relationsUpdated {
-		preparedRelations, err = s.prepareMemoRelations(ctx, memo, request.Memo.Relations)
+		preparedRelations, err = s.prepareMemoRelationsForSave(ctx, memo, request.Memo.Relations)
 		if err != nil {
 			return nil, err
 		}
@@ -515,12 +542,12 @@ func (s *APIV1Service) UpdateMemo(ctx context.Context, request *v1pb.UpdateMemoR
 			return nil, status.Errorf(codes.Internal, "failed to retain previous version: %v", err)
 		}
 	}
-	if contentUpdated || attachmentsUpdated || relationsUpdated || update.ExpectedRecordHash != "" {
+	if contentUpdated || attachmentsUpdated || relationsUpdated || update.ExpectedRecordHash != "" || len(journalDocuments) > 0 {
 		var relations *[]*store.MemoRelation
 		if relationsUpdated {
 			relations = &preparedRelations
 		}
-		if err := s.applyMemoMutation(ctx, memo, preparedAttachments, update, requiredAttachmentIDs, relations); err != nil {
+		if err := s.applyMemoMutation(ctx, memo, preparedAttachments, update, requiredAttachmentIDs, relations, true, journalDocuments...); err != nil {
 			return nil, err
 		}
 	} else if err = s.Store.UpdateMemo(ctx, update); err != nil {
@@ -550,8 +577,10 @@ func (s *APIV1Service) UpdateMemo(ctx context.Context, request *v1pb.UpdateMemoR
 		if err := s.cancelPartitionMemoDeliveries(ctx, memo.CreatorID, memo.UID); err != nil {
 			return nil, err
 		}
-	} else if err := s.enqueuePartitionMemo(ctx, memo.CreatorID, memo.UID, false); err != nil {
-		slog.Warn("Record saved but partition delivery could not be queued", slog.Any("err", err))
+	} else if request.JournalPartition == nil {
+		if err := s.enqueuePartitionMemo(ctx, memo.CreatorID, memo.UID, false); err != nil {
+			slog.Warn("Record saved but partition delivery could not be queued", slog.Any("err", err))
+		}
 	}
 	s.dispatchMemoUpdatedSideEffects(ctx, memoMessage)
 
@@ -638,8 +667,8 @@ func (s *APIV1Service) DeleteMemo(ctx context.Context, request *v1pb.DeleteMemoR
 	}
 
 	for _, attachment := range deleteResult.Attachments {
-		if path, err := attachmentOriginalPath(s.Profile.Data, attachment.UID); err == nil {
-			_ = os.Remove(path)
+		if err := s.removeUnreferencedJournalOriginal(ctx, attachment.UID); err != nil {
+			return nil, err
 		}
 	}
 	for _, kind := range []string{"trash", "provenance"} {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -21,6 +22,7 @@ import (
 	"github.com/EgoSay/kairos/internal/ratelimit"
 	"github.com/EgoSay/kairos/markdown"
 	v1pb "github.com/EgoSay/kairos/proto/gen/api/v1"
+	"github.com/EgoSay/kairos/provider/geocoding"
 	"github.com/EgoSay/kairos/server/auth"
 	"github.com/EgoSay/kairos/store"
 )
@@ -93,6 +95,7 @@ type APIV1Service struct {
 	linkMetadataFetcher linkMetadataFetcher
 	attachmentUploads   attachmentUploads
 	memoImports         memoImports
+	geocoder            *geocoding.Client
 }
 
 // NewAPIV1Service creates an API v1 service with its shared dependencies.
@@ -113,6 +116,7 @@ func NewAPIV1Service(secret string, profile *profile.Profile, store *store.Store
 		imageProcessingSemaphore: semaphore.NewWeighted(2),
 	}
 	service.linkMetadataFetcher = linkmeta.NewHTMLMetaFetcher()
+	service.geocoder = geocoding.NewClient(os.Getenv("MEMOS_GEOCODING_ENDPOINT"))
 	return service
 }
 
@@ -307,6 +311,10 @@ func writeGatewayStatusError(w http.ResponseWriter, err error) {
 }
 
 func writeGatewayAuthorizationError(w http.ResponseWriter, err error) {
+	if errors.Is(err, ErrReadOnlyCredential) {
+		http.Error(w, `{"code": 7, "message": "Agent credential permits owner-only journal reads"}`, http.StatusForbidden)
+		return
+	}
 	if errors.Is(err, ErrUnauthenticated) {
 		http.Error(w, `{"code": 16, "message": "authentication required"}`, http.StatusUnauthorized)
 		return

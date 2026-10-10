@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Home from "@/pages/Home";
 
+vi.mock("@/hooks/useJournalQueries", () => ({ useJournalPreferences: () => ({ data: { timezone: "Asia/Shanghai" } }) }));
 vi.mock("@/hooks/useMemoSuggestions", () => ({
   useMemoSuggestions: () => [{ id: "tag:work" }],
 }));

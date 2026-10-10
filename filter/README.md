@@ -57,12 +57,17 @@ stmt, _ := engine.CompileToStatement(ctx, `has_task_list && visibility == "PUBLI
 - **Tag Operations** — `tag in [...]`, `"tag" in tags`, and tag comprehension
   predicates evaluate individual JSON array elements. Equality and string
   matching are case-sensitive, without Unicode normalization; `%` and `_` in
-  string operands are literal. Hierarchy works through implied ancestors already
-  present in the memo tag set, not through prefix matching.
+  string operands are literal. Hierarchy uses an exact root plus a slash-delimited branch predicate, e.g.
+  `"life" in tags || tags.exists(t, t.startsWith("life/"))`. This also covers
+  historical records without implied ancestors and excludes `lifestyle`.
 - **Boolean Flags** — Fields such as `has_task_list` render as an `IS TRUE` check
   (a comparison against `CAST('true' AS JSON)` on MySQL). Memo payloads omit false
   flags, so a missing key counts as false: `flag == false` and `flag != true`
   render as the negated check and match the same memos as `!flag`.
+- **Journal Facets** — `has_attachment`, `has_image`, and `has_audio` use
+  correlated attachment existence checks; MIME prefixes distinguish image and audio.
+  `journal_partition` resolves the owner-scoped committed partition mapping; an
+  empty string selects unpartitioned records. All facets run before pagination.
 - **Presence Flags** — `has_location` renders as a JSON key-existence check on
   `memo.payload` (`$.location`). A missing key and an explicit JSON null both
   count as absent on every dialect; any other value — including an empty object —
@@ -97,7 +102,7 @@ stmt, _ := engine.CompileToStatement(ctx, `has_task_list && visibility == "PUBLI
   `sets.intersects(tags, [...])`, and `sets.equivalent(tags, [...])` desugar to
   exact-membership checks (AND / OR of `"v" in tags`); `equivalent` adds a
   `size(tags)` length check (relies on tags being a set).
-- **`size()`** — `size(tags)` renders to JSON array length; `size(content)` (and
+- **`size()`** — `size(tags)` renders to JSON array length, with missing/null arrays treated as empty; `size(content)` (and
   other string fields) render to `LENGTH` / `CHAR_LENGTH` (MySQL) for code-point
   counts.
 - **Arithmetic** — `+`, `-`, `*`, `/`, `%` constant-fold on literal/`now`/`duration`

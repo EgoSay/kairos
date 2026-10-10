@@ -74,6 +74,25 @@ const buildAttachmentWithPhotoMetadata = () =>
   });
 
 describe("<PreviewImageDialog>", () => {
+  it("reports image failure, keeps an original download and retries without losing the dialog", () => {
+    render(
+      <PreviewImageDialog
+        open
+        onOpenChange={vi.fn()}
+        items={[{ id: "unsupported", kind: "image", filename: "photo.heic", sourceUrl: "/photo.heic" }]}
+      />,
+    );
+    const image = screen.getByAltText("Preview image 1 of 1");
+    fireEvent.error(image);
+    expect(screen.getByRole("alert")).toHaveTextContent("暂时无法预览");
+    expect(screen.getByRole("link", { name: "下载原件" })).toHaveAttribute("href", "/photo.heic");
+    fireEvent.click(screen.getByRole("button", { name: "重试预览" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    fireEvent.load(screen.getByAltText("Preview image 1 of 1"));
+    expect(screen.queryByRole("status", { name: "正在加载预览" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close preview" })).toBeEnabled();
+  });
+
   it("provides a dialog description without accessibility warnings", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 

@@ -3,6 +3,7 @@ from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -110,6 +111,41 @@ class OnlineSnapshotTest(unittest.TestCase):
         path.write_text(json.dumps(manifest))
         with self.assertRaises(ValueError):
             snapshot.verify(self.root / "snapshot")
+
+    def test_managed_s3_served_bytes_and_historical_originals_are_independent(self):
+        config = {"endpoint": "https://storage.example.com", "bucket": "private", "region": "auto",
+                  "accessKeyId": "test", "accessKeySecret": "ROTATED_KEY"}
+        self.db.execute("INSERT INTO system_setting(name,value) VALUES('STORAGE',?)",
+                        (json.dumps({"storages": [{"id": "media", "s3Config": config}]}),))
+        self.db.execute("UPDATE attachment SET storage_type='S3',reference='',payload=?",
+                        (json.dumps({"s3Object": {"storageId": "media", "key": "photos/a.webp"}}),))
+        self.db.commit()
+        def fetch(args, *, input, stdout, stderr, timeout):
+            request = json.loads(input)
+            self.assertEqual(request['config']['accessKeySecret'], 'ROTATED_KEY')
+            self.assertEqual(request['key'], 'photos/a.webp')
+            stdout.write(b'actual managed S3 served bytes')
+            return subprocess.CompletedProcess(args, 0)
+        with patch.object(snapshot.subprocess, 'run', side_effect=fetch):
+            report = snapshot.snapshot(self.source, self.root / 'snapshot', Path('/var/opt/memos'), '/fixed/helper')
+        self.assertEqual(report['managedS3'], {'photo': 'managed-s3/photo'})
+        self.assertEqual((self.root / 'snapshot/data/managed-s3/photo').read_bytes(), b'actual managed S3 served bytes')
+        self.assertEqual((self.root / 'snapshot/data/originals/old').read_bytes(), b'historical voice')
+        with closing(sqlite3.connect(self.root / 'snapshot/data/memos_prod.db')) as copied:
+            self.assertEqual(copied.execute('SELECT storage_type FROM attachment').fetchone()[0], 'S3')
+        snapshot.verify(self.root / 'snapshot')
+        (self.root / 'snapshot/data/managed-s3/photo').unlink()
+        with self.assertRaises((ValueError, OSError)):
+            snapshot.verify(self.root / 'snapshot')
+
+    def test_failed_s3_copy_never_publishes_partial_media_snapshot(self):
+        self.db.execute("UPDATE attachment SET storage_type='S3',payload=?",
+                        (json.dumps({'s3Object': {'key': 'photo', 's3Config': {'endpoint': 'https://example.com'}}}),))
+        self.db.commit()
+        with patch.object(snapshot.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1)):
+            with self.assertRaisesRegex(RuntimeError, 'could not be copied'):
+                snapshot.snapshot(self.source, self.root / 'snapshot', Path('/var/opt/memos'), '/fixed/helper')
+        self.assertFalse((self.root / 'snapshot').exists())
 
 
 if __name__ == "__main__":

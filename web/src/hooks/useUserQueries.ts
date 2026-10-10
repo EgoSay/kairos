@@ -20,7 +20,7 @@ import {
 
 const BATCH_GET_USERS_LIMIT = 100;
 const USER_PROFILE_STALE_TIME = 1000 * 60 * 5;
-type ListAllUserStatsQuery = Pick<ListAllUserStatsRequest, "state" | "filter">;
+type ListAllUserStatsQuery = Pick<ListAllUserStatsRequest, "state" | "filter" | "includeArchived">;
 
 // Query keys factory
 export const userKeys = {

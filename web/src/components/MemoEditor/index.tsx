@@ -1,5 +1,7 @@
+import { Maximize2Icon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInstance } from "@/contexts/InstanceContext";
 import { useLocalStorage } from "@/hooks";
@@ -37,11 +39,16 @@ import type { EditorController } from "./types/editorController";
 
 // A host that presents the editor full-screen supplies `onFocusModeExit`; its
 // presence is what makes an instance hosted, so focus mode starts on and stays on.
-const MemoEditor = (props: MemoEditorProps) => (
-  <EditorProvider initialFocusMode={Boolean(props.onFocusModeExit)}>
-    <MemoEditorImpl {...props} />
-  </EditorProvider>
-);
+const MemoEditor = (props: MemoEditorProps) => {
+  const owner = useCurrentUser()?.name ?? "anonymous";
+  // A new identity gets a fresh store; the old instance persists only to its
+  // original owner key and cancels its remaining uploads during unmount.
+  return (
+    <EditorProvider key={owner} initialFocusMode={Boolean(props.onFocusModeExit)}>
+      <MemoEditorImpl {...props} />
+    </EditorProvider>
+  );
+};
 
 const MemoEditorImpl: React.FC<MemoEditorProps> = ({
   className,
@@ -85,8 +92,9 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
   const inlineImageUpload = useInlineImageUpload(editorRef);
   // Persisted preference: also show the formatting toolbar in normal mode. Focus
   // mode always shows it regardless; this only governs the non-focus layout.
-  const [isFormattingToolbarVisible, setFormattingToolbarVisible] = useLocalStorage(FORMATTING_TOOLBAR_STORAGE_KEY, false);
+  const [isFormattingToolbarVisible, setFormattingToolbarVisible] = useLocalStorage(FORMATTING_TOOLBAR_STORAGE_KEY, true);
 
+  const [sourceMode, setSourceMode] = useState(false);
   const memoName = memo?.name;
   // Replies are never placed independently: a comment's Space is its parent's.
   // An edited top-level memo can change its Space; a new one can unless its
@@ -132,7 +140,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
     durable.discard();
   };
 
-  const { containerRef: editorContainerRef, placeholderHeight } = useFocusMode(isFocusMode);
+  const { containerRef: editorContainerRef, placeholderHeight, captureScroll } = useFocusMode(isFocusMode);
 
   // Live-sync the draft's createTime/updateTime to the calendar-derived prop.
   // Only applies in create mode; edit mode owns its own timestamps. Runs after
@@ -255,14 +263,29 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
 
   // Hosted: focus mode is the host's frame, so leaving it dismisses the host.
   // Inline: focus mode is a view this editor owns and toggles in place.
-  const handleToggleFocusMode = () => {
+  const handleToggleFocusMode = useCallback(() => {
     if (onFocusModeExit) {
       rememberCursor();
       onFocusModeExit();
       return;
     }
+    captureScroll();
     dispatch(actions.toggleFocusMode());
-  };
+    editorRef.current?.focus();
+  }, [actions, dispatch, onFocusModeExit, rememberCursor, captureScroll]);
+
+  useEffect(() => {
+    if (!isFocusMode || onFocusModeExit) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented || event.isComposing) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"], .cm-tooltip-autocomplete')) return;
+      event.preventDefault();
+      handleToggleFocusMode();
+      editorRef.current?.focus();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isFocusMode, onFocusModeExit, handleToggleFocusMode]);
 
   const handleCancel = useCallback(() => {
     rememberCursor();
@@ -295,8 +318,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
     (files: File[], placement: { inline: false } | { inline: true; position?: number }) => {
       if (getState().ui.isLoading.saving) return;
       const localFiles = toLocalFiles(files, { createBlobUrl, saveMediaMetadata });
-      const { inline, attachments } =
-        placement.inline && navigator.onLine ? splitInlineLocalFiles(localFiles) : { inline: [], attachments: localFiles };
+      const { inline, attachments } = placement.inline ? splitInlineLocalFiles(localFiles) : { inline: [], attachments: localFiles };
       attachments.forEach((file) => dispatch(actions.addLocalFile(file)));
       if (placement.inline) inlineImageUpload.insertLocalImages(inline, placement.position);
     },
@@ -307,13 +329,11 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
   const handleInsertImages = useCallback((files: File[]) => handleFiles(files, { inline: true }), [handleFiles]);
 
   /**
-   * A drop inlines images where they landed. A paste carries no placement
-   * gesture, so it attaches like the ＋ menu's upload; the attachment list's
-   * own Insert action is how a pasted image becomes inline.
+   * Images pasted or dropped into the editor share the same durable inline
+   * upload path. Other files remain in the attachment list.
    */
   const handleEditorFiles = useCallback(
-    (files: File[], origin: EditorFileOrigin) =>
-      handleFiles(files, origin.source === "drop" ? { inline: true, position: origin.position } : { inline: false }),
+    (files: File[], origin: EditorFileOrigin) => handleFiles(files, { inline: true, position: origin.position }),
     [handleFiles],
   );
 
@@ -390,13 +410,29 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
           !isFocusMode && className,
         )}
       >
-        {/* Formatting toolbar. Always shown in focus mode (trailing the button
-            that leaves the current frame — minimize inline, close when hosted);
-            in normal mode it appears only when the user toggled it on via the
-            insert menu. */}
+        {/* The default visual editor exposes formatting and focus directly. */}
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-pressed={sourceMode}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => setSourceMode((value) => !value)}
+          >
+            {sourceMode ? "切换可视化编辑" : "Markdown 源码"}
+          </Button>
+          {!isFocusMode && (
+            <Button size="sm" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={handleToggleFocusMode}>
+              <Maximize2Icon className="size-4" />
+              聚焦
+            </Button>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">粘贴为纯文本：Shift + Cmd / Ctrl + V</p>
         {(isFocusMode || isFormattingToolbarVisible) && (
           <FormattingToolbar
             controllerRef={editorRef}
+            onInsertImages={handleInsertImages}
             exit={isFocusMode ? { action: onFocusModeExit ? "close" : "minimize", onExit: handleToggleFocusMode } : undefined}
           />
         )}
@@ -408,7 +444,13 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
         )}
 
         {/* Editor content grows to fill available space in focus mode */}
-        <EditorContent ref={editorRef} placeholder={placeholder} onSubmit={handleSave} onFiles={handleEditorFiles} />
+        <EditorContent
+          ref={editorRef}
+          placeholder={placeholder}
+          onSubmit={handleSave}
+          onFiles={handleEditorFiles}
+          sourceMode={sourceMode}
+        />
 
         {isAudioRecorderOpen && (audioRecorder.isBusy || isTranscribingAudio) && (
           <AudioRecorderPanel
@@ -462,7 +504,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
         )}
         {!memoName && !parentMemoName && <PendingRecords owner={currentUser?.name ?? ""} draftKey={editorCacheKey} />}
         {/* Metadata and toolbar grouped together at bottom */}
-        <div className="w-full flex flex-col gap-2">
+        <div className={cn("w-full flex flex-col gap-2", isFocusMode && "sticky bottom-0 bg-card pt-2")}>
           <EditorMetadata
             memoName={memoName}
             uploadingLocalFileURLs={inlineImageUpload.uploadingLocalFileURLs}
@@ -476,6 +518,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
             <EditorSuggestions suggestions={suggestions} controllerRef={editorRef} space={editorSpace} />
           )}
           <EditorToolbar
+            onReturnToEditor={() => editorRef.current?.focus()}
             onSave={handleSave}
             onCancel={onCancel ? handleCancel : undefined}
             memoName={memoName}

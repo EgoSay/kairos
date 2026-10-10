@@ -256,7 +256,12 @@ func NewSchema() Schema {
 		},
 	}
 
+	addMemoFacetFields(fields)
 	envOptions := []cel.EnvOption{
+		cel.Variable("has_attachment", cel.BoolType),
+		cel.Variable("has_image", cel.BoolType),
+		cel.Variable("has_audio", cel.BoolType),
+		cel.Variable("journal_partition", cel.StringType),
 		cel.Variable("content", cel.StringType),
 		cel.Variable("creator", cel.StringType),
 		cel.Variable("creator_id", cel.IntType),

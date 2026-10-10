@@ -4,12 +4,12 @@ import { Code, ConnectError } from "@connectrpc/connect";
 import { isEqual } from "lodash-es";
 import { getEditorReferenceRelations } from "@/components/MemoMetadata/Relation/relationHelpers";
 import { memoServiceClient } from "@/connect";
-import { finishPartitionSave } from "@/hooks/useJournalPartitionQueries";
+import { getMemoPartition } from "@/hooks/useJournalPartitionQueries";
 import { journalRecordVersion } from "@/lib/journal-record-version";
 import type { Attachment } from "@/types/proto/api/v1/attachment_service_pb";
 import { AttachmentSchema } from "@/types/proto/api/v1/attachment_service_pb";
 import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
-import { MemoSchema } from "@/types/proto/api/v1/memo_service_pb";
+import { JournalPartitionSelectionSchema, MemoSchema } from "@/types/proto/api/v1/memo_service_pb";
 import type { EditorState } from "../state";
 import { uploadService } from "./uploadService";
 
@@ -87,14 +87,51 @@ function buildUpdateMask(
   return { mask, patch };
 }
 
-async function finishJournalSave(state: EditorState, memoName: string): Promise<string | undefined> {
-  if (state.metadata.journalPartitionId === undefined || state.metadata.journalPartitionSuspended) return undefined;
-  try {
-    await finishPartitionSave(memoName, state.metadata.journalPartitionId, state.metadata.journalPartitionExplicit ?? false);
-  } catch (error) {
-    return `正文和附件已保存，分区同步尚未完成：${error instanceof Error ? error.message : "请到分区设置重试"}`;
+/** The saved response is authoritative when a relation target changed during editing. */
+function relationSaveWarning(requested: Memo["relations"], saved: Memo): string | undefined {
+  const wanted = getEditorReferenceRelations(requested, saved.name)
+    .map((relation) => relation.relatedMemo?.name)
+    .filter(Boolean);
+  const actual = new Set(getEditorReferenceRelations(saved.relations, saved.name).map((relation) => relation.relatedMemo?.name));
+  return wanted.some((name) => !actual.has(name)) ? "正文已保存；部分关联记录已删除或不可访问，未保留这些关联。" : undefined;
+}
+
+/** A stable ID only acknowledges the same attempted record, never later local edits. */
+async function creationMatchesRetry(existing: Memo, requested: Memo, signal?: AbortSignal): Promise<boolean> {
+  if (
+    existing.content !== requested.content ||
+    existing.visibility !== requested.visibility ||
+    (existing.space ?? "") !== (requested.space ?? "") ||
+    !isEqual(existing.location, requested.location) ||
+    // The store persists timestamps in seconds; omitted timestamps are assigned by the server.
+    (requested.createTime && existing.createTime?.seconds !== requested.createTime.seconds) ||
+    (requested.updateTime && existing.updateTime?.seconds !== requested.updateTime.seconds) ||
+    !isEqual(existing.attachments.map((item) => item.name).sort(), requested.attachments.map((item) => item.name).sort())
+  )
+    return false;
+
+  const targets = (relations: Memo["relations"]) =>
+    new Set(
+      getEditorReferenceRelations(relations, existing.name).flatMap((relation) =>
+        relation.relatedMemo?.name ? [relation.relatedMemo.name] : [],
+      ),
+    );
+  const wanted = targets(requested.relations);
+  const actual = targets(existing.relations);
+  if ([...actual].some((name) => !wanted.has(name))) return false;
+  for (const name of wanted) {
+    if (actual.has(name)) continue;
+    try {
+      // Saving may legitimately omit a target deleted or made private. Only
+      // that verified case can settle a retry with the existing warning.
+      signal?.throwIfAborted();
+      await memoServiceClient.getMemo({ name }, signal ? { signal } : undefined);
+      return false;
+    } catch (error) {
+      if (![Code.NotFound, Code.PermissionDenied].includes(ConnectError.from(error).code)) throw error;
+    }
   }
-  return undefined;
+  return true;
 }
 
 export const memoService = {
@@ -105,14 +142,19 @@ export const memoService = {
       parentMemoName?: string;
       space?: string;
     },
-  ): Promise<{ memoName: string; hasChanges: boolean; moved?: boolean; syncError?: string }> {
+    signal?: AbortSignal,
+  ): Promise<{ memoName: string; hasChanges: boolean; moved?: boolean; syncError?: string; relationWarning?: string }> {
+    const requestOptions = signal ? ([{ signal }] as const) : ([] as const);
     // 1. Upload local files first
-    const newAttachments = await uploadService.uploadFiles(state.localFiles);
+    signal?.throwIfAborted();
+    const newAttachments = await uploadService.uploadFiles(state.localFiles, signal);
+    signal?.throwIfAborted();
     const allAttachments = [...state.metadata.attachments, ...newAttachments];
 
     // 2. Update existing memo
     if (options.memoName) {
-      const prevMemo = await memoServiceClient.getMemo({ name: options.memoName });
+      const prevMemo = await memoServiceClient.getMemo({ name: options.memoName }, signal ? { signal } : undefined);
+      signal?.throwIfAborted();
       const baseline = state.baselineMemo ?? prevMemo;
       if (
         state.baselineMemo &&
@@ -130,25 +172,56 @@ export const memoService = {
       }
       const { mask, patch } = buildUpdateMask(baseline, state, allAttachments);
 
-      if (mask.size === 0) {
+      let journalPartition;
+      let partitionChanged = false;
+      if (
+        state.metadata.journalPartitionId !== undefined &&
+        (!state.metadata.journalPartitionSuspended || state.metadata.journalPartitionExplicit)
+      ) {
+        const mapping = await getMemoPartition(prevMemo.name);
+        signal?.throwIfAborted();
+        if (state.metadata.journalPartitionVersion !== undefined && mapping.version !== state.metadata.journalPartitionVersion) {
+          throw new ConnectError("分区已在其他页面或设备修改。当前输入已保留，请重新比较后保存。", Code.Aborted);
+        }
+        // Old durable drafts may predate the mapping baseline. Preserve current
+        // assignment unless the user explicitly selected a destination.
+        const partitionId =
+          state.metadata.journalPartitionExplicit || state.metadata.journalPartitionVersion !== undefined
+            ? state.metadata.journalPartitionId
+            : mapping.partitionId;
+        partitionChanged = Boolean(state.metadata.journalPartitionExplicit && (partitionId !== mapping.partitionId || mapping.suspended));
+        if (!mapping.suspended || state.metadata.journalPartitionExplicit) {
+          journalPartition = create(JournalPartitionSelectionSchema, { partitionId, expectedVersion: BigInt(mapping.version) });
+        }
+      }
+      if (mask.size === 0 && !partitionChanged) {
         return { memoName: prevMemo.name, hasChanges: false };
       }
 
       const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(baseline.content));
       const expectedContent = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      const expectedRecord = await journalRecordVersion(baseline);
+      signal?.throwIfAborted();
       const memo = await memoServiceClient.updateMemo(
         {
           memo: create(MemoSchema, patch as Record<string, unknown>),
           updateMask: create(FieldMaskSchema, { paths: Array.from(mask) }),
+          journalPartition,
         },
         {
+          ...(signal ? { signal } : {}),
           headers: {
             "X-Memos-Expected-Content-Sha256": expectedContent,
-            "X-Memos-Expected-Record-Sha256": await journalRecordVersion(baseline),
+            "X-Memos-Expected-Record-Sha256": expectedRecord,
           },
         },
       );
-      return { memoName: memo.name, hasChanges: true, moved: mask.has("space"), syncError: await finishJournalSave(state, memo.name) };
+      return {
+        memoName: memo.name,
+        hasChanges: true,
+        moved: mask.has("space"),
+        relationWarning: relationSaveWarning(state.metadata.relations, memo),
+      };
     }
 
     // 3. Create new memo or comment
@@ -166,26 +239,45 @@ export const memoService = {
     let memo: Memo;
     try {
       memo = options.parentMemoName
-        ? await memoServiceClient.createMemoComment({
-            name: options.parentMemoName,
-            comment: memoData,
-          })
-        : await memoServiceClient.createMemo({ memo: memoData, memoId: state.clientId });
+        ? await memoServiceClient.createMemoComment(
+            {
+              name: options.parentMemoName,
+              comment: memoData,
+            },
+            ...requestOptions,
+          )
+        : await memoServiceClient.createMemo(
+            {
+              memo: memoData,
+              memoId: state.clientId,
+              journalPartition:
+                state.metadata.journalPartitionId !== undefined && !state.metadata.journalPartitionSuspended
+                  ? create(JournalPartitionSelectionSchema, { partitionId: state.metadata.journalPartitionId, expectedVersion: 0n })
+                  : undefined,
+            },
+            ...requestOptions,
+          );
     } catch (error) {
       if (options.parentMemoName || !state.clientId || ConnectError.from(error).code !== Code.AlreadyExists) throw error;
       // A lost success response is resolved by the stable client ID. Never
       // claim a mismatched record as this save's result.
-      const existing = await memoServiceClient.getMemo({ name: `memos/${state.clientId}` });
-      if (
-        existing.content !== memoData.content ||
-        existing.visibility !== memoData.visibility ||
-        !isEqual(existing.attachments.map((item) => item.name).sort(), allAttachments.map((item) => item.name).sort())
-      )
-        throw error;
+      signal?.throwIfAborted();
+      const existing = await memoServiceClient.getMemo({ name: `memos/${state.clientId}` }, signal ? { signal } : undefined);
+      if (!(await creationMatchesRetry(existing, memoData, signal))) {
+        throw new ConnectError(
+          "这条记录已经创建，但正文、位置、日期或关联等内容与本地不同。草稿仍保留，请打开已创建的记录比较后再保存。",
+          Code.AlreadyExists,
+        );
+      }
+      if (state.metadata.journalPartitionId !== undefined && !state.metadata.journalPartitionSuspended) {
+        const mapping = await getMemoPartition(existing.name);
+        signal?.throwIfAborted();
+        if (mapping.partitionId !== state.metadata.journalPartitionId || mapping.suspended) throw error;
+      }
       memo = existing;
     }
 
-    return { memoName: memo.name, hasChanges: true, syncError: await finishJournalSave(state, memo.name) };
+    return { memoName: memo.name, hasChanges: true, relationWarning: relationSaveWarning(state.metadata.relations, memo) };
   },
 
   /**

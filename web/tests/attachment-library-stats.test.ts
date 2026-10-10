@@ -3,7 +3,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { createElement, type PropsWithChildren } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { buildAttachmentLibraryStats, useAttachmentLibraryStats, useUnusedAttachmentLibrary } from "@/hooks/useAttachmentLibrary";
+import {
+  buildAttachmentLibraryStats,
+  useAttachmentLibrary,
+  useAttachmentLibraryStats,
+  useUnusedAttachmentLibrary,
+} from "@/hooks/useAttachmentLibrary";
 import {
   type Attachment,
   AttachmentSchema,
@@ -104,4 +109,26 @@ describe("buildAttachmentLibraryStats", () => {
       }),
     );
   });
+});
+
+it("uses the encoded file URL for audio/documents and sends lifecycle scope to every page", async () => {
+  clients.listAttachments.mockReset();
+  clients.listAttachments.mockResolvedValueOnce({
+    attachments: [
+      { ...attachment("audio", "audio/mpeg", "memos/one"), filename: "声音 #?.mp3" },
+      { ...attachment("document", "application/pdf", "memos/two"), filename: "文档 #?.pdf" },
+    ],
+    nextPageToken: "",
+  });
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const wrapper = ({ children }: PropsWithChildren) => createElement(QueryClientProvider, { client: queryClient }, children);
+  const { result } = renderHook(() => useAttachmentLibrary("zh-Hans", undefined, true), { wrapper });
+  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  expect(clients.listAttachments.mock.calls[0][0].onlyTrash).toBe(true);
+  for (const item of [...result.current.audioItems, ...result.current.documentItems]) {
+    const url = new URL(item.sourceUrl);
+    expect(decodeURIComponent(url.pathname.split("/").at(-1)!)).toBe(item.attachment.filename);
+    expect(url.hash).toBe("");
+    expect(url.search).toBe("");
+  }
 });

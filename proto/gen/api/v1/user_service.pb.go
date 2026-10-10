@@ -1742,9 +1742,11 @@ type ListAllUserStatsRequest struct {
 	State State `protobuf:"varint,1,opt,name=state,proto3,enum=memos.api.v1.State" json:"state,omitempty"`
 	// Optional. Filter to apply to memo stats.
 	// Uses the same filter syntax as ListMemos.
-	Filter        string `protobuf:"bytes,2,opt,name=filter,proto3" json:"filter,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Filter string `protobuf:"bytes,2,opt,name=filter,proto3" json:"filter,omitempty"`
+	// Optional. Count the current caller's normal and archived records, excluding trash.
+	IncludeArchived bool `protobuf:"varint,5,opt,name=include_archived,json=includeArchived,proto3" json:"include_archived,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ListAllUserStatsRequest) Reset() {
@@ -1789,6 +1791,13 @@ func (x *ListAllUserStatsRequest) GetFilter() string {
 		return x.Filter
 	}
 	return ""
+}
+
+func (x *ListAllUserStatsRequest) GetIncludeArchived() bool {
+	if x != nil {
+		return x.IncludeArchived
+	}
+	return false
 }
 
 type ListAllUserStatsResponse struct {
@@ -2894,7 +2903,9 @@ type PersonalAccessToken struct {
 	// Optional. The expiration timestamp.
 	ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	// Output only. The last used timestamp.
-	LastUsedAt    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_used_at,json=lastUsedAt,proto3" json:"last_used_at,omitempty"`
+	LastUsedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_used_at,json=lastUsedAt,proto3" json:"last_used_at,omitempty"`
+	// True limits this credential to owner-only journal reads; false preserves legacy access.
+	ReadOnly      bool `protobuf:"varint,6,opt,name=read_only,json=readOnly,proto3" json:"read_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2962,6 +2973,13 @@ func (x *PersonalAccessToken) GetLastUsedAt() *timestamppb.Timestamp {
 		return x.LastUsedAt
 	}
 	return nil
+}
+
+func (x *PersonalAccessToken) GetReadOnly() bool {
+	if x != nil {
+		return x.ReadOnly
+	}
+	return false
 }
 
 type ListPersonalAccessTokensRequest struct {
@@ -3091,6 +3109,8 @@ type CreatePersonalAccessTokenRequest struct {
 	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// Optional. Expiration duration in days (0 = never expires).
 	ExpiresInDays int32 `protobuf:"varint,3,opt,name=expires_in_days,json=expiresInDays,proto3" json:"expires_in_days,omitempty"`
+	// Creates an Agent credential restricted to journal reads, with a finite expiration.
+	ReadOnly      bool `protobuf:"varint,4,opt,name=read_only,json=readOnly,proto3" json:"read_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3144,6 +3164,13 @@ func (x *CreatePersonalAccessTokenRequest) GetExpiresInDays() int32 {
 		return x.ExpiresInDays
 	}
 	return 0
+}
+
+func (x *CreatePersonalAccessTokenRequest) GetReadOnly() bool {
+	if x != nil {
+		return x.ReadOnly
+	}
+	return false
 }
 
 type CreatePersonalAccessTokenResponse struct {
@@ -4793,10 +4820,11 @@ const file_api_v1_user_service_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tB\x19\xe0A\x02\xfaA\x13\n" +
 	"\x11memos.api.v1/UserR\x04name\x12\x1b\n" +
 	"\x06filter\x18\x02 \x01(\tB\x03\xe0A\x01R\x06filterJ\x04\b\x03\x10\x04R\x05spaceR\n" +
-	"unassigned\"\x85\x01\n" +
+	"unassigned\"\xb5\x01\n" +
 	"\x17ListAllUserStatsRequest\x12.\n" +
 	"\x05state\x18\x01 \x01(\x0e2\x13.memos.api.v1.StateB\x03\xe0A\x01R\x05state\x12\x1b\n" +
-	"\x06filter\x18\x02 \x01(\tB\x03\xe0A\x01R\x06filterJ\x04\b\x03\x10\x04J\x04\b\x04\x10\x05R\x05spaceR\n" +
+	"\x06filter\x18\x02 \x01(\tB\x03\xe0A\x01R\x06filter\x12.\n" +
+	"\x10include_archived\x18\x05 \x01(\bB\x03\xe0A\x01R\x0fincludeArchivedJ\x04\b\x03\x10\x04J\x04\b\x04\x10\x05R\x05spaceR\n" +
 	"unassigned\"I\n" +
 	"\x18ListAllUserStatsResponse\x12-\n" +
 	"\x05stats\x18\x01 \x03(\v2\x17.memos.api.v1.UserStatsR\x05stats\"\xf1\a\n" +
@@ -4897,7 +4925,7 @@ const file_api_v1_user_service_proto_rawDesc = "" +
 	"\x1bmemos.api.v1/LinkedIdentityR\x04name\"V\n" +
 	"\x1bDeleteLinkedIdentityRequest\x127\n" +
 	"\x04name\x18\x01 \x01(\tB#\xe0A\x02\xfaA\x1d\n" +
-	"\x1bmemos.api.v1/LinkedIdentityR\x04name\"\xa7\x03\n" +
+	"\x1bmemos.api.v1/LinkedIdentityR\x04name\"\xc9\x03\n" +
 	"\x13PersonalAccessToken\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\bR\x04name\x12%\n" +
 	"\vdescription\x18\x02 \x01(\tB\x03\xe0A\x01R\vdescription\x12>\n" +
@@ -4906,7 +4934,8 @@ const file_api_v1_user_service_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x03\xe0A\x01R\texpiresAt\x12A\n" +
 	"\flast_used_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x03\xe0A\x03R\n" +
-	"lastUsedAt:\x8c\x01\xeaA\x88\x01\n" +
+	"lastUsedAt\x12 \n" +
+	"\tread_only\x18\x06 \x01(\bB\x03\xe0A\x03R\breadOnly:\x8c\x01\xeaA\x88\x01\n" +
 	" memos.api.v1/PersonalAccessToken\x129users/{user}/personalAccessTokens/{personal_access_token}*\x14personalAccessTokens2\x13personalAccessToken\"\x9a\x01\n" +
 	"\x1fListPersonalAccessTokensRequest\x121\n" +
 	"\x06parent\x18\x01 \x01(\tB\x19\xe0A\x02\xfaA\x13\n" +
@@ -4916,12 +4945,13 @@ const file_api_v1_user_service_proto_rawDesc = "" +
 	"page_token\x18\x03 \x01(\tB\x03\xe0A\x01R\tpageToken\"\xa3\x01\n" +
 	" ListPersonalAccessTokensResponse\x12W\n" +
 	"\x16personal_access_tokens\x18\x01 \x03(\v2!.memos.api.v1.PersonalAccessTokenR\x14personalAccessTokens\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xa9\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xcb\x01\n" +
 	" CreatePersonalAccessTokenRequest\x121\n" +
 	"\x06parent\x18\x01 \x01(\tB\x19\xe0A\x02\xfaA\x13\n" +
 	"\x11memos.api.v1/UserR\x06parent\x12%\n" +
 	"\vdescription\x18\x02 \x01(\tB\x03\xe0A\x01R\vdescription\x12+\n" +
-	"\x0fexpires_in_days\x18\x03 \x01(\x05B\x03\xe0A\x01R\rexpiresInDays\"\x90\x01\n" +
+	"\x0fexpires_in_days\x18\x03 \x01(\x05B\x03\xe0A\x01R\rexpiresInDays\x12 \n" +
+	"\tread_only\x18\x04 \x01(\bB\x03\xe0A\x01R\breadOnly\"\x90\x01\n" +
 	"!CreatePersonalAccessTokenResponse\x12U\n" +
 	"\x15personal_access_token\x18\x01 \x01(\v2!.memos.api.v1.PersonalAccessTokenR\x13personalAccessToken\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\"`\n" +

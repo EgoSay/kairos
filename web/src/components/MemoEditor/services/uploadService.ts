@@ -68,12 +68,13 @@ export const uploadService = {
     }
   },
 
-  async uploadFiles(localFiles: LocalFile[]): Promise<Attachment[]> {
+  async uploadFiles(localFiles: LocalFile[], signal?: AbortSignal): Promise<Attachment[]> {
     const attachments: Attachment[] = new Array(localFiles.length);
     let next = 0;
     const worker = async () => {
       for (let index = next++; index < localFiles.length; index = next++) {
-        attachments[index] = await this.uploadFile(localFiles[index]);
+        signal?.throwIfAborted();
+        attachments[index] = await this.uploadFile(localFiles[index], signal);
       }
     };
     await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT_UPLOADS, localFiles.length) }, worker));

@@ -22,3 +22,11 @@ All persistence uses owner-scoped compare-and-swap documents. HTTP auth,
 passcodes, safe media transformation and provider calls remain transport or
 provider responsibilities. These features never run an automatic full-archive
 AI job or create prompts, streaks, goals or notification tasks.
+
+- Agent query criteria compile into the shared memo filter contract. Local day
+  boundaries use calendar arithmetic across DST; strings remain literal and tag
+  descendants match full path segments. Query scope, authentication and cursor
+  verification remain in the API transport.
+- Named locations are owner-scoped CAS documents. Updating a reusable name never
+  changes historical memo locations. Recent suggestions come only from readable
+  originals outside the archive and trash; they carry no new sharing permission.

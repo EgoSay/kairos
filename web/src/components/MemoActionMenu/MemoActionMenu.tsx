@@ -59,6 +59,7 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
   const {
     isInMemoDetailPage,
     handleTogglePinMemoBtnClick,
+    pinPending,
     handleEditMemoClick,
     handleToggleMemoStatusClick,
     handleCopyLink,
@@ -146,7 +147,7 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
           {t("common.edit")}
         </DropdownMenuItem>
         {!isComment && (
-          <DropdownMenuItem onClick={handleTogglePinMemoBtnClick}>
+          <DropdownMenuItem onClick={handleTogglePinMemoBtnClick} disabled={pinPending}>
             {memo.pinned ? <BookmarkMinusIcon /> : <BookmarkPlusIcon />}
             {memo.pinned ? t("common.unpin") : t("common.pin")}
           </DropdownMenuItem>

@@ -120,3 +120,5 @@ describe("map pagination", () => {
     await waitFor(() => expect(result.current.memos).toHaveLength(0));
   });
 });
+
+vi.mock("@/contexts/MemoFilterContext", () => ({ useMemoFilterContext: () => ({ filters: [] }) }));

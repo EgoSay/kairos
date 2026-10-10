@@ -3,10 +3,8 @@ import { useEffect, useMemo } from "react";
 import {
   SIDEBAR_ROW_BOX_CLASSES,
   SIDEBAR_ROW_COUNT_RAIL_CLASSES,
-  SIDEBAR_ROW_ICON_CLASSES,
   SIDEBAR_ROW_LABEL_CLASSES,
   SIDEBAR_ROW_SLOT_BUTTON_CLASSES,
-  SIDEBAR_ROW_SLOT_CLASSES,
   SidebarRowIconSlot,
   sidebarRowStateAttributes,
   sidebarRowStateClasses,
@@ -88,10 +86,6 @@ const parentPathsOf = (tag: string): string[] => {
   return segments.slice(0, -1).map((_, index) => segments.slice(0, index + 1).join("/"));
 };
 
-const TagMark = ({ className }: { className?: string }) => (
-  <HashIcon aria-hidden="true" className={cn(SIDEBAR_ROW_ICON_CLASSES, className)} strokeWidth={1.8} />
-);
-
 const Chevron = ({ open, className }: { open: boolean; className?: string }) => (
   <ChevronRightIcon
     aria-hidden="true"
@@ -141,10 +135,7 @@ const TagItem = ({ tag, depth, activeTag, expanded, onTagClick, onToggle }: TagI
         // Same 12px step the memo outline indents by.
         style={{ paddingInlineStart: 8 + depth * INDENT_STEP }}
       >
-        {isTag && hasSubTags && (
-          // At rest the slot holds the row's # mark like any other tag; pointing at the row
-          // (or tabbing into it) swaps in the chevron, so branches only look different while
-          // the disclosure is actually reachable.
+        {hasSubTags && (
           <button
             type="button"
             aria-label={`${open ? t("common.collapse") : t("common.expand")} #${tag.text}`}
@@ -152,45 +143,23 @@ const TagItem = ({ tag, depth, activeTag, expanded, onTagClick, onToggle }: TagI
             className={SIDEBAR_ROW_SLOT_BUTTON_CLASSES}
             onClick={() => onToggle(tag.text)}
           >
-            <TagMark className="group-hover:hidden group-has-[:focus-visible]:hidden" />
-            <Chevron open={open} className="hidden group-hover:block group-has-[:focus-visible]:block" />
+            <Chevron open={open} />
           </button>
         )}
-        {isTag ? (
-          <button
-            type="button"
-            aria-label={tagLabel}
-            aria-pressed={isActive || undefined}
-            title={title}
-            className={SIDEBAR_ROW_LABEL_CLASSES}
-            onClick={() => onTagClick(tag.text)}
-          >
-            {!hasSubTags && <SidebarRowIconSlot icon={HashIcon} />}
-            <span ref={labelRef} className="min-w-0 flex-1 truncate">
-              {tag.key}
-            </span>
-            <span className={SIDEBAR_ROW_COUNT_RAIL_CLASSES}>{tag.amount}</span>
-          </button>
-        ) : (
-          // A structural segment only exists to reach its children, so the whole row is the
-          // disclosure — one control, rather than a row and a chevron doing the same thing.
-          <button
-            type="button"
-            aria-label={`${open ? t("common.collapse") : t("common.expand")} ${tag.text}`}
-            aria-expanded={open}
-            className={SIDEBAR_ROW_LABEL_CLASSES}
-            onClick={() => onToggle(tag.text)}
-          >
-            <span className={SIDEBAR_ROW_SLOT_CLASSES} aria-hidden="true">
-              <Chevron open={open} />
-            </span>
-            <span ref={labelRef} className="min-w-0 flex-1 truncate" title={title}>
-              {tag.key}
-            </span>
-            {/* Empty count rail keeps structural labels truncating at the same edge as tag labels. */}
-            <span aria-hidden="true" className={SIDEBAR_ROW_COUNT_RAIL_CLASSES} />
-          </button>
-        )}
+        <button
+          type="button"
+          aria-label={tagLabel ?? `#${tag.text}`}
+          aria-pressed={isActive || undefined}
+          title={title}
+          className={SIDEBAR_ROW_LABEL_CLASSES}
+          onClick={() => onTagClick(tag.text)}
+        >
+          {!hasSubTags && <SidebarRowIconSlot icon={HashIcon} />}
+          <span ref={labelRef} className="min-w-0 flex-1 truncate">
+            {tag.key}
+          </span>
+          <span className={SIDEBAR_ROW_COUNT_RAIL_CLASSES}>{tag.amount ?? "—"}</span>
+        </button>
       </div>
 
       {open && (

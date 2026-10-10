@@ -1,0 +1,25 @@
+[Unit]
+Description=Kairos restricted backup management agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+UMask=0077
+# Match the application's actual host UID/GID before installation.
+ExecStart=/usr/bin/python3 /opt/memos-backup/journal_backup_agent.py --client-uid=10001 --socket-gid=10001
+Restart=on-failure
+RestartSec=10s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/run/kairos-backup /etc/memos-backup /var/lib/memos-backup /var/lib/memos-release /etc/systemd/system/memos-backup.timer.d
+RuntimeDirectory=kairos-backup
+RuntimeDirectoryMode=0750
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target

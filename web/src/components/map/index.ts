@@ -1,1 +1,1 @@
-export { useReverseGeocoding } from "./useReverseGeocoding";
+export { lookupLocationName } from "./useReverseGeocoding";

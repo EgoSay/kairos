@@ -1,9 +1,11 @@
 import { create } from "@bufbuild/protobuf";
 import { useEffect, useMemo, useState } from "react";
-import { memoServiceClient } from "@/connect";
 import { useDebouncedEffect } from "@/hooks";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { useInfiniteMemos } from "@/hooks/useMemoQueries";
+import { combineCELFilters } from "@/lib/cel-filter";
 import { DEFAULT_LIST_MEMOS_PAGE_SIZE } from "@/lib/constants";
+import { keywordSearchFilter } from "@/lib/memo-search";
 import { buildMemoCreatorFilter } from "@/lib/resource-names";
 import {
   type Memo,
@@ -23,67 +25,59 @@ interface UseLinkMemoParams {
 export const useLinkMemo = ({ isOpen, currentMemoName, existingRelations, onAddRelation }: UseLinkMemoParams) => {
   const user = useCurrentUser();
   const [searchText, setSearchText] = useState("");
-  const [isFetching, setIsFetching] = useState(true);
-  const [fetchedMemos, setFetchedMemos] = useState<Memo[]>([]);
-
-  const filteredMemos = fetchedMemos.filter((memo) => memo.name !== currentMemoName);
-
-  const linkedMemoNames = useMemo(() => new Set(existingRelations.map((r) => r.relatedMemo?.name)), [existingRelations]);
-
-  const isAlreadyLinked = (memoName: string): boolean => linkedMemoNames.has(memoName);
-
+  const [settledSearch, setSettledSearch] = useState("");
   useEffect(() => {
     if (isOpen) {
       setSearchText("");
+      setSettledSearch("");
     }
   }, [isOpen]);
-
-  useDebouncedEffect(
-    async () => {
-      if (!isOpen) return;
-
-      setIsFetching(true);
-      try {
-        const conditions: string[] = [];
-        const creatorFilter = buildMemoCreatorFilter(user?.name ?? "");
-        if (creatorFilter) {
-          conditions.push(creatorFilter);
-        }
-        if (searchText) {
-          conditions.push(`content.contains("${searchText}")`);
-        }
-        const { memos } = await memoServiceClient.listMemos({
-          pageSize: DEFAULT_LIST_MEMOS_PAGE_SIZE,
-          filter: conditions.join(" && "),
-        });
-        setFetchedMemos(memos);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsFetching(false);
-      }
+  useDebouncedEffect(() => setSettledSearch(searchText), 250, [searchText]);
+  const settling = settledSearch !== searchText;
+  const query = useInfiniteMemos(
+    {
+      pageSize: DEFAULT_LIST_MEMOS_PAGE_SIZE,
+      includeArchived: true,
+      orderBy: "create_time desc",
+      filter: combineCELFilters(buildMemoCreatorFilter(user?.name ?? ""), keywordSearchFilter(settledSearch)),
     },
-    300,
-    [isOpen, searchText],
+    { enabled: isOpen && Boolean(user) && !settling, staleTime: 0 },
   );
-
+  const linkedMemoNames = useMemo(() => new Set(existingRelations.map((relation) => relation.relatedMemo?.name)), [existingRelations]);
+  const isFetching = settling || query.isPending || query.isRefetching;
+  // Query keys isolate late responses, and no previous keyword's results remain selectable.
+  const filteredMemos =
+    !isOpen || isFetching || query.isError
+      ? []
+      : [...new Map(query.data?.pages.flatMap((page) => page.memos).map((memo) => [memo.name, memo]) ?? []).values()].filter(
+          (memo) => memo.name !== currentMemoName,
+        );
   const addMemoRelation = (memo: Memo) => {
-    const relation = create(MemoRelationSchema, {
-      type: MemoRelation_Type.REFERENCE,
-      relatedMemo: create(MemoRelation_MemoSchema, {
-        name: memo.name,
-        snippet: memo.snippet,
+    if (
+      isFetching ||
+      memo.name === currentMemoName ||
+      linkedMemoNames.has(memo.name) ||
+      !filteredMemos.some((item) => item.name === memo.name)
+    )
+      return;
+    onAddRelation(
+      create(MemoRelationSchema, {
+        type: MemoRelation_Type.REFERENCE,
+        relatedMemo: create(MemoRelation_MemoSchema, { name: memo.name, snippet: memo.snippet }),
       }),
-    });
-    onAddRelation(relation);
+    );
   };
-
   return {
     searchText,
     setSearchText,
     isFetching,
     filteredMemos,
     addMemoRelation,
-    isAlreadyLinked,
+    isAlreadyLinked: (name: string) => linkedMemoNames.has(name),
+    error: query.isError ? "关联记录暂时无法读取。" : undefined,
+    retry: () => (query.isFetchNextPageError ? query.fetchNextPage() : query.refetch()),
+    hasNextPage: query.hasNextPage && !settling,
+    isFetchingNextPage: query.isFetchingNextPage,
+    fetchNextPage: () => query.fetchNextPage(),
   };
 };

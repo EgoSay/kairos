@@ -5,7 +5,8 @@ Uploaded media in Kairos has unique, immutable paths. Snapshot the database firs
 then retain those exact media versions, including originals used by revisions.
 A concurrent deletion that wins the race makes this attempt fail, never succeed
 with missing media. Retry from a new database snapshot. No application pause or
-live SQLite file copying is required. S3/external attachments are unsupported.
+live SQLite file copying is required. Managed S3 objects are copied through the
+bounded storage helper; arbitrary external links remain an explicit coverage gap.
 """
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ from pathlib import Path
 import re
 import shutil
 import sqlite3
+import subprocess
 import tempfile
 import time
 
@@ -34,14 +36,18 @@ def checksum(path: Path) -> str:
     return digest.hexdigest()
 
 
-def required_media(db: sqlite3.Connection, logical_root: Path) -> set[str]:
+def required_media(db: sqlite3.Connection, logical_root: Path, remote_files: dict | None = None) -> set[str]:
     """Resolve only paths within the data root; reject unsupported dependencies."""
     paths = set()
     for uid, storage, reference in db.execute("SELECT uid,storage_type,reference FROM attachment"):
         if not UID.fullmatch(uid):
             raise ValueError("invalid attachment UID")
-        if storage in ("S3", "EXTERNAL"):
+        if storage == "EXTERNAL":
             raise ValueError("remote media requires an independent, verified backup")
+        if storage == "S3":
+            if not remote_files or remote_files.get(uid) != "managed-s3/" + uid:
+                raise ValueError("managed S3 object is not included in snapshot")
+            paths.add(remote_files[uid])
         if storage == "LOCAL":
             path = Path(reference)
             if path.is_absolute():
@@ -49,7 +55,7 @@ def required_media(db: sqlite3.Connection, logical_root: Path) -> set[str]:
             if not path.parts or ".." in path.parts:
                 raise ValueError("attachment reference escapes the data directory")
             paths.add(path.as_posix())
-        elif storage not in ("", "DATABASE"):
+        elif storage not in ("", "DATABASE", "S3"):
             raise ValueError("unrecognized attachment storage")
         # Original bytes are part of the journal's archival contract, even for
         # transformed pictures or attachments whose served bytes live in SQLite.
@@ -63,6 +69,47 @@ def required_media(db: sqlite3.Connection, logical_root: Path) -> set[str]:
                 raise ValueError("historical external media is not backed up")
             paths.add("originals/" + name[12:])
     return paths
+
+
+def copy_managed_s3(db: sqlite3.Connection, data: Path, helper: str | None) -> dict:
+    """Keep the database exact; object copies are mapped only during restoration."""
+    rows = list(db.execute("SELECT uid,payload,size FROM attachment WHERE storage_type='S3'"))
+    if not rows:
+        return {}
+    if not helper:
+        raise ValueError("managed S3 backup requires the configured storage helper")
+    setting = db.execute("SELECT value FROM system_setting WHERE name='STORAGE'").fetchone()
+    registry = json.loads(setting[0]) if setting else {}
+    storages = {item["id"]: item for item in registry.get("storages", [])}
+    result = {}
+    for uid, raw, expected_size in rows:
+        if not UID.fullmatch(uid):
+            raise ValueError("invalid S3 attachment UID")
+        obj = json.loads(raw).get("s3Object", {})
+        storage_id = obj.get("storageId")
+        config = storages.get(storage_id, {}).get("s3Config")
+        if not config:
+            config = obj.get("s3Config") or registry.get("s3Config")
+            if config:
+                # Mirror ResolveStorage's legacy fallback and pick current
+                # credentials for the same object namespace after key rotation.
+                config = next((item["s3Config"] for item in storages.values()
+                               if item.get("s3Config") and all(item["s3Config"].get(key) == config.get(key)
+                               for key in ("endpoint", "bucket", "region"))), config)
+        if not config or not obj.get("key"):
+            raise ValueError("managed S3 attachment configuration is unavailable")
+        relative = "managed-s3/" + uid
+        target = data / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("xb") as output:
+            process = subprocess.run([helper], input=json.dumps({"action": "fetch", "config": config,
+                                     "key": obj["key"]}).encode(), stdout=output, stderr=subprocess.PIPE, timeout=660)
+        if process.returncode:
+            raise RuntimeError("managed S3 object could not be copied; check source access and network")
+        if expected_size > 0 and target.stat().st_size != expected_size:
+            raise ValueError("managed S3 object size differs from the recorded attachment")
+        result[uid] = relative
+    return result
 
 
 def retain_file(source: Path, target: Path) -> None:
@@ -84,7 +131,7 @@ def retain_file(source: Path, target: Path) -> None:
         raise ValueError("media changed during snapshot")
 
 
-def snapshot(source: Path, destination: Path, logical_root: Path | None = None) -> dict:
+def snapshot(source: Path, destination: Path, logical_root: Path | None = None, storage_helper: str | None = None) -> dict:
     source, destination = source.resolve(), destination.resolve()
     logical_root = logical_root or source
     if not source.is_dir() or destination.exists() or destination.is_relative_to(source):
@@ -108,10 +155,13 @@ def snapshot(source: Path, destination: Path, logical_root: Path | None = None) 
                 original.backup(copied, pages=256, progress=progress, sleep=0.05)
                 if copied.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
                     raise ValueError("SQLite integrity check failed")
-                required = required_media(copied, logical_root)
+                remote_files = copy_managed_s3(copied, data, storage_helper)
+                required = required_media(copied, logical_root, remote_files)
                 counts = {table: copied.execute(f'SELECT count(*) FROM "{table}"').fetchone()[0]
                           for table in ("user", "memo", "attachment", "journal_document")}
         for relative in sorted(required):
+            if relative in remote_files.values():
+                continue
             original = source / relative
             if original.resolve().is_relative_to(source) is False:
                 raise ValueError("media path escapes the data directory")
@@ -123,7 +173,8 @@ def snapshot(source: Path, destination: Path, logical_root: Path | None = None) 
         files = {path.relative_to(stage).as_posix(): {"bytes": path.stat().st_size, "sha256": checksum(path)}
                  for path in sorted(data.rglob("*")) if path.is_file()}
         report = {"format": FORMAT, "sourceTs": started, "completedTs": int(time.time()),
-                  "database": DATABASE, "logicalRoot": str(logical_root), "counts": counts, "files": files}
+                  "database": DATABASE, "logicalRoot": str(logical_root), "counts": counts, "files": files,
+                  "managedS3": remote_files, "externalDependencies": []}
         (stage / "manifest.json").write_text(json.dumps(report, ensure_ascii=False, indent=2))
         verify(stage)
         os.replace(stage, destination)
@@ -151,7 +202,11 @@ def verify(directory: Path) -> dict:
     with closing(sqlite3.connect((directory / "data" / DATABASE).as_uri() + "?mode=ro", uri=True)) as db:
         if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
             raise ValueError("snapshot database is corrupt")
-        required = required_media(db, Path(report["logicalRoot"]))
+        remote_files = report.get("managedS3", {})
+        expected_s3 = {row[0] for row in db.execute("SELECT uid FROM attachment WHERE storage_type='S3'")}
+        if set(remote_files) != expected_s3:
+            raise ValueError("managed S3 snapshot mapping differs from database")
+        required = required_media(db, Path(report["logicalRoot"]), remote_files)
         if any("data/" + path not in report["files"] for path in required):
             raise ValueError("snapshot manifest omits referenced media")
         for table, count in report["counts"].items():

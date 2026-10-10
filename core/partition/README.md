@@ -75,7 +75,16 @@ resuming does not replay it. Historical sending requires a user-selected batch.
 Private routes live under `/api/v1/journal` and use the existing authorizer.
 Create/update/delete partitions, configure targets, list delivery states and
 request selected historical sends through `server/api/v1/journal_partition.go`.
-The editor confirms all attachments before calling `finishPartitionSave`.
+The editor uploads local attachments first, then sends its optional
+`JournalPartitionSelection` with `CreateMemo` or `UpdateMemo`. The memo, mapping
+CAS and durable `partition-pending` save intent commit in one database transaction.
+A partition-only edit does not create a content revision or change record dates.
+The worker reconciles save intents after a lost response or restart, cancels stale
+authorizations, and creates idempotent delivery IDs from the current committed
+record and mapping. Legacy clients without the optional selection retain the
+existing API behavior; the legacy separate assignment/send routes remain available.
+The mapping version originally loaded by the editor prevents a stale selection
+from silently overwriting another device's assignment.
 Legacy user-wide webhook settings remain stored but their automatic dispatch
 entrypoints are disabled; they must be explicitly configured as partition
 targets before any private record can leave the journal.

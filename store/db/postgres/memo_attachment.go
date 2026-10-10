@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/EgoSay/kairos/store"
+	"github.com/EgoSay/kairos/store/db/journalsql"
 )
 
 // ApplyMemoMutation atomically updates a memo, attachment bindings, and reference relations.
@@ -148,6 +149,9 @@ func (d *DB) ApplyMemoMutation(ctx context.Context, mutation *store.MemoMutation
 		if err := replaceMemoReferenceRelations(ctx, tx, mutation.MemoID, mutation.ReferenceRelations); err != nil {
 			return err
 		}
+	}
+	if err := (journalsql.Repository{DB: tx, Postgres: true}).ApplyMutations(ctx, mutation.JournalDocuments); err != nil {
+		return err
 	}
 	if err := tx.Commit(); err != nil {
 		return errors.Wrap(err, "failed to commit memo transaction")

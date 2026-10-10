@@ -1,4 +1,6 @@
 import { create } from "@bufbuild/protobuf";
+import { timestampDate } from "@bufbuild/protobuf/wkt";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { LoaderCircleIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -18,9 +20,10 @@ import { attachmentServiceClient } from "@/connect";
 import { useAppSidebar } from "@/contexts/AppSidebarContext";
 import { useSpaceContext } from "@/contexts/SpaceContext";
 import { useAttachmentLibrary, useUnusedAttachmentLibrary } from "@/hooks/useAttachmentLibrary";
-import { useBatchDeleteAttachments } from "@/hooks/useAttachmentQueries";
+import { attachmentKeys, useBatchDeleteAttachments } from "@/hooks/useAttachmentQueries";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import useDialog from "@/hooks/useDialog";
+import { journalRequest } from "@/hooks/useJournalQueries";
 import { useUsersByNames } from "@/hooks/useUserQueries";
 import i18n from "@/i18n";
 import { combineCELFilters } from "@/lib/cel-filter";
@@ -67,6 +70,18 @@ const listUnusedAttachmentNames = async (filter: string | undefined, selectedSpa
 
 const Attachments = () => {
   const t = useTranslate();
+  const [onlyTrash, setOnlyTrash] = useState(false);
+  const queryClient = useQueryClient();
+  const restore = useMutation({
+    mutationFn: (memo: string) => journalRequest(`/trash/${encodeURIComponent(memo.replace(/^memos\//, ""))}/restore`, { method: "POST" }),
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: attachmentKeys.lists() }),
+        queryClient.invalidateQueries({ queryKey: ["memos"] }),
+        queryClient.invalidateQueries({ queryKey: ["journal"] }),
+      ]);
+    },
+  });
   const currentUser = useCurrentUser();
   const deleteUnusedAttachmentsDialog = useDialog();
   const { attachmentSection, setAttachmentSection } = useAppSidebar();
@@ -75,6 +90,7 @@ const Attachments = () => {
   const [previewState, setPreviewState] = useState({ open: false, initialIndex: 0 });
   const { mutateAsync: batchDeleteAttachments, isPending: isDeletingUnused } = useBatchDeleteAttachments();
   const {
+    attachments,
     audioItems,
     documentItems,
     error,
@@ -88,7 +104,7 @@ const Attachments = () => {
     mediaPreviewItems,
     refetch,
     stats,
-  } = useAttachmentLibrary(i18n.language, memoFilter);
+  } = useAttachmentLibrary(i18n.language, memoFilter, onlyTrash);
   const {
     error: unusedError,
     isComplete: unusedIsComplete,
@@ -148,7 +164,7 @@ const Attachments = () => {
   };
 
   const renderContent = () => {
-    if (attachmentSection === "unused") {
+    if (!onlyTrash && attachmentSection === "unused") {
       if (unusedIsError) {
         return (
           <AttachmentLibraryErrorState error={unusedError instanceof Error ? unusedError : undefined} onRetry={() => refetchUnused()} />
@@ -191,7 +207,7 @@ const Attachments = () => {
       return <AttachmentLibraryErrorState error={error instanceof Error ? error : undefined} onRetry={() => refetch()} />;
     }
 
-    if (attachmentSection === "all") {
+    if (onlyTrash || attachmentSection === "all") {
       const total = stats.media + stats.documents + stats.audio;
       if (total === 0) return <div className="py-16 text-center text-sm text-muted-foreground">{t("attachment-library.empty.all")}</div>;
       return (
@@ -239,10 +255,70 @@ const Attachments = () => {
   return (
     <section className="@container min-h-full w-full pb-10 pt-3 md:pt-6">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 sm:gap-6 sm:px-6">
+        <div className="flex flex-wrap gap-2" aria-label="附件生命周期">
+          <Button
+            variant={!onlyTrash && attachmentSection !== "unused" ? "default" : "outline"}
+            onClick={() => {
+              setOnlyTrash(false);
+              setAttachmentSection("all");
+            }}
+          >
+            使用中
+          </Button>
+          {canShowUnused && (
+            <Button
+              variant={!onlyTrash && attachmentSection === "unused" ? "default" : "outline"}
+              onClick={() => {
+                setOnlyTrash(false);
+                setAttachmentSection("unused");
+              }}
+            >
+              未关联
+            </Button>
+          )}
+          <Button
+            variant={onlyTrash ? "default" : "outline"}
+            onClick={() => {
+              setOnlyTrash(true);
+              setAttachmentSection("all");
+            }}
+          >
+            回收站
+          </Button>
+        </div>
+        {onlyTrash && (
+          <div className="space-y-3 rounded-xl border p-4">
+            <p className="text-sm text-muted-foreground">附件随所属记录保留 30 天。恢复记录后附件重新可见，旧分享和外发授权不会恢复。</p>
+            {Array.from(new Map(attachments.filter((a) => a.memo && a.deleteTime).map((a) => [a.memo!, a])).values()).map((a) => {
+              const deletedAt = timestampDate(a.deleteTime!);
+              const days = Math.max(0, Math.ceil((deletedAt.getTime() + 30 * 86400000 - Date.now()) / 86400000));
+              return (
+                <div key={a.memo} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span>
+                    所属记录 {a.memo?.replace("memos/", "")} · {deletedAt.toLocaleDateString()} 删除 · 剩余 {days} 天
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={restore.isPending || days === 0}
+                    onClick={() => a.memo && restore.mutate(a.memo)}
+                  >
+                    恢复所属记录
+                  </Button>
+                </div>
+              );
+            })}
+            {restore.isError && (
+              <p role="alert" className="text-sm text-destructive">
+                {restore.error.message}
+              </p>
+            )}
+          </div>
+        )}
         <div className="min-h-[16rem] pt-1">
           {renderContent()}
 
-          {attachmentSection !== "unused" && hasNextPage && (
+          {(onlyTrash || attachmentSection !== "unused") && hasNextPage && (
             <div className="mt-6 flex justify-center">
               <Button variant="outline" className="rounded-full px-4" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
                 {isFetchingNextPage ? <LoaderCircleIcon className="h-4 w-4 animate-spin" /> : null}

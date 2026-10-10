@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -56,6 +57,7 @@ func (s *APIV1Service) listUsernamesByID(ctx context.Context, userIDs []int32) (
 func (s *APIV1Service) ListAllUserStats(ctx context.Context, request *v1pb.ListAllUserStatsRequest) (*v1pb.ListAllUserStatsResponse, error) {
 	rowStatus := convertStateToStore(request.State)
 	memoFind := &store.FindMemo{
+		ExcludeTrashed: true,
 		// Exclude comments by default.
 		ExcludeComments: true,
 		ExcludeContent:  true,
@@ -74,7 +76,13 @@ func (s *APIV1Service) ListAllUserStats(ctx context.Context, request *v1pb.ListA
 		memoFind.Filters = append(memoFind.Filters, request.Filter)
 	}
 
-	if request.State == v1pb.State_ARCHIVED {
+	if request.IncludeArchived {
+		if currentUser == nil {
+			return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+		}
+		memoFind.RowStatus = nil
+		memoFind.CreatorID = &currentUser.ID
+	} else if request.State == v1pb.State_ARCHIVED {
 		// Archived memos are only visible to their creator.
 		if currentUser == nil {
 			return &v1pb.ListAllUserStatsResponse{}, nil
@@ -197,7 +205,8 @@ func (s *APIV1Service) GetUserStats(ctx context.Context, request *v1pb.GetUserSt
 
 	normalStatus := store.Normal
 	memoFind := &store.FindMemo{
-		CreatorID: &userID,
+		ExcludeTrashed: true,
+		CreatorID:      &userID,
 		// Exclude comments by default.
 		ExcludeComments: true,
 		ExcludeContent:  true,
@@ -298,10 +307,17 @@ func (s *APIV1Service) GetUserStats(ctx context.Context, request *v1pb.GetUserSt
 func incrementTagCounts(counts map[string]int32, tags []string) {
 	seen := make(map[string]struct{}, len(tags))
 	for _, tag := range tags {
-		if _, ok := seen[tag]; ok {
-			continue
+		segments := strings.Split(tag, "/")
+		for i := range segments {
+			path := strings.Join(segments[:i+1], "/")
+			if path == "" {
+				continue
+			}
+			if _, ok := seen[path]; ok {
+				continue
+			}
+			seen[path] = struct{}{}
+			counts[path]++
 		}
-		seen[tag] = struct{}{}
-		counts[tag]++
 	}
 }

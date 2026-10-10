@@ -31,6 +31,7 @@ type MemoRelationEndpointSnapshot struct {
 	EndpointRowStatus  RowStatus
 	EndpointVisibility Visibility
 	EndpointSpaceID    *int32
+	EndpointTrashed    bool
 
 	EndpointSpaceExists  bool
 	EndpointMemberActive bool
@@ -43,7 +44,7 @@ func ValidateMemoRelationEndpointRead(snapshot *MemoRelationEndpointSnapshot) er
 	if snapshot == nil || !snapshot.Actor.Active {
 		return ErrMemoPermissionDenied
 	}
-	if snapshot.EndpointID <= 0 {
+	if snapshot.EndpointID <= 0 || snapshot.EndpointTrashed {
 		return ErrMemoMutationConflict
 	}
 	if snapshot.EndpointRowStatus != Normal && snapshot.EndpointRowStatus != Archived {
@@ -139,4 +140,25 @@ func (s *Store) DeleteMemoRelation(ctx context.Context, delete *DeleteMemoRelati
 		return err
 	}
 	return s.driver.DeleteMemoRelation(ctx, delete)
+}
+
+// PruneUnavailableReference removes an optional outgoing reference during save.
+// The source and immutable COMMENT context are never optional authorization.
+func (m *MemoMutation) PruneUnavailableReference(endpointID int32) bool {
+	if !m.SkipUnavailableReferenceRelations || endpointID == m.MemoID || (m.CommentContextMemoID != nil && endpointID == *m.CommentContextMemoID) {
+		return false
+	}
+	filtered := make([]*MemoRelation, 0, len(m.ReferenceRelations))
+	removed := false
+	for _, relation := range m.ReferenceRelations {
+		if relation != nil && relation.RelatedMemoID == endpointID {
+			removed = true
+			continue
+		}
+		filtered = append(filtered, relation)
+	}
+	if removed {
+		m.ReferenceRelations = filtered
+	}
+	return removed
 }

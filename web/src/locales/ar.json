@@ -180,6 +180,9 @@
       "transcribing": "جارٍ تحويل الصوت إلى نص..."
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "كتلة كود",
       "heading": "عنوان",
       "paragraph": "فقرة",
@@ -339,6 +342,7 @@
     "back-to-top": "اذهب إلى الأعلى"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "member": {
       "admin": "مدير",
       "archive-member": "أرشفة العضو",

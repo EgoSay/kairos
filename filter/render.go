@@ -133,7 +133,7 @@ func (r *renderer) renderFieldPredicate(cond *FieldPredicateCondition) (renderRe
 
 	switch field.Kind {
 	case FieldKindBoolColumn:
-		column := qualifyColumn(r.dialect, field.Column)
+		column := field.columnExpr(r.dialect)
 		return renderResult{
 			sql: fmt.Sprintf("%s IS TRUE", column),
 		}, nil
@@ -356,7 +356,7 @@ func (r *renderer) renderBoolColumnComparison(field Field, op ComparisonOperator
 		return renderResult{}, err
 	}
 	placeholder := r.addBoolArg(value)
-	column := qualifyColumn(r.dialect, field.Column)
+	column := field.columnExpr(r.dialect)
 	return renderResult{
 		sql: fmt.Sprintf("%s %s %s", column, sqlOperator(op), placeholder),
 	}, nil
@@ -893,10 +893,12 @@ func jsonExtractExpr(d DialectName, field Field) string {
 func jsonArrayExpr(d DialectName, field Field) string {
 	column := qualifyColumn(d, field.Column)
 	switch d {
-	case DialectSQLite, DialectMySQL:
+	case DialectSQLite:
 		return fmt.Sprintf("JSON_EXTRACT(%s, '%s')", column, jsonPath(field))
+	case DialectMySQL:
+		return fmt.Sprintf("NULLIF(JSON_EXTRACT(%s, '%s'), CAST('null' AS JSON))", column, jsonPath(field))
 	case DialectPostgres:
-		return buildPostgresJSONAccessor(column, field.JSONPath, false)
+		return fmt.Sprintf("NULLIF(%s, 'null'::jsonb)", buildPostgresJSONAccessor(column, field.JSONPath, false))
 	default:
 		return ""
 	}

@@ -7,6 +7,7 @@ vi.mock("@/hooks/useUserQueries", () => ({
   useAllUserStats: vi.fn(),
   useUserStats: vi.fn(),
 }));
+vi.mock("@/hooks/useJournalQueries", () => ({ useJournalPreferences: () => ({ data: { timezone: "Asia/Shanghai" } }) }));
 vi.mock("@/hooks/useMemoQueries", () => ({
   useMemos: () => ({ data: undefined, isLoading: false }),
 }));
@@ -52,6 +53,28 @@ describe("useFilteredMemoStats", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it.each(["home", "collection", "archived"] as const)("exposes only the active %s statistics error and explicit retry", (context) => {
+    mockUseView.mockReturnValue({ timeBasis: "create_time" });
+    const userError = new Error("user statistics failed");
+    const allError = new Error("all statistics failed");
+    const userRetry = vi.fn();
+    const allRetry = vi.fn();
+    vi.mocked(useUserStats).mockReturnValue({ error: userError, isFetching: false, refetch: userRetry } as unknown as ReturnType<
+      typeof useUserStats
+    >);
+    vi.mocked(useAllUserStats).mockReturnValue({ error: allError, isFetching: true, refetch: allRetry } as unknown as ReturnType<
+      typeof useAllUserStats
+    >);
+    const { result } = renderHook(() => useFilteredMemoStats({ userName: "users/test", context }), { wrapper });
+    expect(result.current.error).toBe(context === "home" ? userError : allError);
+    expect(result.current.retrying).toBe(context !== "home");
+    expect(userRetry).not.toHaveBeenCalled();
+    expect(allRetry).not.toHaveBeenCalled();
+    result.current.retry();
+    expect(context === "home" ? userRetry : allRetry).toHaveBeenCalledTimes(1);
+    expect(context === "home" ? allRetry : userRetry).not.toHaveBeenCalled();
   });
 
   it("aggregates by created timestamps when timeBasis is create_time", () => {
@@ -108,6 +131,16 @@ describe("useFilteredMemoStats", () => {
     warn.mockRestore();
   });
 
+  it("counts midnight records on the Kairos date rather than the device date", () => {
+    mockUseView.mockReturnValue({ timeBasis: "create_time" });
+    vi.mocked(useAllUserStats).mockReturnValue({
+      data: [{ memoCreatedTimestamps: [{ seconds: BigInt(Date.parse("2026-09-30T16:30:00Z") / 1000), nanos: 0 }], tagCount: {} }],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useAllUserStats>);
+    const { result } = renderHook(() => useFilteredMemoStats({ context: "collection" }), { wrapper });
+    expect(result.current.statistics.activityStats).toEqual({ "2026-10-01": 1 });
+  });
+
   it("disables both statistics queries when deferred", () => {
     mockUseView.mockReturnValue({
       timeBasis: "create_time",
@@ -150,6 +183,7 @@ describe("useFilteredMemoStats", () => {
     expect(useAllUserStats).toHaveBeenCalledWith(
       {
         state: State.NORMAL,
+        includeArchived: false,
         filter,
       },
       { enabled: true },
@@ -169,6 +203,7 @@ describe("useFilteredMemoStats", () => {
     expect(useAllUserStats).toHaveBeenCalledWith(
       {
         state: State.NORMAL,
+        includeArchived: false,
         filter: undefined,
       },
       { enabled: true },
@@ -189,3 +224,5 @@ describe("useFilteredMemoStats", () => {
     expect(useAllUserStats).toHaveBeenCalledWith({ state: State.ARCHIVED, filter }, { enabled: true });
   });
 });
+
+vi.mock("@/contexts/MemoFilterContext", () => ({ useMemoFilterContext: () => ({ filters: [] }) }));

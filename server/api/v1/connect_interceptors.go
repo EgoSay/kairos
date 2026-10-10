@@ -241,6 +241,9 @@ func (in *AuthInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 }
 
 func newAuthorizationConnectError(err error) *connect.Error {
+	if pkgerrors.Is(err, ErrReadOnlyCredential) {
+		return connect.NewError(connect.CodePermissionDenied, ErrReadOnlyCredential)
+	}
 	if pkgerrors.Is(err, ErrUnauthenticated) {
 		return connect.NewError(connect.CodeUnauthenticated, ErrUnauthenticated)
 	}

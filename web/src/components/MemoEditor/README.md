@@ -2,12 +2,20 @@
 
 ## Overview
 
-MemoEditor is a three-layer component. At its core is a single editor — `Editor/`, a CodeMirror 6 "decorated source" editor. It stores the memo as **raw markdown, verbatim** (no parse/serialize round-trip) and styles that source in place with CodeMirror decorations: the markers (`#`, `*`, `` ` ``, list bullets, fences) stay visible but de-emphasized while the styled text leads. There is one editor and one storage format; everything above the editor boundary talks markdown through the `EditorController` contract.
+MemoEditor is a three-layer component around one CodeMirror 6 editor. It stores **raw Markdown, verbatim** with no parse/serialize round-trip. Visual mode is the default: headings, marks, tasks, links and managed images render in place, while the current editing line reveals de-emphasized syntax for precise cursor and IME editing. An explicit Markdown source switch changes a decoration compartment, retaining the same document, selection and undo history. Complex Markdown stays in the document even when the visual layer does not render it. Everything above the editor boundary talks Markdown through `EditorController`.
 
 ## Architecture
 
 Tag insertion and completion serialize punctuation-bearing names as `#"books/Title:Edition"`.
 The source editor keeps the quotes; the reader displays the original tag name and filtering uses its exact value.
+
+Location selection is a separate dialog draft until explicit confirmation.
+Opening/cancelling restores the memo's value; only “使用当前位置” requests device
+location. Manual selection/name changes invalidate older device and geocoding
+responses. Coordinates can be saved without a name. Reusable place names are
+owner-scoped server documents and never rewrite historical records. Public-place
+search and name lookup require explicit submission through the rate-limited
+server provider; no editor-open or keystroke triggers an external lookup.
 
 ```
 ┌─────────────────────────────────────────┐
@@ -49,6 +57,8 @@ MemoEditor/
 │   ├── index.tsx               # React wrapper: mounts the EditorView, owns the
 │   │                           #   controller refs, syncs initialContent in/out
 │   ├── extensions.ts           # buildEditorExtensions(): assembles the CM extension set
+│   ├── livePreview.ts          # Direct StateField decorations; visual/source compartment
+│   ├── clipboard.ts            # HTML semantic paste; no style import or remote image fetch
 │   ├── theme.ts                # Syntax-highlight style + editor theme (CSS-var colors)
 │   ├── tagMentionDecorations.ts# ViewPlugin that decorates #tag / @mention spans
 │   ├── markdownTagRanges.ts    # Markdown syntax-tree adapter for the shared tag scanner
@@ -79,17 +89,17 @@ A reducer (`state/reducer.ts`) drives an **external store**, not a `useReducer` 
 
 `Editor/controller.ts` implements `EditorController` over a CodeMirror `EditorView`: `getMarkdown` is just `view.state.doc.toString()`, `setMarkdown` replaces the whole document, and `insertMarkdown` block-pads the insertion so it lands as its own block.
 
-`createUploadAnchor`/`updateUploadAnchor`/`resolveUploadAnchor`/`cancelUploadAnchor` drive `Editor/uploadAnchors.ts`, a `StateField` of widget decorations that hold a place in the document while an attachment uploads and carry its progress, failure message, and retry/keep affordances. `resolveUploadAnchor` replaces the anchor with the finished markdown (block-padded the same way `insertMarkdown` is); resolving with empty markdown cancels instead, as does `cancelUploadAnchor`.
+`createUploadAnchor`/`updateUploadAnchor`/`resolveUploadAnchor`/`cancelUploadAnchor`/`getUploadAnchorPosition` drive `Editor/uploadAnchors.ts`, a `StateField` of widget decorations that hold a place in the document while an attachment uploads and carry its progress, failure message, and retry/keep affordances. `resolveUploadAnchor` replaces the anchor with the finished markdown (block-padded the same way `insertMarkdown` is); resolving with empty markdown cancels instead, as does `cancelUploadAnchor`. Anchors stay before text typed at the paste point, move through earlier edits and advance later queued images when an earlier image resolves. Completion maps the current selection rather than moving focus back to the upload location.
 
-`FormattingController` (same file in `types/`) is the rich-formatting surface the focus-mode `FormattingToolbar` drives: `run(commandId, ctx?)`, `getActiveFormats()`, and `subscribe(listener)`. `Editor/formatting.ts` implements it by editing the markdown source directly — toggling inline marks (`**` and `*`) and single-backtick code delimiters, line prefixes (`-`, `1.`, and `- [ ]`, each followed by a space), and ATX heading prefixes (`#`…) — and by reading active state from the Lezer syntax tree at the caret.
+`FormattingController` (same file in `types/`) is the rich-formatting surface the focus-mode `FormattingToolbar` drives: `run(commandId, ctx?)`, `getLink()`, `getActiveFormats()`, and `subscribe(listener)`. Link editing updates the target of an existing link; an explicit empty target removes the link and retains its label. `Editor/formatting.ts` implements it by editing the markdown source directly — toggling inline marks (`**` and `*`) and single-backtick code delimiters, line prefixes (`-`, `1.`, and `- [ ]`, each followed by a space), and ATX heading prefixes (`#`…) — and by reading active state from the Lezer syntax tree at the caret.
 
 ### Formatting command catalog
 
-`formatting/commands.ts` is the single, editor-agnostic catalog of formatting verbs (`EDITOR_COMMANDS`, `EditorCommandId`, `ActiveFormatState`, `isCommandActive`). It is metadata only — labels (i18n keys), icons, and grouping — with no dependency on any concrete editor. The toolbar and the active-state highlighting derive everything from this catalog; `Editor/formatting.ts` supplies how each verb is applied to the live CodeMirror document. To add a verb, add one entry here (and its field on `ActiveFormatState`).
+`formatting/commands.ts` is the single, editor-agnostic catalog of formatting verbs (`EDITOR_COMMANDS`, `EditorCommandId`, `ActiveFormatState`, `isCommandActive`). It is metadata only — labels (i18n keys), icons, and grouping — with no dependency on any concrete editor. The toolbar and the active-state highlighting derive everything from this catalog; `Editor/formatting.ts` supplies how each verb is applied to the live CodeMirror document. To add a verb, add one entry here and an active-state mapping if it represents persistent formatting. The initial catalog includes marks, inline/block code, headings, lists/tasks, quotes, horizontal rules and links. A direct image button shares the managed upload path.
 
 ### Editor extensions
 
-`Editor/extensions.ts` exports `buildEditorExtensions()`, which composes the CodeMirror extension set: `@codemirror/lang-markdown` (with GFM), line wrapping, a reconfigurable placeholder, the editor theme, the `#tag`/`@mention` decoration plugin, the `#tag` autocomplete, and an update listener that pushes document changes back to the reducer via `onChange`. It also binds the save shortcut: `Meta-Enter` and `Ctrl-Enter` both call `onSubmit`, bound explicitly rather than through the platform-dependent `Mod-` so either works everywhere, and ordered ahead of `defaultKeymap`'s own `Mod-Enter` (`insertBlankLine`) so saving never also edits the document. Native CodeMirror paste/drop handlers intercept file payloads before its text insertion behavior: pasted files join the attachment list (a paste carries no placement gesture, so it never writes into the text), while dropped images are inserted inline at the drop point and other dropped files are attached. Ordinary markdown text paste/drop remains CodeMirror-owned.
+`Editor/extensions.ts` exports `buildEditorExtensions()`, which composes the CodeMirror extension set: `@codemirror/lang-markdown` (with GFM), line wrapping, a reconfigurable placeholder, the editor theme, the `#tag`/`@mention` decoration plugin, the `#tag` autocomplete, and an update listener that pushes document changes back to the reducer via `onChange`. It also binds the save shortcut: `Meta-Enter` and `Ctrl-Enter` both call `onSubmit`, bound explicitly rather than through the platform-dependent `Mod-` so either works everywhere, and ordered ahead of `defaultKeymap`'s own `Mod-Enter` (`insertBlankLine`) so saving never also edits the document. The paste handler retains mixed text and files. Actual images use inline upload anchors at the caret, or at their semantic HTML positions when the clipboard provides them; other files remain attachments. HTML paste keeps basic headings, emphasis, lists, code and links without source styles. Remote HTML images become links and are never downloaded implicitly. Clipboard files map to HTML image positions only when the complete set of local blob/data/file slots matches the actual image files; ambiguous files are inserted once at the paste caret while source links remain readable. Preformatted code preserves its internal blank lines. Shift+Cmd/Ctrl+V delegates to native plain-text paste. Plain Markdown paste and ordinary text drops remain CodeMirror-owned.
 
 The app formatting keymap sits ahead of CodeMirror's generic `defaultKeymap`: `Mod-B`/`Mod-I` toggle bold/italic, `Mod-Shift-S` toggles strikethrough, `Mod-E` toggles inline code, `Mod-Alt-C` toggles a code block, `Mod-Alt-0` restores paragraph text, `Mod-Alt-1` through `Mod-Alt-3` select heading levels, and `Mod-Shift-7` through `Mod-Shift-9` toggle ordered, bullet, and task lists. CodeMirror's Markdown keymap remains enabled separately for structural `Enter` and `Backspace` behavior.
 
@@ -136,7 +146,7 @@ eligibility/application in `EditorSuggestions`.
 
 Every instance is one of two things, and `onFocusModeExit` is the switch:
 
-- **Inline** (prop omitted) — the editor sits in page flow (Home composer, memo edit, comments) and owns its presentation. The more menu offers the view toggles: focus mode expands the editor over the page and the formatting toolbar's trailing button minimizes it back in place, while the formatting-toolbar preference governs the normal-mode layout.
+- **Inline** (prop omitted) — the editor sits in page flow and owns its presentation. A visible Focus button expands the same mounted editor; the formatting toolbar's visible exit returns it to page flow. Formatting starts visible in normal mode (`kairos-editor-formatting-toolbar`) and can still be hidden from the more menu. Escape closes a child dialog/menu first and otherwise exits inline focus. Mode changes do not save, cancel or reset a draft.
 - **Hosted** (prop supplied) — a host presents the editor full-screen and owns that frame; `contexts/GlobalMemoEditorContext.tsx` is the one today. The editor mounts straight into focus mode and exits by calling back to dismiss the host, so the formatting toolbar's trailing button reads as Close rather than minimize. The more menu's view toggles are absent: focus mode is not the editor's to leave, and it already forces the formatting toolbar on.
 
 Photos and audio recording are direct quiet toolbar actions. Less frequent actions, including starting a tag, remain in the more menu. `startTag()` inserts an inline `#` at the caret without replacing selected text and leaves the caret immediately after it; block-oriented `insertMarkdown()` retains its existing semantics. The optional personal-journal partition picker uses a compact menu and only shows a name after selection. Configured outgoing destinations remain visible beside the explicit “保存并同步” action.
@@ -152,7 +162,7 @@ Those toggles travel as a single optional `viewToggles` object (`types/component
 Cross-cutting React workflows stay outside the editor shell. `useMemoSave`
 coordinates validation, persistence, query invalidation, and post-save reducer
 state. `useFocusMode` owns focus mode's DOM lifecycle, including restoring the
-previous body scroll style and preserving the editor's place in grid layouts.
+previous body scroll style, retaining each mode's editor scroll position and preserving the editor's place in grid layouts. Focus bounds track `visualViewport` changes so the frame follows the visible keyboard area. Reduced-motion preferences disable presentation transitions. Visual/source reconfiguration waits until composition ends.
 
 ### Components
 
@@ -182,8 +192,15 @@ const result = await memoService.save(state, { memoName: 'memos/123' });
 
 ## Personal journal durability
 
-`useDurableDraft` persists text, the original edit baseline and selected `File` bytes to owner-scoped IndexedDB entries. `journal-drafts.ts` serializes writes per key and reports success only after the transaction commits. Cleared or saved drafts are removed in that same ordering; unavailable/quota-exhausted storage never claims a successful local save. Explicit offline saves use a separate pending queue. `PendingRecords` resumes those saves with stable memo/attachment IDs and exposes cold-start offline drafts without replacing an occupied editor.
+`useDurableDraft` persists text, the original edit baseline and selected `File` bytes to owner-scoped IndexedDB entries. The provider is keyed by account identity, so account changes create a fresh editor store. Unmount aborts active inline upload requests and stops subsequent files; late results cannot enter a different owner's editor. `journal-drafts.ts` serializes writes per key and reports success only after the transaction commits. Cleared or saved drafts are removed in that same ordering; unavailable/quota-exhausted storage never claims a successful local save. Inline upload jobs persist their mapped position, representative file order, original Blob, stable attachment ID and completed upload results in these same entries. After refresh, widgets rebuild and the first unfinished job resumes on reconnect; completed parts are not uploaded again. Consecutive jobs resolve in order, and the upload service reuses a stable ID when a response was lost. The attachment strip excludes these in-body objects to avoid double presentation. A pending inline job blocks record save until its Markdown references resolve, while the draft's separate status reports actual local persistence. Explicit offline saves without unresolved inline insertions use a separate pending queue. `PendingRecords` resumes those saves with stable memo/attachment IDs and exposes cold-start offline drafts without replacing an occupied editor. Cold offline text edits remap durable inline anchors through the actual text change. Pending synchronization first checkpoints completed uploads and resolved image Markdown, then saves the record, so refresh/retry retains both original placement and successful parts. The pending runner and its save/upload requests are cancelled with the owner editor lifetime. Moving a draft into the durable pending queue also removes its legacy localStorage copy after the durable operation succeeds.
 
-The editor defaults to private and a fresh personal partition selection. Files are uploaded before the memo transaction and partition delivery is committed only after the entire memo has saved. Recording always keeps the audio file; transcription is a separately editable candidate and only enters the body after acceptance.
+The editor defaults to private and a fresh personal partition selection. Files are uploaded before the memo transaction. The final partition selection and its observed mapping version travel in that same request; the server commits record fields, mapping CAS and a durable outbound intent together. Partition-only changes are valid saves without touching the body or dates. A failed selection retains the draft and never reports that the body saved separately. Recording always keeps the audio file; transcription is a separately editable candidate and only enters the body after acceptance.
 
 Edits compare the originally opened record, including date, location and attachments. The client sends `X-Memos-Expected-Record-Sha256`; `lib/journal-record-version.ts` and `store.MemoRecordSnapshot.Hash` use a shared UTF-8 length-prefixed tuple with IEEE754 coordinate bits. The database drivers recheck that complete tuple under the memo mutation transaction, including for metadata-only changes. A conflict retains the local draft and opens a comparison; accepting a new baseline is an explicit action, with another comparison at save time. A shared hash vector and concurrent metadata mutation tests protect the protocol.
+
+
+Editor regression coverage lives in `editor-live-preview`, `inline-image-recovery`,
+`editor-focus-viewport`, `memo-editor-paste-files`, `editor-upload-anchor`,
+`editor-formatting`, `editor` and the existing draft/save suites under `web/tests/`.
+Unit composition and visual-viewport events verify state handling; browser clipboard,
+layout and IndexedDB reload checks remain separate acceptance evidence.

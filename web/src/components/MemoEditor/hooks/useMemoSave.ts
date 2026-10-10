@@ -74,6 +74,7 @@ export function useMemoSave({
         return;
       }
 
+      if (result.relationWarning) toast(result.relationWarning, { duration: 7000 });
       if (result.syncError) toast.error(result.syncError, { duration: 7000 });
 
       // Prevent the autosave unmount flush from restoring the saved draft.

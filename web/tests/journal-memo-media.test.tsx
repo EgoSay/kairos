@@ -100,3 +100,6 @@ describe("journal original Markdown and media", () => {
     expect(container.querySelector("audio")).not.toHaveAttribute("src");
   });
 });
+
+vi.mock("@/hooks/useMemoPin", () => ({ useMemoPin: () => ({ pending: false, toggle: vi.fn() }) }));
+vi.mock("@/hooks/useCurrentUser", () => ({ default: () => ({ name: "users/owner" }) }));

@@ -15,6 +15,7 @@ type sqliteRelationMemoState struct {
 	rowStatus  store.RowStatus
 	visibility store.Visibility
 	spaceID    *int32
+	trashed    bool
 }
 
 func validateSQLiteMemoRelationEndpoints(ctx context.Context, executor dbExecutor, mutation *store.MemoMutation) error {
@@ -33,6 +34,9 @@ func validateSQLiteMemoRelationEndpoints(ctx context.Context, executor dbExecuto
 		state, err := getSQLiteRelationMemoState(ctx, executor, endpointID)
 		if err != nil {
 			if stderrors.Is(err, sql.ErrNoRows) {
+				if mutation.PruneUnavailableReference(endpointID) {
+					continue
+				}
 				return store.ErrMemoMutationConflict
 			}
 			return err
@@ -45,6 +49,7 @@ func validateSQLiteMemoRelationEndpoints(ctx context.Context, executor dbExecuto
 			EndpointRowStatus:  state.rowStatus,
 			EndpointVisibility: state.visibility,
 			EndpointSpaceID:    state.spaceID,
+			EndpointTrashed:    state.trashed,
 		}
 		if state.spaceID != nil {
 			if err := executor.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM space WHERE id = ?)", *state.spaceID).Scan(&snapshot.EndpointSpaceExists); err != nil {
@@ -59,6 +64,9 @@ func validateSQLiteMemoRelationEndpoints(ctx context.Context, executor dbExecuto
 			}
 		}
 		if err := store.ValidateMemoRelationEndpointRead(snapshot); err != nil {
+			if actor.Active && mutation.PruneUnavailableReference(endpointID) {
+				continue
+			}
 			return err
 		}
 	}
@@ -68,9 +76,10 @@ func validateSQLiteMemoRelationEndpoints(ctx context.Context, executor dbExecuto
 func getSQLiteRelationMemoState(ctx context.Context, executor dbExecutor, memoID int32) (*sqliteRelationMemoState, error) {
 	state := &sqliteRelationMemoState{}
 	var spaceID sql.NullInt64
-	if err := executor.QueryRowContext(ctx, `SELECT id, creator_id, row_status, visibility, space_id
+	if err := executor.QueryRowContext(ctx, `SELECT id, creator_id, row_status, visibility, space_id,
+ EXISTS(SELECT 1 FROM journal_document trash WHERE trash.owner_id=memo.creator_id AND trash.kind='trash' AND trash.document_key=memo.uid)
 		FROM memo WHERE id = ?`, memoID).Scan(
-		&state.id, &state.creatorID, &state.rowStatus, &state.visibility, &spaceID,
+		&state.id, &state.creatorID, &state.rowStatus, &state.visibility, &spaceID, &state.trashed,
 	); err != nil {
 		return nil, err
 	}

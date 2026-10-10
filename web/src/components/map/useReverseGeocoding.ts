@@ -1,39 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { journalRequest } from "@/hooks/useJournalQueries";
+import type { MapPoint } from "./types";
 
-const GEOCODING = {
-  endpoint: "https://nominatim.openstreetmap.org/reverse",
-  userAgent: "Kairos/1.0 (https://github.com/EgoSay/kairos)",
-  format: "json",
-} as const;
-
-export const useReverseGeocoding = (lat: number | undefined, lng: number | undefined) => {
-  return useQuery({
-    queryKey: ["geocoding", lat, lng],
-    queryFn: async () => {
-      const coordString = `${lat?.toFixed(6)}, ${lng?.toFixed(6)}`;
-      if (lat === undefined || lng === undefined) return "";
-
-      try {
-        const url = `${GEOCODING.endpoint}?lat=${lat}&lon=${lng}&format=${GEOCODING.format}`;
-        const response = await fetch(url, {
-          headers: {
-            "User-Agent": GEOCODING.userAgent,
-            Accept: "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return (data?.display_name as string) || coordString;
-      } catch (error) {
-        console.error("Failed to fetch reverse geocoding data:", error);
-        return coordString;
-      }
-    },
-    enabled: lat !== undefined && lng !== undefined,
-    staleTime: Infinity,
+/** Explicit lookup only: opening an editor must not send its saved coordinates
+ * to an external provider or silently replace a private, user-written name. */
+export const lookupLocationName = (point: MapPoint, signal?: AbortSignal) =>
+  journalRequest<{ name: string }>("/locations/reverse", {
+    method: "POST",
+    signal,
+    body: JSON.stringify({ latitude: point.lat, longitude: point.lng }),
   });
-};

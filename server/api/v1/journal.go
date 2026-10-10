@@ -27,7 +27,14 @@ func (s *APIV1Service) registerJournalRoutes(ctx context.Context, e *echo.Echo) 
 			setAPIResponseNoStoreHeaders(c.Response().Header())
 			r := c.Request()
 			result := authorizer.Authenticate(r.Context(), r.Header.Get("Authorization"))
-			if err := authorizer.CheckAccess(r.Context(), "/memos.api.v1.JournalService/Private", result); err != nil {
+			procedure := "/memos.api.v1.JournalService/Private"
+			if result != nil && result.ReadOnly {
+				if !isAgentReadRequest(r) {
+					return c.JSON(http.StatusForbidden, map[string]string{"message": ErrReadOnlyCredential.Error()})
+				}
+				procedure = "/memos.api.v1.JournalService/AgentRead"
+			}
+			if err := authorizer.CheckAccess(r.Context(), procedure, result); err != nil {
 				return c.JSON(http.StatusUnauthorized, map[string]string{"message": "请先登录"})
 			}
 			r = r.WithContext(auth.ApplyToContext(r.Context(), result))
@@ -47,11 +54,14 @@ func (s *APIV1Service) registerJournalRoutes(ctx context.Context, e *echo.Echo) 
 	group.PATCH("/preferences", s.journalUpdatePreferences)
 	group.GET("/review", s.journalReview)
 	group.GET("/calendar", s.journalCalendar)
+	s.registerJournalAgentRoutes(group)
 	s.registerJournalPartitionRoutes(group)
 	s.registerJournalRecordRoutes(group)
 	s.registerJournalInsightRoutes(group)
 	s.registerJournalShareRoutes(group, e)
 	s.registerJournalBackupRoutes(group)
+	s.registerJournalCloudBackupRoutes(group)
+	s.registerJournalLocationRoutes(group)
 	go s.RunPartitionDeliveryWorker(ctx)
 	go s.RunJournalRetention(ctx)
 }

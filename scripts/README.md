@@ -110,6 +110,39 @@ drift or new data blocks destructive rollback and retains private receipts.
 The watchdog uses the same path; recovery does not depend on a CI runner or
 another Git push. Do not manually redeploy an old digest over new writes.
 
+Remote `rollback` requests must receive the same release JSON on stdin as
+`prepare` (repository, commit, digest and Compose SHA-256). A request for another
+pending release is rejected without changes. If the watchdog already completed
+recovery, the gate accepts only a matching successful receipt and verifies that
+the previous Dokploy declaration and healthy image are still current before
+returning `already-rolled-back`; a missing or stale receipt is not success. The
+local watchdog has no stdin and recovers the current pending release.
+
+A missing application container does not prevent safe rollback: a successful
+Docker query must prove absence before the gate proceeds through the unchanged
+data check and rebuilds the old service. Docker daemon and permission failures
+still fail. New data, an unreadable database or unknown deployment outcome retain
+the pending state; the gate attempts to resume backup scheduling and records a
+private `last-rollback-attempt.json` for inspection. Health or backup-resumption
+failure never records a successful rollback. Install the updated server gate
+before a workflow that sends release identities to rollback.
+
+The unchanged-data fingerprint covers the full logical SQLite database. When it
+matches, rollback keeps that database and its WAL in place; it restores the
+declaration and image without deleting and recopying identical data. Confirmation
+retains the pending receipt and watchdog until backup scheduling has recovered.
+The release receipt preserves an administrator's paused backup schedule, so a
+successful release or rollback does not silently enable it.
+
+Before stopping writes, the gate resolves the verified previous Dokploy Compose
+with its private environment and freezes the `memos` service for rollback. It
+retains that service's settings and the running container's complete environment,
+mounts and network identities, including the backup-agent socket. Existing named
+volumes and networks are pinned as external so rollback cannot create an empty
+replacement. The previous image stays pinned by digest and uses the locally
+available image. Compose parsing is checked before downtime; environment secrets
+remain in root-private files and never enter command arguments or public receipts.
+
 A rollback after an already confirmed release needs a separate compatibility and
 data-recovery assessment; the pending-release gate is not a general restore tool.
 Restore to a new volume when schema compatibility or preservation requires it.
@@ -131,10 +164,11 @@ the resulting archive has been restored and checked in an isolated instance.
 `journal_snapshot.py` uses SQLite's online backup API, validates the database,
 and pins the immutable local files referenced by attachments and revisions.
 It includes retained originals and creates a SHA-256 manifest. Concurrent media
-deletion, missing originals, unsafe paths and unsupported external/S3 media fail
+deletion, missing originals, unsafe paths and uncovered external media fail
 the attempt instead of producing a supposedly complete snapshot. A subsequent
 attempt starts from a new database snapshot. Avatars embedded in the database are
-covered; arbitrary remote images linked in text still depend on their remote host.
+covered; managed S3 objects are copied through the host storage helper described
+below. Arbitrary remote images linked in text still depend on their remote host.
 Unreferenced files and regenerable caches are excluded.
 
 `journal_cloud_backup.py` serializes snapshot creation, encrypted restic upload,
@@ -185,7 +219,11 @@ retention/check jobs and independent monitoring before claiming automatic backup
 
 Restore the explicit snapshot ID from a verified success receipt with restic into
 a new, isolated directory; do not assume the newest snapshot is complete, because
-restic can retain snapshots from failed partial uploads. Then run
+restic can retain snapshots from failed partial uploads. This script backs up
+relative `data` and `manifest.json` paths: the snapshot tree restores directly
+under the target even though `snapshots --json` lists absolute input paths.
+Inspect `restic ls SNAPSHOT_ID` when recovering archives from another producer.
+Then run
 `journal_snapshot.py verify --destination RESTORED_DIRECTORY`. Verify account and
 media behavior in an isolated app as well. Before starting a restored copy, use
 the existing `journal_backup.pause_restored_permissions` routine to revoke old
@@ -236,11 +274,155 @@ and internal source identities to agree, private access mode, the running digest
 and Docker health. An eight minute watchdog handles interrupted releases;
 preparation has a six minute deadline. No whole-host restart is used.
 
-Rollback restores the previous snapshot and exact image only while the logical
-database and its shape are unchanged. If the new version accepted content,
+Rollback verifies the previous snapshot and restores the exact image only while
+the logical database and its shape are unchanged, retaining the live DB/WAL.
+If the new version accepted content,
 changed account/settings state or transformed tables, it preserves current data and reports a blocked
 rollback instead of erasing changes or guessing schema compatibility. Inspect
 private release receipts in `/var/lib/memos-release` in that case. The latest
 three local preparation snapshots are retained; R2 follows its separate policy.
 The rollback logic must be exercised and the full pipeline must succeed in the
 actual environment before declaring automated releases ready.
+
+### Product backup configuration and status (R08)
+
+`journal_backup_agent.py` is a root-owned, local Unix-socket control plane for
+**the existing** `memos-backup.service` and `memos-backup.timer`. It does not create
+another scheduler. Its application API is restricted to `status`, connection
+`test`, complete `trial`, `activate`, `pause`, `enable`, `run`, `check`, and
+isolated `restore`. Neither the browser nor the application supplies a source
+path, executable, systemd unit, shell command or restore directory. Only active
+application administrators can use `/api/v1/journal/cloud-backup/*`; deployers
+must enforce scoped-token permissions there as on other management routes.
+
+Build the helper from the reviewed commit for the host architecture:
+
+```bash
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o kairos-backup-storage ./cmd/kairos-backup-storage
+```
+
+Install this binary and the reviewed Python scripts under `/opt/memos-backup/`,
+owned by root and not writable by the application. Add
+`"storageHelper": "/opt/memos-backup/kairos-backup-storage"` to the existing
+root-private backup configuration. Preserve the source, logical root, restic
+password file, repository, host identity and independent monitoring fields.
+Install `scripts/systemd/kairos-backup-agent.service` after matching its UID/GID
+to the application's actual user. Create the writable timer drop-in directory
+and `/run/kairos-backup` first; adapt its `ReadWritePaths` to the existing work
+path if that differs. Start this service, and bind-mount `/run/kairos-backup`
+read-only into the existing application with
+`MEMOS_BACKUP_SOCKET=/run/kairos-backup/agent.sock`. The directory is root-owned
+0750 and socket root/application-group 0660. No TCP listener, Docker socket,
+root credentials or host configuration directories enter the application.
+
+The `/journal/backup` page saves draft credentials only on the host with 0600
+permissions. It does an actual temporary S3 write/read/checksum/delete, checks
+repository access, then requires a complete trial backup before activation.
+New repository initialization is an explicit checkbox, never a fallback after
+an access failure. Blank credentials may reuse the active endpoint's values;
+a changed endpoint needs new credentials. The repository recovery password is
+never returned by the API. Store an independent recovery copy before enabling
+new settings. Activation journals the previous configuration and timer drop-in;
+an interrupted activation restores them at agent startup. Configuration tests
+and trial runs do not replace production configuration or publish production
+monitoring heartbeats. All uploads share the active backup lock.
+
+`/journal/backup/status` separates connection, last successful protected time,
+current task, history, full repository read checks, isolated restore reports,
+monitor delivery and independent-replica freshness. It marks stale receipts and
+failed refreshes explicitly. Browser drafts are counted locally and never
+included in server backup coverage. `last-replica.json` is optional independent
+copy evidence; without it the UI reports unknown rather than inferring success.
+The configured external monitoring receiver continues receiving backup
+heartbeats even with the application closed; this page is not that independent
+monitor and does not configure a new notification channel.
+
+Managed S3 attachments are streamed through the helper into `managed-s3/<uid>`
+and included in the manifest alongside retained originals and historical
+originals. The snapshot database remains exact, including its S3 metadata, so
+release fingerprint checks still work. Missing objects or originals and arbitrary
+external attachments fail the backup. Restore converts only the isolated copy's
+S3 references to the verified local bytes while retaining media metadata.
+It also resets the copy's default upload destination to local storage, removes
+the production S3 registry and credentials, and uses a relative local upload
+path template. New uploads during a restore drill cannot reuse the old bucket.
+The helper uses the existing AWS SDK, verifies TLS, and does not echo SDK errors.
+Legacy repositories containing only local/database files remain verifiable.
+
+An isolated restore accepts only a successful receipt's explicit snapshot ID,
+restores under the fixed `workDir/restores/<isolationId>` directory, verifies
+manifest/checksums and database counts, revokes sessions/tokens/shares, pauses
+outbound jobs, and makes the restored instance private. It never replaces the
+live database. Its report initially sets `applicationVerified=false`: a human or
+release operator must actually run the isolated application and verify records,
+relationships, dates and media before recording application evidence in that
+snapshot's `restore-report.json`. Mount its data at the original logical root,
+keep networking restricted and backup control unmounted, and use the source
+snapshot's compatible application image. Do not claim checksum verification is
+an application restore test. Preserve the original encrypted snapshot unchanged.
+
+### Isolated application restore verification
+
+`journal_restore_app_verify.py` prepares a **new copy** of an agent-generated,
+permission-paused restore. It refuses a live data path, an existing work directory,
+or symlinks. Only the new copy receives one-hour synthetic owner, administrator,
+and unrelated-user PATs; the credentials stay in a root-private 0600 file. The
+tool never starts containers or changes the live application. Its `verify`
+command checks Docker isolation before sending credentials to the
+container's own loopback over a fixed `docker exec` HTTP stream. The default
+transport sends credentials over stdin, never command arguments. The container
+must use `--network none` without published ports, and the sole mount
+must be the prepared copy at `/var/opt/memos`; no production socket or tunnel is
+allowed.
+
+As the release operator, substitute a real restore ID and its compatible pinned
+image digest, choose an unused container name, and install the reviewed verifier beside
+`journal_cloud_backup.py` and `journal_snapshot.py`:
+
+```bash
+restore_dir=/var/lib/memos-backup/restores/RESTORE_ID
+verify_dir=/var/lib/memos-backup/app-checks/RESTORE_ID-baseline
+verify_image=ghcr.io/egosay/kairos@sha256:COMPATIBLE_DIGEST
+python3 /opt/memos-backup/journal_restore_app_verify.py prepare \
+  --restore "$restore_dir" --work "$verify_dir" --uid 10001 --gid 10001
+docker run -d --name kairos-restore-check --network none \
+  --mount type=bind,source="$verify_dir/data",target=/var/opt/memos \
+  -e MEMOS_DATA=/var/opt/memos -e MEMOS_PORT=5230 "$verify_image"
+# Wait for the isolated application's health check, then run the full check.
+python3 /opt/memos-backup/journal_restore_app_verify.py verify \
+  --work "$verify_dir" --container kairos-restore-check
+```
+
+The existing Alpine image includes BusyBox `nc`; verification only requests HTTP
+GETs at its own loopback port 5230. No external network, host HTTP listener or
+extra sidecar is needed. See Docker's
+[none network guidance](https://docs.docker.com/engine/network/drivers/none/).
+An optional `--base-url http://127.0.0.1:PORT` transport exists for hosts with a
+verified internal bridge and explicit loopback publication; it additionally
+inspects every attached network and port binding. Docker Desktop configurations
+can ignore port publication for internal networks, so use the default exec
+transport. Match UID/GID to the chosen image rather than changing
+the original volume's ownership. Pull the exact digest before creating the
+restricted container if it is not cached.
+
+Every readable record is checked by UID, original dates, content hash, location,
+attachment membership and visible relationships. Every served attachment and
+retained original is checked byte-for-byte, image previews are requested, and
+anonymous, unrelated-user and unregistered-token access must fail. An instance
+administrator's existing named-record privilege is checked separately. Recycled
+records remain excluded and recycled files require the explicit owner recovery
+URL. Protected database tables and all retained media, including history-only
+originals, must remain unchanged. Archived-owner records stay in the table/hash
+checks and are explicitly counted as excluded from authenticated API verification.
+
+`application-report.json` is private and carries the snapshot ID, tested image
+identity, profile version/commit, counts, hashes and scope. A failed rerun clears
+prior success. Original credential rows are checked absent before preparation;
+the negative token is synthetic and unregistered, **not** a recovered real token.
+Only after reviewing successful evidence should the release operator copy its
+application result into that snapshot's `restore-report.json`. This does not
+claim personal acceptance or replace the final candidate image's regression.
+Use a separately prepared copy for a candidate image so migration checks do not
+overwrite baseline evidence. Stop/remove the named temporary container after
+verification, preserve private reports, and retain or dispose of
+the copied data under the existing recovery-data policy.

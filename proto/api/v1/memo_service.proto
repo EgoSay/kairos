@@ -310,6 +310,17 @@ message CreateMemoRequest {
   // If empty, a unique ID will be generated.
   // Format: ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,34}[a-zA-Z0-9])?$
   string memo_id = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Private partition selection committed with the complete record.
+  JournalPartitionSelection journal_partition = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// An explicit, owner-only partition selection with optimistic concurrency.
+message JournalPartitionSelection {
+  // Empty removes the record from its partition.
+  string partition_id = 1;
+  // Mapping version observed by the editor; zero means no mapping yet.
+  int64 expected_version = 2;
 }
 
 message ListMemosRequest {
@@ -358,6 +369,10 @@ message ListMemosRequest {
   // Optional. If true, show deleted memos in the response.
   bool show_deleted = 6 [(google.api.field_behavior) = OPTIONAL];
 
+  // Optional. Include normal and archived records owned by the current caller.
+  // Trash remains excluded. Overrides state without widening read permissions.
+  bool include_archived = 9 [(google.api.field_behavior) = OPTIONAL];
+
   reserved 7, 8;
   reserved "space", "unassigned";
 }
@@ -385,8 +400,11 @@ message UpdateMemoRequest {
   // The `name` field is required.
   Memo memo = 1 [(google.api.field_behavior) = REQUIRED];
 
-  // Required. The list of fields to update.
+  // Required. The list of fields to update. May be empty for a partition-only save.
   google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. Committed atomically with memo fields before any outbound work.
+  JournalPartitionSelection journal_partition = 3 [(google.api.field_behavior) = OPTIONAL];
 }
 
 message DeleteMemoRequest {

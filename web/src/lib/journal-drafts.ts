@@ -75,7 +75,8 @@ export function restoreJournalState(draft: JournalDraft): EditorState {
     ui: {
       ...draft.state.ui,
       justSaved: false,
-      pendingInlineImageInsertions: 0,
+      pendingInlineImageInsertions: new Set(draft.state.localFiles.flatMap((file) => (file.inlineUpload ? [file.inlineUpload.id] : [])))
+        .size,
       isLoading: { saving: false, uploading: false, loading: false, transcribing: false },
     },
     recorderBusy: false,

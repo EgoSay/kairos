@@ -23,15 +23,19 @@ export const EditorMetadata: FC<EditorMetadataProps> = ({
   const placementActionsDisabled = useEditorSelector(
     (s) => s.ui.isLoading.saving || s.ui.isLoading.uploading || s.ui.pendingInlineImageInsertions > 0,
   );
-  const inlineAttachmentUIDs = extractManagedAttachmentUIDs(content);
+  const inlineAttachmentUIDs = new Set(extractManagedAttachmentUIDs(content));
+  for (const file of localFiles) {
+    const attachment = file.inlineUpload?.attachment;
+    if (attachment) inlineAttachmentUIDs.add(attachment.name.split("/").pop() ?? "");
+  }
 
   return (
     <div className="w-full flex flex-col gap-2">
       <AttachmentListEditor
         attachments={attachments}
-        localFiles={localFiles}
+        localFiles={localFiles.filter((file) => !file.inlineUpload)}
         onAttachmentsChange={(next) => dispatch(actions.setMetadata({ attachments: next }))}
-        onLocalFilesChange={(next) => dispatch(actions.setLocalFiles(next))}
+        onLocalFilesChange={(next) => dispatch(actions.setLocalFiles([...next, ...localFiles.filter((file) => file.inlineUpload)]))}
         onRemoveLocalFile={(previewUrl) => dispatch(actions.removeLocalFile(previewUrl))}
         inlineAttachmentUIDs={inlineAttachmentUIDs}
         onInsertAttachments={onInsertAttachments}

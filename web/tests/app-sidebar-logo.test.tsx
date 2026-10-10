@@ -99,6 +99,12 @@ vi.mock("@/contexts/MemoFilterContext", async (importOriginal) => ({
   }),
 }));
 
+vi.mock("@/contexts/ViewContext", async (original) => ({
+  ...(await original<typeof import("@/contexts/ViewContext")>()),
+  useView: () => ({ timeBasis: "create_time" }),
+}));
+vi.mock("@/hooks/useJournalQueries", () => ({ useJournalPreferences: () => ({ data: { timezone: "Asia/Shanghai" } }) }));
+
 vi.mock("@/contexts/SpaceContext", () => ({
   useSpaceContext: () => {
     const location = useLocation();
@@ -352,7 +358,9 @@ describe("App sidebar logo", () => {
       </MemoryRouter>,
     );
 
-    expect(filteredStatsHook).toHaveBeenCalledWith(expect.objectContaining({ context: "collection", filter: 'space == "spaces/product"' }));
+    expect(filteredStatsHook).toHaveBeenCalledWith(
+      expect.objectContaining({ context: "collection", filter: '(space == "spaces/product")' }),
+    );
   });
 
   it("includes authorized Space memos in All Explore statistics", () => {
