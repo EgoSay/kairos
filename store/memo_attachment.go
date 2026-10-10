@@ -23,6 +23,13 @@ type MemoAttachmentBinding struct {
 	WasBoundToMemo bool
 }
 
+// MemoRecordCheck binds an authorization transaction to an owner's exact record.
+type MemoRecordCheck struct {
+	MemoID    int32
+	CreatorID int32
+	Hash      string
+}
+
 // MemoMutation atomically updates a memo, its attachment bindings, and its
 // reference relations. Removed attachment rows are deleted in the same
 // transaction; callers may clean up external objects after the commit.
@@ -47,6 +54,8 @@ type MemoMutation struct {
 	Policy                            *MemoWritePolicy
 	// JournalDocuments share the memo transaction, including version checks.
 	JournalDocuments []*JournalDocumentMutation
+	// RecordChecks are read-only CAS conditions, acquired in ascending memo ID order.
+	RecordChecks []MemoRecordCheck
 }
 
 // MemoAttachmentBindingOwnerAllowed reports whether an unbound attachment may
@@ -117,6 +126,13 @@ func (s *Store) ApplyMemoMutation(ctx context.Context, mutation *MemoMutation) e
 	policy := mutation.WritePolicy()
 	if err := validateMemoWritePolicy(policy); err != nil {
 		return err
+	}
+	mutation.RecordChecks = slices.Clone(mutation.RecordChecks)
+	slices.SortFunc(mutation.RecordChecks, func(a, b MemoRecordCheck) int { return int(a.MemoID - b.MemoID) })
+	for _, check := range mutation.RecordChecks {
+		if check.MemoID <= 0 || check.CreatorID != mutation.MemoCreatorID || len(check.Hash) != 64 {
+			return ErrMemoPermissionDenied
+		}
 	}
 	for _, document := range mutation.JournalDocuments {
 		if document == nil || document.Document == nil || document.Document.OwnerID != mutation.MemoCreatorID || mutation.ActorUserID() != mutation.MemoCreatorID {

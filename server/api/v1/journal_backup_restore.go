@@ -118,6 +118,10 @@ func (s *APIV1Service) journalRestoreBackup(c *echo.Context) error {
 }
 
 func (s *APIV1Service) pauseJournalPublication(ctx context.Context, owner int32) error {
+	guard, err := s.prepareJournalShareGuard(ctx, owner)
+	if err != nil {
+		return err
+	}
 	service := s.JournalPartitions
 	if service == nil {
 		service = partition.New(s.Store, s.readPartitionMemo)
@@ -129,6 +133,7 @@ func (s *APIV1Service) pauseJournalPublication(ctx context.Context, owner int32)
 	if err != nil {
 		return err
 	}
+	mutations := []*store.JournalDocumentMutation{guard}
 	for _, doc := range docs {
 		var share journal.Share
 		if err := json.Unmarshal(doc.Payload, &share); err != nil {
@@ -139,11 +144,31 @@ func (s *APIV1Service) pauseJournalPublication(ctx context.Context, owner int32)
 		if err != nil {
 			return err
 		}
-		if _, err := s.Store.PutJournalDocument(ctx, &store.JournalDocument{OwnerID: owner, Kind: "share", Key: doc.Key, Payload: payload}, doc.Version); err != nil {
-			return err
-		}
+		mutations = append(mutations, &store.JournalDocumentMutation{Document: &store.JournalDocument{OwnerID: owner, Kind: "share", Key: doc.Key, Payload: payload}, ExpectedVersion: doc.Version})
 	}
-	return nil
+	limit := 1
+	anchor, err := s.Store.GetMemo(ctx, &store.FindMemo{CreatorID: &owner, Limit: &limit})
+	if err != nil {
+		return err
+	}
+	if anchor == nil {
+		// An empty owner cannot have an approved nonempty share. Advancing the
+		// guard rejects any stale approval whose source was since deleted; a
+		// newly created memo and newly previewed share may follow this boundary.
+		for _, mutation := range mutations {
+			if _, err := s.Store.PutJournalDocument(ctx, mutation.Document, mutation.ExpectedVersion); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	// This internal withdrawal changes no memo data. The immutable owner and
+	// body are checked in the transaction; it may also withdraw grants for an
+	// archived record or a Space the author has since left.
+	return s.Store.ApplyMemoMutation(ctx, &store.MemoMutation{
+		MemoID: anchor.ID, MemoCreatorID: owner, ExpectedMemoContent: anchor.Content,
+		JournalDocuments: mutations,
+	})
 }
 
 func (s *APIV1Service) backupUID(ctx context.Context, owner int32, digest, kind, source string) (string, error) {
@@ -390,19 +415,21 @@ func remapBackupLinks(text string, memos, attachments map[string]string) string 
 	// Only resource paths are rewritten when an existing instance already owns
 	// the original ID. All other original wording stays unchanged.
 	return backupResourcePath.ReplaceAllStringFunc(text, func(resource string) string {
-		parts := strings.SplitN(resource, "/", 2)
-		mapping := memos
-		if parts[0] != "memos" {
-			mapping = attachments
+		parts := backupResourcePath.FindStringSubmatch(resource)
+		mapping := attachments
+		if parts[1] == "memos/" {
+			mapping = memos
 		}
-		if uid := mapping[parts[1]]; uid != "" {
-			return parts[0] + "/" + uid
+		if uid := mapping[parts[2]]; uid != "" {
+			return parts[1] + uid + parts[3]
 		}
 		return resource
 	})
 }
 
-var backupResourcePath = regexp.MustCompile(`\b(?:memos|attachments|file)/[a-zA-Z0-9_-]+`)
+// Match the complete URL tail so resource-like words in a filename, query or
+// fragment cannot be mistaken for a second independent managed resource.
+var backupResourcePath = regexp.MustCompile(`(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//[^\s)\]<>"']+|\b(file/attachments/|memos/|attachments/|file/)([a-zA-Z0-9_-]+)([^\s)\]<>"']*)`)
 
 func backupRestoredID(digest, kind, source string) string {
 	sum := sha256.Sum256([]byte(digest + "\x00" + kind + "\x00" + source))

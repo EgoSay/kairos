@@ -322,6 +322,12 @@ func (s *APIV1Service) GetMemo(ctx context.Context, request *v1pb.GetMemoRequest
 
 // UpdateMemo updates an existing memo.
 func (s *APIV1Service) UpdateMemo(ctx context.Context, request *v1pb.UpdateMemoRequest) (*v1pb.Memo, error) {
+	return s.applyMemoUpdate(ctx, request, false)
+}
+
+// Restoration is internal-only: the public save contract cannot opt out of
+// normal authorization checks or automatically reactivate recovered content.
+func (s *APIV1Service) applyMemoUpdate(ctx context.Context, request *v1pb.UpdateMemoRequest, restoring bool, recoveryGuards ...*store.JournalDocumentMutation) (*v1pb.Memo, error) {
 	if request.Memo == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "memo is required")
 	}
@@ -436,6 +442,13 @@ func (s *APIV1Service) UpdateMemo(ctx context.Context, request *v1pb.UpdateMemoR
 	journalDocuments, err := s.prepareMemoPartitionSave(ctx, user, memo, request.JournalPartition)
 	if err != nil {
 		return nil, err
+	}
+	if restoring {
+		journalDocuments, err = s.prepareMemoPartitionRestore(ctx, memo)
+		if err != nil {
+			return nil, err
+		}
+		journalDocuments = append(journalDocuments, recoveryGuards...)
 	}
 
 	previousContent := memo.Content
@@ -564,7 +577,7 @@ func (s *APIV1Service) UpdateMemo(ctx context.Context, request *v1pb.UpdateMemoR
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build updated memo state")
 	}
-	if contentUpdated {
+	if contentUpdated && !restoring {
 		s.dispatchMemoMentionNotificationsBestEffort(ctx, memo, commentContext, previousContent)
 	}
 	if memo.RowStatus == store.Archived {
@@ -577,12 +590,16 @@ func (s *APIV1Service) UpdateMemo(ctx context.Context, request *v1pb.UpdateMemoR
 		if err := s.cancelPartitionMemoDeliveries(ctx, memo.CreatorID, memo.UID); err != nil {
 			return nil, err
 		}
-	} else if request.JournalPartition == nil {
+	} else if request.JournalPartition == nil && !restoring {
 		if err := s.enqueuePartitionMemo(ctx, memo.CreatorID, memo.UID, false); err != nil {
 			slog.Warn("Record saved but partition delivery could not be queued", slog.Any("err", err))
 		}
 	}
-	s.dispatchMemoUpdatedSideEffects(ctx, memoMessage)
+	if restoring {
+		s.SSEHub.publishMemoChanged()
+	} else {
+		s.dispatchMemoUpdatedSideEffects(ctx, memoMessage)
+	}
 
 	return memoMessage, nil
 }

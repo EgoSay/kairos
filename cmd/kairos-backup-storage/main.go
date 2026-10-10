@@ -7,37 +7,108 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/EgoSay/kairos/internal/version"
+	"github.com/EgoSay/kairos/markdown"
 	storepb "github.com/EgoSay/kairos/proto/gen/store"
 	storage "github.com/EgoSay/kairos/provider/storage/s3"
 )
 
 type request struct {
-	Action string          `json:"action"`
-	Config json.RawMessage `json:"config"`
-	Key    string          `json:"key"`
-	Prefix string          `json:"prefix"`
+	Action               string          `json:"action"`
+	Config               json.RawMessage `json:"config,omitempty"`
+	Key                  string          `json:"key"`
+	Prefix               string          `json:"prefix"`
+	SnapshotID           string          `json:"snapshotId"`
+	SourceDatabaseSHA256 string          `json:"sourceDatabaseSha256"`
+	Records              []sourceRecord  `json:"records"`
+}
+
+type sourceRecord struct {
+	ID      int64  `json:"id"`
+	Content string `json:"content"`
+}
+
+type tagIndexRecord struct {
+	ID                int64    `json:"id"`
+	ContentSHA256     string   `json:"contentSha256"`
+	ExpectedExactTags []string `json:"expectedExactTags"`
+}
+
+func deriveTags(ctx context.Context, req request, output io.Writer) error {
+	if len(req.Config) != 0 || req.Key != "" || req.Prefix != "" {
+		return errors.New("tag derivation does not accept storage configuration")
+	}
+	if !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(req.SnapshotID) || !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(req.SourceDatabaseSHA256) {
+		return errors.New("tag derivation requires source identities")
+	}
+	if !regexp.MustCompile(`^[a-f0-9]{40}$`).MatchString(version.Commit) || len(req.Records) > 100000 {
+		return errors.New("tag derivation requires an identified parser and bounded records")
+	}
+	parser := markdown.NewService(markdown.WithTagExtension())
+	rows := make([]tagIndexRecord, 0, len(req.Records))
+	seen := make(map[int64]bool)
+	for _, row := range req.Records {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if row.ID <= 0 || seen[row.ID] {
+			return errors.New("invalid or repeated source record")
+		}
+		seen[row.ID] = true
+		parsed, err := parser.ExtractAll([]byte(row.Content))
+		if err != nil {
+			return errors.Wrap(err, "derive source tags")
+		}
+		tags := parsed.ExplicitTags
+		if tags == nil {
+			tags = []string{}
+		}
+		digest := sha256.Sum256([]byte(row.Content))
+		rows = append(rows, tagIndexRecord{ID: row.ID, ContentSHA256: hex.EncodeToString(digest[:]), ExpectedExactTags: tags})
+	}
+	return json.NewEncoder(output).Encode(struct {
+		Format               string           `json:"format"`
+		SnapshotID           string           `json:"snapshotId"`
+		SourceDatabaseSHA256 string           `json:"sourceDatabaseSha256"`
+		ParserCommit         string           `json:"parserCommit"`
+		ParserVersion        string           `json:"parserVersion"`
+		Records              []tagIndexRecord `json:"records"`
+	}{"kairos-explicit-tag-index-v1", req.SnapshotID, req.SourceDatabaseSHA256, version.Commit, version.Version, rows})
 }
 
 func execute(ctx context.Context, input io.Reader, output io.Writer) error {
 	var req request
-	decoder := json.NewDecoder(io.LimitReader(input, 65537))
+	// Tag manifests may cover the whole journal; S3 requests retain their smaller limit below.
+	data, err := io.ReadAll(io.LimitReader(input, (64<<20)+1))
+	if err != nil || len(data) > 64<<20 {
+		return errors.New("request exceeds helper input limit")
+	}
+	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&req); err != nil {
 		return errors.Wrap(err, "invalid request")
 	}
 	if decoder.Decode(&struct{}{}) != io.EOF {
 		return errors.New("one request required")
+	}
+	if req.Action == "derive-tags" {
+		return deriveTags(ctx, req, output)
+	}
+	if len(data) > 65536 || req.SnapshotID != "" || req.SourceDatabaseSHA256 != "" || req.Records != nil {
+		return errors.New("invalid storage request fields or size")
 	}
 	if req.Action != "probe" && req.Action != "fetch" {
 		return errors.New("unsupported operation")

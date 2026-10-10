@@ -82,6 +82,26 @@ func (d *DB) ApplyMemoMutation(ctx context.Context, mutation *store.MemoMutation
 		}
 	}
 
+	for _, check := range mutation.RecordChecks {
+		var owner int32
+		if err := tx.QueryRowContext(ctx, `SELECT creator_id FROM memo WHERE id = $1 FOR UPDATE`, check.MemoID).Scan(&owner); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return store.ErrMemoMutationConflict
+			}
+			return err
+		}
+		if owner != check.CreatorID {
+			return store.ErrMemoMutationConflict
+		}
+		snapshot, err := readPostgresMemoRecordSnapshot(ctx, tx, check.MemoID)
+		if err != nil {
+			return err
+		}
+		if snapshot.Hash() != check.Hash {
+			return store.ErrMemoMutationConflict
+		}
+	}
+
 	removedAttachments, err := listPostgresAttachmentSnapshots(ctx, tx, mutation.RemovedAttachmentIDs)
 	if err != nil {
 		return errors.Wrap(err, "failed to read removed attachments")
@@ -194,6 +214,13 @@ type memoUpdateExecer interface {
 }
 
 func applyMemoUpdate(ctx context.Context, executor memoUpdateExecer, update *store.UpdateMemo) error {
+	if update.Content != nil && update.Payload != nil {
+		indexedPayload, err := store.WithMemoExplicitTags(*update.Content, update.Payload)
+		if err != nil {
+			return err
+		}
+		update.Payload = indexedPayload
+	}
 	set, args := []string{}, []any{}
 	appendValue := func(column string, value any) {
 		args = append(args, value)
@@ -225,7 +252,21 @@ func applyMemoUpdate(ctx context.Context, executor memoUpdateExecer, update *sto
 		if err != nil {
 			return errors.Wrap(err, "failed to marshal memo payload")
 		}
-		appendValue("payload", string(payload))
+		if update.Content == nil {
+			// Metadata-only updates cannot discard or forge the content-derived index.
+			args = append(args, string(payload))
+			set = append(set, "payload = "+placeholder(len(args))+"::jsonb || jsonb_build_object('explicitTags', payload->'explicitTags', 'explicitTagsVersion', payload->'explicitTagsVersion')")
+		} else {
+			appendValue("payload", string(payload))
+		}
+	}
+	if update.Content != nil && update.Payload == nil {
+		patch, err := store.MemoExplicitTagPatch(*update.Content)
+		if err != nil {
+			return err
+		}
+		args = append(args, patch)
+		set = append(set, "payload = payload || "+placeholder(len(args))+"::jsonb")
 	}
 	if update.ClearSpace {
 		set = append(set, "space_id = NULL")

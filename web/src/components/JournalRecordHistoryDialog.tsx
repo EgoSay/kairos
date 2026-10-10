@@ -28,8 +28,11 @@ export default function JournalRecordHistoryDialog({
   const restore = useMutation({
     mutationFn: (id: string) => journalRequest(`/memos/${uid}/revisions/${encodeURIComponent(id)}/restore`, { method: "POST" }),
     onSuccess: async () => {
-      await client.invalidateQueries({ queryKey: ["memos"] });
-      await versions.refetch();
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["memos"] }),
+        client.invalidateQueries({ queryKey: ["journal"] }),
+        client.invalidateQueries({ queryKey: ["journal-partitions"] }),
+      ]);
       onOpenChange(false);
     },
   });
@@ -38,7 +41,9 @@ export default function JournalRecordHistoryDialog({
       <DialogContent size="xl">
         <DialogHeader>
           <DialogTitle>最近版本</DialogTitle>
-          <DialogDescription>保留最近 30 天。恢复后仍可找回当前版本。</DialogDescription>
+          <DialogDescription>
+            保留最近 30 天。恢复后仍可找回当前版本；记录保持私密，旧分享撤回，同步暂停。需要再次同步时，请在编辑器重新选择分区并保存。
+          </DialogDescription>
         </DialogHeader>
         <div className="overflow-y-auto space-y-3">
           {versions.data && (

@@ -84,6 +84,26 @@ func (d *DB) ApplyMemoMutation(ctx context.Context, mutation *store.MemoMutation
 		}
 	}
 
+	for _, check := range mutation.RecordChecks {
+		var owner int32
+		if err := tx.QueryRowContext(ctx, `SELECT creator_id FROM memo WHERE id = ? FOR UPDATE`, check.MemoID).Scan(&owner); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return store.ErrMemoMutationConflict
+			}
+			return err
+		}
+		if owner != check.CreatorID {
+			return store.ErrMemoMutationConflict
+		}
+		snapshot, err := readMySQLMemoRecordSnapshot(ctx, tx, check.MemoID)
+		if err != nil {
+			return err
+		}
+		if snapshot.Hash() != check.Hash {
+			return store.ErrMemoMutationConflict
+		}
+	}
+
 	removedAttachments, err := listMySQLAttachmentsByIDs(ctx, tx, mutation.RemovedAttachmentIDs)
 	if err != nil {
 		return errors.Wrap(err, "failed to read removed attachments")
@@ -195,6 +215,13 @@ type memoUpdateExecer interface {
 }
 
 func applyMemoUpdate(ctx context.Context, executor memoUpdateExecer, update *store.UpdateMemo) error {
+	if update.Content != nil && update.Payload != nil {
+		indexedPayload, err := store.WithMemoExplicitTags(*update.Content, update.Payload)
+		if err != nil {
+			return err
+		}
+		update.Payload = indexedPayload
+	}
 	set, args := []string{}, []any{}
 	if v := update.UID; v != nil {
 		set, args = append(set, "`uid` = ?"), append(args, *v)
@@ -222,7 +249,19 @@ func applyMemoUpdate(ctx context.Context, executor memoUpdateExecer, update *sto
 		if err != nil {
 			return errors.Wrap(err, "failed to marshal memo payload")
 		}
-		set, args = append(set, "`payload` = ?"), append(args, string(payload))
+		if update.Content == nil {
+			// Metadata-only updates cannot discard or forge the content-derived index.
+			set, args = append(set, "`payload` = JSON_SET(CAST(? AS JSON), '$.explicitTags', JSON_EXTRACT(payload, '$.explicitTags'), '$.explicitTagsVersion', JSON_EXTRACT(payload, '$.explicitTagsVersion'))"), append(args, string(payload))
+		} else {
+			set, args = append(set, "`payload` = ?"), append(args, string(payload))
+		}
+	}
+	if update.Content != nil && update.Payload == nil {
+		patch, err := store.MemoExplicitTagPatch(*update.Content)
+		if err != nil {
+			return err
+		}
+		set, args = append(set, "`payload` = JSON_MERGE_PATCH(`payload`, CAST(? AS JSON))"), append(args, patch)
 	}
 	if update.ClearSpace {
 		set = append(set, "`space_id` = NULL")

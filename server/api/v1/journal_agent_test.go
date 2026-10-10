@@ -178,6 +178,14 @@ func TestAgentQueryOwnArchiveTrashPagingAndOriginalDate(t *testing.T) {
 		require.Equal(t, http.StatusNotFound, res.Code, res.Body.String())
 	}
 
+	exact := agentHTTP(t, router, "GET", query+"&includeSubtags=false", token.Token, "")
+	require.Equal(t, http.StatusOK, exact.Code, exact.Body.String())
+	var exactPage page
+	require.NoError(t, json.Unmarshal(exact.Body.Bytes(), &exactPage))
+	require.Len(t, exactPage.Records, 1)
+	require.Equal(t, b.Name, exactPage.Records[0].Name, "implied parent from child-only Markdown is not an explicit tag")
+	require.False(t, exactPage.Coverage.HasMore)
+
 	combined := query + "&keyword=" + url.QueryEscape("原始全文") + "&pinned=true&partitionId=" + selected.ID
 	res = agentHTTP(t, router, "GET", combined, token.Token, "")
 	require.Equal(t, http.StatusOK, res.Code, res.Body.String())

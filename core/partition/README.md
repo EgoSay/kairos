@@ -11,7 +11,12 @@ original and verifies ownership, normal state, trash exclusion, membership,
 partition assignment/version, target epoch and source revision before each send.
 Changes that invalidate authorization cancel pending and retrying payloads.
 Deleting/archiving suspends the mapping so restoring the record does not resume
-publication. The user can explicitly select a partition again.
+publication. Restoring a historical version also withdraws existing shares and
+pauses its mapping before replacing the body. The record and suspended mapping
+then commit under the same CAS transaction, so a concurrent reassignment cannot
+authorize recovered text. A failed restore can leave grants withdrawn, but never
+publishes recovered content. Ordinary edits preserve this suspension; the user
+must explicitly select a partition again to resume sending.
 
 ## Delivery contract
 

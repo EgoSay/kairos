@@ -146,10 +146,12 @@ const CollectionSidebarContent = ({
 
 const AttachmentsSidebarContent = () => {
   const t = useTranslate();
+  const { search } = useLocation();
+  const onlyTrash = new URLSearchParams(search).get("lifecycle") === "trash";
   const currentUser = useCurrentUser();
   const { memoFilter, selectedSpaceName, creatorUsername } = useSpaceContext();
   const { attachmentSection, setAttachmentSection, setMobileOpen } = useAppSidebar();
-  const { isComplete, stats } = useAttachmentLibraryStats(memoFilter);
+  const { isComplete, stats } = useAttachmentLibraryStats(memoFilter, onlyTrash);
   const total = stats.media + stats.documents + stats.audio;
   const rows: Array<{ value: AttachmentSection; icon: LucideIcon; label: string; count?: number }> = [
     { value: "all", icon: ListIcon, label: t("common.all"), count: isComplete ? total : undefined },
@@ -163,7 +165,7 @@ const AttachmentsSidebarContent = () => {
     },
   ];
   // Unlinked uploads do not belong to any Space, so "Unused" is only a Memos-level collection.
-  if (!selectedSpaceName && (!creatorUsername || creatorUsername === currentUser?.username)) {
+  if (!onlyTrash && !selectedSpaceName && (!creatorUsername || creatorUsername === currentUser?.username)) {
     rows.push({
       value: "unused",
       icon: Trash2Icon,

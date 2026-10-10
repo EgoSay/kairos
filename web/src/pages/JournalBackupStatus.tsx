@@ -144,6 +144,15 @@ export default function JournalBackupStatus() {
                   const restore = data.restores.find(
                     (record) => record.snapshotId === item.snapshotId && record.repositoryId === repositoryId,
                   );
+                  const verification = restore?.applicationVerification;
+                  const verificationState =
+                    verification?.status === "failed"
+                      ? "最近检查未通过"
+                      : verification?.status === "running"
+                        ? "正在实际实例验证"
+                        : restore?.applicationVerified
+                          ? "已验证"
+                          : "待实际实例验证";
                   const checked =
                     item.snapshotId &&
                     (data.integrity?.repositoryId ?? data.config.repositoryId) === repositoryId &&
@@ -157,6 +166,7 @@ export default function JournalBackupStatus() {
                       </summary>
                       <div className="space-y-3 pt-3 text-sm">
                         <p className="break-all">快照：{item.snapshotId ?? "未产生完整快照"}</p>
+                        <p className="break-all">备份时应用标识：{item.instanceVersion ?? "历史回执未记录"}</p>
                         <p>范围：数据库、受管附件、保留的历史原件；不含浏览器草稿和任意外链。</p>
                         <p>
                           大小：{item.bytes === undefined ? "历史回执未记录" : `${(item.bytes / 1048576).toFixed(2)} MiB`} · 耗时：
@@ -165,8 +175,24 @@ export default function JournalBackupStatus() {
                         <p>完整读取校验：{checked ? backupTime(data.integrity?.checkedTs) : "此快照尚无完整读取校验证据"}</p>
                         <p>
                           隔离恢复：{restore?.manifestVerified ? `文件与数据库通过（${backupTime(restore.restoredTs)}）` : "尚未验证"} ·
-                          应用可用性：{restore?.applicationVerified ? "已验证" : "待实际实例验证"}
+                          应用可用性：{verificationState}
                         </p>
+                        {verification && (
+                          <div className="space-y-1 text-xs text-muted-foreground">
+                            <p>最近应用检查：{backupTime(verification.completedTs ?? verification.startedTs)}</p>
+                            <p className="break-all">
+                              实际测试版本：{verification.testedVersion ?? "尚无完整回执"} · 提交：{verification.testedCommit ?? "尚未确认"}
+                            </p>
+                            {verification.sourceIndexMigration && (
+                              <p>
+                                已核对标签索引迁移：{verification.sourceIndexMigration.migratedRows}{" "}
+                                条；仅派生索引变化，原始记录字段和附件核对通过。
+                              </p>
+                            )}
+                            {verification.message && <p className="text-destructive">{verification.message}</p>}
+                            <p>仅针对这次隔离恢复及所列测试版本，不代表所有历史备份或当前线上版本已通过。</p>
+                          </div>
+                        )}
                         {item.errorType && (
                           <p className="text-destructive">
                             {item.message ?? `失败类型：${item.errorType}。请检查凭据、存储空间、网络和原件覆盖。`}

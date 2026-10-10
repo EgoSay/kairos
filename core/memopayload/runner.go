@@ -83,6 +83,8 @@ func RebuildMemoPayload(_ context.Context, memo *store.Memo, markdownService mar
 	}
 
 	memo.Payload.Tags = data.Tags
+	memo.Payload.ExplicitTags = data.ExplicitTags
+	memo.Payload.ExplicitTagsVersion = 1
 	memo.Payload.Property = data.Property
 	return nil
 }

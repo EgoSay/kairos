@@ -29,3 +29,20 @@ without schema changes keeps the existing schema version. Calendar schemas
 sort after the legacy 0.x baseline. Migration directories keep months zero-padded
 (`01` through `12`), while stored schema markers omit the padding. This lets older binaries' SemVer comparisons
 recognize a calendar schema as newer and reject a downgrade.
+
+## Explicit tag index
+
+Startup also backfills version 1 of the derived `memo.payload.explicitTags` index
+using the Markdown parser. `explicitTagsVersion` marks completion, including
+records with no authored tags. This is a data index, with no DDL or schema-version
+change. Fresh content writes update it atomically on all three drivers. Legacy
+`tags`, content, timestamps, location, permissions and unknown JSON fields are
+preserved. Backfill compares the original content and payload before updating;
+a concurrent change stops startup instead of overwriting it. Partial progress is
+safe to resume.
+
+The two expected payload additions change the database's logical fingerprint.
+The release gate therefore retains its conservative new-write/changed-data block;
+never waive that check automatically. Validate the previous image against an
+isolated upgraded copy before planning an image-only rollback. Re-entering the
+new version rebuilds an index dropped by a legacy payload writer.

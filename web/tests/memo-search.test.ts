@@ -12,7 +12,7 @@ describe("visual search uses the shared server filter", () => {
   });
   it("matches tag segments and exposes exact matching separately", () => {
     expect(tagBranchFilter("人生/阅读")).toBe('("人生/阅读" in tags || tags.exists(t, t.startsWith("人生/阅读/")))');
-    expect(tagBranchFilter("人生/阅读", false)).toBe('"人生/阅读" in tags');
+    expect(tagBranchFilter("人生/阅读", false)).toBe('"人生/阅读" in explicit_tags');
     const conditions = buildSearchFacetConditions([
       { factor: "tagSearch", value: "人生" },
       { factor: "tagSearch", value: "工作" },
@@ -20,7 +20,7 @@ describe("visual search uses the shared server filter", () => {
       { factor: "tagExclude", value: "人生/家庭" },
       { factor: "tagExact", value: "true" },
     ]);
-    expect(conditions).toEqual(['("人生" in tags || "工作" in tags)', '!("人生/家庭" in tags)']);
+    expect(conditions).toEqual(['("人生" in explicit_tags || "工作" in explicit_tags)', '!("人生/家庭" in explicit_tags)']);
   });
   it("uses the journal timezone including 23-hour days and inclusive end dates", () => {
     expect(

@@ -1080,3 +1080,11 @@ func BenchmarkExtractProperties(b *testing.B) {
 		}
 	}
 }
+
+func TestExplicitTagsPreserveAuthoredParentAndIgnoreCode(t *testing.T) {
+	svc := NewService(WithTagExtension())
+	data, err := svc.ExtractAll([]byte("#人生修行/阅读 #人生修行 #人生修行/阅读 `#hidden`\n\n```text\n#hidden/fence\n```\n"))
+	require.NoError(t, err)
+	require.Equal(t, []string{"人生修行", "人生修行/阅读"}, data.Tags)
+	require.Equal(t, []string{"人生修行/阅读", "人生修行"}, data.ExplicitTags)
+}

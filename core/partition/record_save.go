@@ -13,6 +13,26 @@ import (
 // PendingKind is a durable save outbox, written with the memo and mapping.
 const PendingKind = "partition-pending"
 
+// PrepareRecordRestore keeps a recovered version private in the same transaction
+// as its body. A concurrent explicit reassignment must conflict, never silently
+// authorize the newly restored text. Restoration creates no send intent.
+func (s *Service) PrepareRecordRestore(ctx context.Context, owner int32, memoUID string) ([]*store.JournalDocumentMutation, error) {
+	mapping, err := s.GetMapping(ctx, owner, memoUID)
+	if err != nil {
+		return nil, err
+	}
+	alreadySuspended := mapping.Suspended
+	mapping.Suspended = true
+	payload, err := json.Marshal(mapping)
+	if err != nil {
+		return nil, err
+	}
+	return []*store.JournalDocumentMutation{{
+		Document:        &store.JournalDocument{OwnerID: owner, Kind: MappingKind, Key: memoUID, Payload: payload},
+		ExpectedVersion: mapping.Version, CheckOnly: alreadySuspended,
+	}}, nil
+}
+
 // PrepareRecordSave validates a selection without changing persistent state.
 // The caller must apply all documents in the same transaction as the memo.
 // A nil partitionID preserves the current mapping, including suspension.

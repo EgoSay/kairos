@@ -353,10 +353,10 @@ An isolated restore accepts only a successful receipt's explicit snapshot ID,
 restores under the fixed `workDir/restores/<isolationId>` directory, verifies
 manifest/checksums and database counts, revokes sessions/tokens/shares, pauses
 outbound jobs, and makes the restored instance private. It never replaces the
-live database. Its report initially sets `applicationVerified=false`: a human or
-release operator must actually run the isolated application and verify records,
-relationships, dates and media before recording application evidence in that
-snapshot's `restore-report.json`. Mount its data at the original logical root,
+live database. Its report initially sets `applicationVerified=false`: the release
+operator must actually run the isolated application and use the verifier below
+to check records, relationships, dates and media before the snapshot's
+`restore-report.json` receives application evidence. Mount its data at the original logical root,
 keep networking restricted and backup control unmounted, and use the source
 snapshot's compatible application image. Do not claim checksum verification is
 an application restore test. Preserve the original encrypted snapshot unchanged.
@@ -423,14 +423,51 @@ The exec transport closes its `nc` stream before waiting and reconnects afterwar
 so the idle timeout cannot corrupt the retry. Reports include retry/wait totals.
 Rate limits stay enabled, and a 429 is never counted as a passed permission denial.
 
-`application-report.json` is private and carries the snapshot ID, tested image
-identity, profile version/commit, counts, hashes and scope. A failed rerun clears
-prior success. Original credential rows are checked absent before preparation;
-the negative token is synthetic and unregistered, **not** a recovered real token.
-Only after reviewing successful evidence should the release operator copy its
-application result into that snapshot's `restore-report.json`. This does not
-claim personal acceptance or replace the final candidate image's regression.
+`application-report.json` stays private and carries the snapshot ID, tested image
+identity, profile version/commit, counts, hashes and scope. The trusted operator
+verifier atomically publishes a redacted summary to the fixed restore report,
+binding the snapshot, repository, isolation ID and original database checksum.
+The UI shows the actual tested version/commit and time separately from the
+backup's application identity. No web endpoint accepts a success flag or report
+path. Operator ownership and private file modes prevent the restored application
+from writing trusted evidence. Prepare a new copy when upgrading older verifier
+metadata that lacks repository or isolation identifiers.
+
+A per-restore lock and check ID prevent an older concurrent check from replacing
+the newest result; a per-work lock protects the private report and its published
+checksum. Starting a new check clears current success, and a failed rerun remains
+failed even when a previous successful summary is retained in history. The
+verifier never changes the original restored data. Original credential rows are
+checked absent before preparation; the negative token is synthetic and
+unregistered, **not** a recovered real token. Successful evidence does not claim
+personal acceptance or replace the final candidate image's regression.
 Use a separately prepared copy for a candidate image so migration checks do not
 overwrite baseline evidence. Stop/remove the named temporary container after
 verification, preserve private reports, and retain or dispose of
 the copied data under the existing recovery-data policy.
+
+The verifier normally requires every protected table's original hash to remain
+identical. For the declared explicit-tag index migration only, prepare with
+`--explicit-tag-helper /opt/memos-backup/kairos-backup-storage` and verify with
+`--allow-explicit-tag-index-migration`. Build that helper from the exact candidate
+commit. It derives a private manifest using the application's Markdown parser,
+bound to source snapshot/database hashes, record IDs/content hashes and parser
+commit. Verification requires the parser commit to match the running image.
+Only source rows without an exact numeric `explicitTagsVersion: 1` may change:
+`explicitTags` must equal the parser's ordered source tags (empty means `[]`) and
+`explicitTagsVersion` must be `1`. All other payload fields, including unknown
+metadata and array order, every other record column, every other protected table
+and media bytes remain checked. Source version-1 rows stay byte-for-byte exact.
+The evidence records original/actual table hashes, equal normalized memo hashes
+and the migrated row count, separately from the original backup's identity.
+
+Preparation also fingerprints users, user settings, instance settings, native
+share grants, Spaces/memberships, identity providers and user identities after
+installing the synthetic test credentials. Both before and after HTTP checks,
+the verifier requires those permissions/configurations to match. Only the
+generated PATs' `lastUsedAt` may change, within their verification lifetime;
+token hashes, expiry, scope and every other field remain exact. The runtime
+profile must explicitly report private access. Revived sessions, webhooks,
+shares, AI/storage credentials, user roles or external delivery permissions fail
+verification and leave the linked report unsuccessful. Private full reports and
+the redacted restore summary include the authorization hashes and this allowance.

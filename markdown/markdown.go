@@ -30,6 +30,7 @@ type ManagedAttachmentReference struct {
 // ExtractedData contains all metadata extracted from markdown in a single pass.
 type ExtractedData struct {
 	Tags                               []string
+	ExplicitTags                       []string
 	Mentions                           []string
 	ImageDestinations                  []string
 	ManagedAttachmentReferences        []ManagedAttachmentReference
@@ -395,6 +396,7 @@ func (s *service) ExtractAll(content []byte) (*ExtractedData, error) {
 
 	data := &ExtractedData{
 		Tags:                        []string{},
+		ExplicitTags:                []string{},
 		Mentions:                    []string{},
 		ImageDestinations:           []string{},
 		ManagedAttachmentReferences: []ManagedAttachmentReference{},
@@ -410,6 +412,7 @@ func (s *service) ExtractAll(content []byte) (*ExtractedData, error) {
 
 		if tagNode, ok := asMemoTagNode(n); ok {
 			data.Tags = appendTagHierarchy(data.Tags, string(tagNode.Tag))
+			data.ExplicitTags = append(data.ExplicitTags, string(tagNode.Tag))
 		}
 		if mentionNode, ok := n.(*mast.MentionNode); ok {
 			data.Mentions = append(data.Mentions, string(mentionNode.Username))
@@ -469,6 +472,7 @@ func (s *service) ExtractAll(content []byte) (*ExtractedData, error) {
 
 	// Deduplicate tags while preserving original case
 	data.Tags = uniquePreserveCase(data.Tags)
+	data.ExplicitTags = uniquePreserveCase(data.ExplicitTags)
 	data.Mentions = uniquePreserveCase(data.Mentions)
 	data.ManagedAttachmentReferences = uniqueManagedAttachmentReferences(data.ManagedAttachmentReferences)
 	data.InvalidManagedAttachmentReferences = uniquePreserveCase(data.InvalidManagedAttachmentReferences)

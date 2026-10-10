@@ -60,6 +60,12 @@ stmt, _ := engine.CompileToStatement(ctx, `has_task_list && visibility == "PUBLI
   string operands are literal. Hierarchy uses an exact root plus a slash-delimited branch predicate, e.g.
   `"life" in tags || tags.exists(t, t.startsWith("life/"))`. This also covers
   historical records without implied ancestors and excludes `lifestyle`.
+  `"life" in explicit_tags` matches only tags actually written in Markdown:
+  `#life/reading` does not count as an explicit `#life`, while a document containing
+  both does. The derived `explicitTags` index is populated before serving requests
+  on upgrade and maintained with content writes, so exact matching is applied
+  before pagination on all drivers. Existing `tags` and legacy filters retain
+  their hierarchy semantics.
 - **Boolean Flags** — Fields such as `has_task_list` render as an `IS TRUE` check
   (a comparison against `CAST('true' AS JSON)` on MySQL). Memo payloads omit false
   flags, so a missing key counts as false: `flag == false` and `flag != true`

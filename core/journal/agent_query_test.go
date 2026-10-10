@@ -40,3 +40,9 @@ func TestAgentFilterRejectsAmbiguityAndPreservesLiterals(t *testing.T) {
 	require.Contains(t, filter, `journal_partition == "partition"`)
 	require.Contains(t, filter, `pinned == false`)
 }
+
+func TestAgentExactTagUsesAuthoredIndex(t *testing.T) {
+	filter, _, _, err := AgentFilter(AgentQuery{Tag: "人生修行", IncludeSubtags: false}, "Asia/Shanghai", time.Now())
+	require.NoError(t, err)
+	require.Equal(t, `"人生修行" in explicit_tags`, filter)
+}

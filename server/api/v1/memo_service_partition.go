@@ -39,3 +39,15 @@ func (s *APIV1Service) prepareMemoPartitionSave(ctx context.Context, user *store
 	}
 	return documents, nil
 }
+
+func (s *APIV1Service) prepareMemoPartitionRestore(ctx context.Context, memo *store.Memo) ([]*store.JournalDocumentMutation, error) {
+	service := s.JournalPartitions
+	if service == nil {
+		service = partition.New(s.Store, s.readPartitionMemo)
+	}
+	documents, err := service.PrepareRecordRestore(ctx, memo.CreatorID, memo.UID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to pause restored record: %v", err)
+	}
+	return documents, nil
+}

@@ -56,9 +56,9 @@ func AgentFilter(query AgentQuery, zone string, now time.Time) (filter, from, to
 		parts = append(parts, "content.contains("+strconv.Quote(query.Keyword)+")")
 	}
 	if query.Tag != "" {
-		predicate := strconv.Quote(query.Tag) + " in tags"
+		predicate := strconv.Quote(query.Tag) + " in explicit_tags"
 		if query.IncludeSubtags {
-			predicate = "(" + predicate + " || tags.exists(t, t.startsWith(" + strconv.Quote(query.Tag+"/") + ")))"
+			predicate = "(" + strconv.Quote(query.Tag) + " in tags" + " || tags.exists(t, t.startsWith(" + strconv.Quote(query.Tag+"/") + ")))"
 		}
 		parts = append(parts, predicate)
 	}

@@ -16,7 +16,19 @@ share grants are separate versioned `journal_document` records.
   explicit preview before entering an existing dynamic grant.
 - Withdrawal removes saved AI results referring to the source and removes both
   membership and frozen bytes from managed collection shares. Restoring an
-  original does not restore its old grants.
+  original does not restore its old grants. The API captures an owner-scoped
+  `share-guard` before preview source reads or withdrawal scans and advances it
+  in the transaction that creates the grant or restores the record. Full record
+  hashes bind grants to the exact source. The preview digest also includes the
+  captured guard version, so identical content restored after withdrawal cannot
+  reuse an old preview. Conflicting approvals return HTTP 409
+  and require a fresh preview. Legacy grants use the record owner's guard even
+  when an administrator acts, and anonymous reads recheck revocation before
+  returning loaded content.
+- Backup import pauses collection grants with the same guard in one transaction
+  before importing any record. A late conflicting grant aborts import; a new
+  empty owner needs no artificial memo. Imported originals stay private and
+  excluded from existing dynamic grants until an explicit new preview.
 
 All persistence uses owner-scoped compare-and-swap documents. HTTP auth,
 passcodes, safe media transformation and provider calls remain transport or

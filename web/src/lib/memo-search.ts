@@ -11,7 +11,7 @@ export const keywordSearchFilter = (query: string): string | undefined => {
 export const tagBranchFilter = (tag: string, descendants = true): string =>
   descendants
     ? `(${JSON.stringify(tag)} in tags || tags.exists(t, t.startsWith(${JSON.stringify(`${tag}/`)})))`
-    : `${JSON.stringify(tag)} in tags`;
+    : `${JSON.stringify(tag)} in explicit_tags`;
 
 export const searchIncludesArchived = (filters: MemoFilter[]): boolean =>
   filters.some((filter) => filter.factor === "includeArchived" && filter.value === "true");

@@ -22,7 +22,20 @@ const AttachmentMediaCard = ({ item, creator, onPreview }: { item: AttachmentLib
 
   return (
     <article className="overflow-hidden rounded-[20px] border border-border/60 bg-background/90 shadow-sm shadow-black/[0.03]">
-      <div className="relative block w-full cursor-pointer text-left" onClick={onPreview}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`${t("common.open")} ${item.filename}`}
+        className="relative block w-full cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        onClick={onPreview}
+        onKeyDown={(event) => {
+          // A live-photo badge inside this surface has its own playback keys.
+          if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            onPreview();
+          }
+        }}
+      >
         <div className="relative aspect-[5/4] overflow-hidden bg-muted/40">
           {item.kind === "video" ? (
             <>

@@ -34,6 +34,11 @@ func (d *DB) CreateMemo(ctx context.Context, create *store.Memo) (*store.Memo, e
 
 func insertPostgresMemo(ctx context.Context, tx *sql.Tx, create *store.Memo) error {
 	fields := []string{"uid", "creator_id", "content", "visibility", "payload", "space_id"}
+	indexedPayload, err := store.WithMemoExplicitTags(create.Content, create.Payload)
+	if err != nil {
+		return err
+	}
+	create.Payload = indexedPayload
 	payload := "{}"
 	if create.Payload != nil {
 		payloadBytes, err := protojson.Marshal(create.Payload)

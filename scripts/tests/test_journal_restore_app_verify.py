@@ -1,4 +1,5 @@
 from contextlib import closing
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from email.utils import format_datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -27,8 +28,8 @@ class RestoreApplicationVerificationTest(unittest.TestCase):
         self.data.mkdir(parents=True)
         self.work = self.root / 'app-check'
         self.report = {'snapshotId': 'a' * 64, 'isolationId': self.restore.name, 'manifestVerified': True,
-                       'storageIsolated': True, 'sessionsAndAccessTokensRevoked': True}
-        (self.restore / 'restore-report.json').write_text(json.dumps(self.report))
+                       'storageIsolated': True, 'sessionsAndAccessTokensRevoked': True, 'repositoryId': 'b' * 16}
+        verifier.atomic_json(self.restore / 'restore-report.json', self.report)
         with closing(sqlite3.connect(self.data / verifier.DATABASE)) as db, db:
             db.executescript((SCRIPTS.parent / 'store/migration/sqlite/LATEST.sql').read_text())
             db.execute("INSERT INTO user(username,password_hash) VALUES('owner','disabled')")
@@ -72,6 +73,201 @@ class RestoreApplicationVerificationTest(unittest.TestCase):
         (self.data / 'linked').symlink_to(self.root)
         with self.assertRaisesRegex(ValueError, 'symlinks'):
             self.prepare()
+
+    def test_report_binding_rejects_other_identity_changed_source_and_nonprivate_metadata(self):
+        self.prepare()
+        prepared = json.loads((self.work / 'prepare-report.json').read_text())
+        before = (self.restore / 'restore-report.json').read_bytes()
+        started = {'checkId': 'first', 'status': 'running', 'applicationVerified': False, 'startedTs': 1}
+        for field in ('snapshotId', 'repositoryId', 'isolationId'):
+            with self.subTest(field=field), self.assertRaises(verifier.VerificationFailure):
+                verifier.begin_application_check({**prepared, field: 'wrong'}, started)
+            self.assertEqual(before, (self.restore / 'restore-report.json').read_bytes())
+        with closing(sqlite3.connect(self.data / verifier.DATABASE)) as db, db:
+            db.execute("UPDATE memo SET content='changed source'")
+        with self.assertRaisesRegex(verifier.VerificationFailure, 'original restore changed'):
+            verifier.verify_application(self.work, 'fixture')
+        changed = json.loads((self.restore / 'restore-report.json').read_text())
+        self.assertFalse(changed['applicationVerified'])
+        self.assertEqual('failed', changed['applicationVerification']['status'])
+        before = (self.restore / 'restore-report.json').read_bytes()
+        (self.work / 'prepare-report.json').chmod(0o644)
+        with self.assertRaisesRegex(verifier.VerificationFailure, 'private'):
+            verifier.verify_application(self.work, 'fixture')
+        self.assertEqual(before, (self.restore / 'restore-report.json').read_bytes())
+
+    def test_same_work_directory_cannot_replace_a_running_checks_evidence(self):
+        self.prepare()
+        with (self.work / '.verification.lock').open('w') as lock:
+            (self.work / '.verification.lock').chmod(0o600)
+            verifier.fcntl.flock(lock, verifier.fcntl.LOCK_EX)
+            with self.assertRaises(BlockingIOError):
+                verifier.verify_application(self.work, 'fixture')
+        self.assertFalse((self.work / 'application-report.json').exists())
+        self.assertFalse(json.loads((self.restore / 'restore-report.json').read_text()).get('applicationVerified', False))
+
+    def index_migration_fixture(self):
+        with closing(sqlite3.connect(self.data / verifier.DATABASE)) as db, db:
+            db.execute('UPDATE memo SET payload=?', (json.dumps({'tags': ['legacy'], 'future': {'order': [2, 1]}}),))
+            db.execute("INSERT INTO memo(uid,creator_id,content,payload) VALUES('indexed',1,'existing',?)",
+                       (json.dumps({'explicitTagsVersion': 1, 'explicitTags': ['preserved'], 'future': [2, 1]}),))
+        helper = self.root / 'helper'
+        helper.write_text('private fixture')
+        helper.chmod(0o700)
+        def derive(_command, **kwargs):
+            request = json.loads(kwargs['input'])
+            result = {'format': 'kairos-explicit-tag-index-v1', 'snapshotId': request['snapshotId'],
+                      'sourceDatabaseSha256': request['sourceDatabaseSha256'], 'parserCommit': 'c' * 40, 'parserVersion': 'fixture',
+                      'records': [{'id': row['id'], 'contentSha256': verifier.sha(row['content'].encode()), 'expectedExactTags': []}
+                                  for row in request['records']]}
+            return Mock(returncode=0, stdout=json.dumps(result).encode())
+        with patch.object(verifier.subprocess, 'run', side_effect=derive):
+            verifier.prepare(self.restore, self.work, explicit_tag_helper=helper)
+        return (json.loads((self.work / 'prepare-report.json').read_text()),
+                json.loads((self.work / 'expected.json').read_text()), {'commit': 'c' * 40})
+
+    def test_explicit_index_migration_requires_exact_derived_fields_and_preserves_unknown_metadata(self):
+        prepared, expected, profile = self.index_migration_fixture()
+        with closing(sqlite3.connect(self.work / 'data' / verifier.DATABASE)) as db, db:
+            source = json.loads(db.execute('SELECT payload FROM memo WHERE id=1').fetchone()[0])
+            migrated = {**source, 'explicitTagsVersion': 1, 'explicitTags': []}
+            db.execute('UPDATE memo SET payload=? WHERE id=1', (json.dumps(migrated),))
+        with self.assertRaisesRegex(verifier.VerificationFailure, 'changed restored'):
+            verifier.verified_data_hashes(self.work, prepared, expected, profile, False)
+        result = verifier.verified_data_hashes(self.work, prepared, expected, profile, True)
+        migration = result['sourceIndexMigration']
+        self.assertEqual(1, migration['migratedRows'])
+        self.assertNotEqual(migration['sourceMemoSha256'], migration['actualMemoSha256'])
+        self.assertEqual(migration['sourceNormalizedMemoSha256'], migration['actualNormalizedMemoSha256'])
+        for changed in ({**migrated, 'explicitTags': ['invented']}, {**migrated, 'explicitTags': None},
+                        {**migrated, 'explicitTagsVersion': True}, {**migrated, 'future': {'order': [1, 2]}},
+                        {key: value for key, value in migrated.items() if key != 'future'}):
+            with closing(sqlite3.connect(self.work / 'data' / verifier.DATABASE)) as db, db:
+                db.execute('UPDATE memo SET payload=? WHERE id=1', (json.dumps(changed),))
+            with self.subTest(changed=changed), self.assertRaises(verifier.VerificationFailure):
+                verifier.verified_data_hashes(self.work, prepared, expected, profile, True)
+        with closing(sqlite3.connect(self.work / 'data' / verifier.DATABASE)) as db, db:
+            db.execute('UPDATE memo SET payload=? WHERE id=1', (json.dumps(migrated),))
+            db.execute("UPDATE memo SET payload='{}' WHERE id=2")
+        with self.assertRaisesRegex(verifier.VerificationFailure, 'non-index'):
+            verifier.verified_data_hashes(self.work, prepared, expected, profile, True)
+
+    def test_explicit_index_migration_rejects_wrong_source_manifest_and_parser_commit(self):
+        prepared, expected, profile = self.index_migration_fixture()
+        with self.assertRaisesRegex(verifier.VerificationFailure, 'parser commit'):
+            verifier.verified_data_hashes(self.work, prepared, expected, {'commit': 'd' * 40}, True)
+        path = self.work / 'explicit-tag-index.json'
+        manifest = json.loads(path.read_text())
+        for field in ('snapshotId', 'sourceDatabaseSha256'):
+            with self.subTest(field=field):
+                verifier.atomic_json(path, {**manifest, field: 'd' * 64})
+                with self.assertRaisesRegex(verifier.VerificationFailure, 'another source'):
+                    verifier.verified_data_hashes(self.work, prepared, expected, profile, True)
+                altered = {**prepared, 'explicitTagIndexManifestSha256': verifier.file_hash(path)}
+                with self.assertRaisesRegex(verifier.VerificationFailure, 'another source'):
+                    verifier.verified_data_hashes(self.work, altered, expected, profile, True)
+        verifier.atomic_json(path, manifest)
+        with self.assertRaisesRegex(verifier.VerificationFailure, 'derived fields'):
+            verifier.verified_data_hashes(self.work, prepared, expected, profile, True)
+
+    def test_concurrent_checks_use_per_restore_lock_and_cannot_publish_old_success(self):
+        self.prepare()
+        prepared = json.loads((self.work / 'prepare-report.json').read_text())
+        barrier = threading.Barrier(2)
+        def begin(check_id):
+            barrier.wait()
+            verifier.begin_application_check(prepared, {'checkId': check_id, 'status': 'running', 'applicationVerified': False, 'startedTs': 1})
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            list(pool.map(begin, ['one', 'two']))
+        report = json.loads((self.restore / 'restore-report.json').read_text())
+        current = report['applicationVerification']['checkId']
+        old = 'two' if current == 'one' else 'one'
+        self.assertFalse(verifier.finish_application_check(prepared, {'checkId': old, 'status': 'success', 'applicationVerified': True}))
+        self.assertTrue(verifier.finish_application_check(prepared, {'checkId': current, 'status': 'failed', 'applicationVerified': False, 'message': 'controlled failure'}))
+        report = json.loads((self.restore / 'restore-report.json').read_text())
+        self.assertFalse(report['applicationVerified'])
+        self.assertEqual('failed', report['applicationVerification']['status'])
+
+    def test_private_success_file_cannot_mark_a_restore_without_running_the_verifier(self):
+        self.prepare()
+        verifier.atomic_json(self.work / 'application-report.json', {'applicationVerified': True, 'status': 'success', 'profile': {'commit': 'fake'}})
+        self.assertFalse(json.loads((self.restore / 'restore-report.json').read_text()).get('applicationVerified', False))
+        with patch.object(verifier, 'inspect_isolation', side_effect=verifier.VerificationFailure('isolation failed')):
+            with self.assertRaisesRegex(verifier.VerificationFailure, 'isolation failed'):
+                verifier.verify_application(self.work, 'fixture')
+        self.assertFalse(json.loads((self.restore / 'restore-report.json').read_text())['applicationVerified'])
+        self.assertEqual('failed', json.loads((self.work / 'application-report.json').read_text())['status'])
+
+    def test_authorization_baseline_only_permits_synthetic_pat_usage_timestamps(self):
+        self.prepare()
+        expected = json.loads((self.work / 'expected.json').read_text())
+        database = self.work / 'data' / verifier.DATABASE
+        baseline = database.read_bytes()
+        result = verifier.verify_authorization_state(self.work, expected)
+        self.assertTrue(result['authorizationVerified'])
+        with closing(sqlite3.connect(database)) as db, db:
+            value = json.loads(db.execute("SELECT value FROM user_setting WHERE user_id=1 AND key='PERSONAL_ACCESS_TOKENS'").fetchone()[0])
+            value['tokens'][0]['lastUsedAt'] = datetime.fromtimestamp(expected['authorizationBaselineTs'], timezone.utc).isoformat().replace('+00:00', 'Z')
+            db.execute("UPDATE user_setting SET value=? WHERE user_id=1 AND key='PERSONAL_ACCESS_TOKENS'", (json.dumps(value, sort_keys=True),))
+        self.assertEqual(result['authorizationHashes'], verifier.verify_authorization_state(self.work, expected)['authorizationHashes'])
+        changes = [
+            ("UPDATE user SET role='ADMIN' WHERE id=1", ()),
+            ("UPDATE user SET password_hash='reactivated' WHERE id=1", ()),
+            ("INSERT INTO user(username,password_hash) VALUES('unexpected','reactivated')", ()),
+            ("INSERT INTO user_setting(user_id,key,value) VALUES(1,'REFRESH_TOKENS','{}')", ()),
+            ("INSERT INTO user_setting(user_id,key,value) VALUES(1,'WEBHOOKS','{}')", ()),
+            ("UPDATE user_setting SET value=? WHERE user_id=1 AND key='PERSONAL_ACCESS_TOKENS'", (json.dumps({'tokens': [{'tokenId': 'old-real-token', 'tokenHash': 'old-hash'}]}),)),
+            ("INSERT INTO memo_share(uid,memo_id,creator_id) VALUES('revived',1,1)", ()),
+            ("INSERT INTO idp(uid,name,type) VALUES('revived','provider','OIDC')", ()),
+            ("INSERT INTO user_identity(user_id,provider,extern_uid) VALUES(1,'revived','external-user')", ()),
+            ("INSERT INTO space(uid,title) VALUES('revived','space')", ()),
+            ("INSERT INTO space_member(space_id,user_id,status,role) VALUES(1,1,'NORMAL','ADMIN')", ()),
+            ("UPDATE system_setting SET value=? WHERE name='ACCESS'", (json.dumps({'accessMode': 'INSTANCE_ACCESS_MODE_PUBLIC'}),)),
+            ("UPDATE system_setting SET value=? WHERE name='STORAGE'", (json.dumps({'storageType': 'S3'}),)),
+            ("INSERT INTO system_setting(name,value) VALUES('AI',?)", (json.dumps({'providers': [{'apiKey': 'revived'}]}),)),
+            ("INSERT INTO journal_document VALUES(1,'partition-target','revived',?,1,1)", (json.dumps({'enabled': True, 'url': 'https://example.invalid'}),)),
+        ]
+        for query, args in changes:
+            with self.subTest(change=query):
+                database.write_bytes(baseline)
+                with closing(sqlite3.connect(database)) as db, db:
+                    db.execute(query, args)
+                with self.assertRaises(verifier.VerificationFailure):
+                    verifier.verify_authorization_state(self.work, expected)
+        database.write_bytes(baseline)
+        with closing(sqlite3.connect(database)) as db, db:
+            value = json.loads(db.execute("SELECT value FROM user_setting WHERE user_id=1 AND key='PERSONAL_ACCESS_TOKENS'").fetchone()[0])
+            value['tokens'][0]['lastUsedAt'] = '1970-01-01T00:00:01Z'
+            db.execute("UPDATE user_setting SET value=? WHERE user_id=1 AND key='PERSONAL_ACCESS_TOKENS'", (json.dumps(value),))
+        with self.assertRaisesRegex(verifier.VerificationFailure, 'usage timestamp'):
+            verifier.verify_authorization_state(self.work, expected)
+
+    def test_application_verification_rejects_public_profile_and_permission_changes_during_requests(self):
+        self.prepare()
+        credentials = json.loads((self.work / 'credentials.json').read_text())
+        response = {'name': 'memos/record', 'content': 'PRIVATE TEST CONTENT', 'createTime': '1970-01-01T00:00:10Z',
+                    'updateTime': '1970-01-01T00:00:20Z', 'state': 'NORMAL', 'visibility': 'PRIVATE'}
+        database = self.work / 'data' / verifier.DATABASE
+        baseline = database.read_bytes()
+        for change in ('public-profile', 'webhook-after-preflight', 'user-role-after-preflight'):
+            with self.subTest(change=change):
+                database.write_bytes(baseline)
+                def get(_api, path, token=None, **_):
+                    if path == '/api/v1/instance/profile':
+                        with closing(sqlite3.connect(database)) as db, db:
+                            if change == 'webhook-after-preflight':
+                                db.execute("INSERT INTO user_setting(user_id,key,value) VALUES(1,'WEBHOOKS','{}')")
+                            elif change == 'user-role-after-preflight':
+                                db.execute("UPDATE user SET role='ADMIN' WHERE id=1")
+                        return 200, {'version': 'fixture', 'commit': 'c' * 40,
+                                     'accessMode': 'INSTANCE_ACCESS_MODE_PUBLIC' if change == 'public-profile' else 'INSTANCE_ACCESS_MODE_PRIVATE'}
+                    return (200, response) if token in (credentials['tokens']['1'], credentials['tokens'][str(credentials['syntheticAdmin'])]) else (401, None)
+                with patch.object(verifier, 'inspect_isolation', return_value={'imageId': 'fixture'}), patch.object(verifier.API, 'get', get):
+                    with self.assertRaises(verifier.VerificationFailure):
+                        verifier.verify_application(self.work, 'fixture', 'http://127.0.0.1:5231')
+                linked = json.loads((self.restore / 'restore-report.json').read_text())
+                self.assertFalse(linked['applicationVerified'])
+                self.assertEqual('failed', linked['applicationVerification']['status'])
 
     def test_container_isolation_rejects_network_and_mount_escape(self):
         item = {'State': {'Running': True}, 'HostConfig': {'NetworkMode': 'internal', 'PortBindings': {'5230/tcp': [{'HostIp': '127.0.0.1', 'HostPort': '5231'}]}},
@@ -196,7 +392,7 @@ class RestoreApplicationVerificationTest(unittest.TestCase):
                     'updateTime': '1970-01-01T00:00:20Z', 'state': 'NORMAL', 'visibility': 'PRIVATE'}
         def get(_api, path, token=None, **_):
             if path == '/api/v1/instance/profile':
-                return 200, {'version': 'fixture'}
+                return 200, {'version': 'fixture', 'commit': 'c' * 40, 'accessMode': 'INSTANCE_ACCESS_MODE_PRIVATE'}
             return (200, response) if token in (credentials['tokens']['1'], credentials['tokens'][str(credentials['syntheticAdmin'])]) else (401, None)
         with patch.object(verifier, 'inspect_isolation', return_value={'imageId': 'fixture'}), patch.object(verifier.API, 'get', get):
             report = verifier.verify_application(self.work, 'fixture', 'http://127.0.0.1:5231')
@@ -205,11 +401,25 @@ class RestoreApplicationVerificationTest(unittest.TestCase):
             self.assertEqual(3, report['negativeAccessChecks'])
             self.assertEqual(1, report['adminReadsVerified'])
             self.assertNotIn('PRIVATE TEST CONTENT', json.dumps(report))
+            linked = json.loads((self.restore / 'restore-report.json').read_text())
+            self.assertTrue(linked['applicationVerified'])
+            self.assertEqual('c' * 40, linked['applicationVerification']['testedCommit'])
+            self.assertEqual('b' * 16, linked['applicationVerification']['repositoryId'])
+            self.assertEqual(self.restore.name, linked['applicationVerification']['isolationId'])
+            self.assertEqual(verifier.file_hash(self.work / 'application-report.json'), linked['applicationVerification']['reportSha256'])
+            self.assertNotIn(str(self.work), json.dumps(linked))
+            self.assertNotIn('memos_pat_', json.dumps(linked))
             response['content'] = 'different content'
             with self.assertRaisesRegex(ValueError, 'fields differ'):
                 verifier.verify_application(self.work, 'fixture', 'http://127.0.0.1:5231')
             self.assertFalse(json.loads((self.work / 'application-report.json').read_text())['applicationVerified'])
-        with patch.object(verifier, 'inspect_isolation', return_value={}), patch.object(verifier.API, 'get', return_value=(200, response)):
+            linked = json.loads((self.restore / 'restore-report.json').read_text())
+            self.assertFalse(linked['applicationVerified'])
+            self.assertEqual('failed', linked['applicationVerification']['status'])
+            self.assertEqual(1, len(linked['applicationVerificationHistory']))
+        def leaking_get(_api, path, token=None, **_):
+            return get(_api, path, token, **_) if path == '/api/v1/instance/profile' else (200, response)
+        with patch.object(verifier, 'inspect_isolation', return_value={}), patch.object(verifier.API, 'get', leaking_get):
             response['content'] = 'PRIVATE TEST CONTENT'
             with self.assertRaisesRegex(ValueError, 'permission failed'):
                 verifier.verify_application(self.work, 'fixture', 'http://127.0.0.1:5231')
@@ -225,7 +435,7 @@ class RestoreApplicationVerificationTest(unittest.TestCase):
         wrong_file = [False]
         def get(_api, path, token=None, **_):
             if path == '/api/v1/instance/profile':
-                return 200, {'version': 'fixture'}
+                return 200, {'version': 'fixture', 'commit': 'c' * 40, 'accessMode': 'INSTANCE_ACCESS_MODE_PRIVATE'}
             if token == credentials['tokens']['1'] and path in ('/file/attachments/photo?trash=true', '/file/attachments/photo?trash=true&thumbnail=true', '/api/v1/journal/attachments/photo/original'):
                 return 200, verifier.sha(b'wrong' if wrong_file[0] else b'fixture image')
             return 404, None

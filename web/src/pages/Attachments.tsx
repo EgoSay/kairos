@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { LoaderCircleIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
+import { useSearchParams } from "react-router-dom";
 import {
   AttachmentAudioRows,
   AttachmentDocumentRows,
@@ -70,7 +71,16 @@ const listUnusedAttachmentNames = async (filter: string | undefined, selectedSpa
 
 const Attachments = () => {
   const t = useTranslate();
-  const [onlyTrash, setOnlyTrash] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const onlyTrash = searchParams.get("lifecycle") === "trash";
+  const setOnlyTrash = (trash: boolean) => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      if (trash) next.set("lifecycle", "trash");
+      else next.delete("lifecycle");
+      return next;
+    });
+  };
   const queryClient = useQueryClient();
   const restore = useMutation({
     mutationFn: (memo: string) => journalRequest(`/trash/${encodeURIComponent(memo.replace(/^memos\//, ""))}/restore`, { method: "POST" }),
@@ -97,6 +107,7 @@ const Attachments = () => {
     fetchNextPage,
     hasNextPage,
     isError,
+    isComplete,
     isFetching,
     isFetchingNextPage,
     isLoading,
@@ -130,10 +141,10 @@ const Attachments = () => {
   const { data: creators } = useUsersByNames(creatorNames);
 
   useEffect(() => {
-    if (!canShowUnused && attachmentSection === "unused") {
+    if ((!canShowUnused || onlyTrash) && attachmentSection === "unused") {
       setAttachmentSection("all");
     }
-  }, [attachmentSection, canShowUnused, setAttachmentSection]);
+  }, [attachmentSection, canShowUnused, onlyTrash, setAttachmentSection]);
 
   const handlePreview = (itemId: string) => {
     const initialIndex = mediaPreviewItems.findIndex((item) => item.id === itemId);
@@ -207,7 +218,14 @@ const Attachments = () => {
       return <AttachmentLibraryErrorState error={error instanceof Error ? error : undefined} onRetry={() => refetch()} />;
     }
 
-    if (onlyTrash || attachmentSection === "all") {
+    const matchingCount = attachmentSection === "all" ? stats.media + stats.documents + stats.audio : stats[attachmentSection];
+    // No matches in the pages read so far is not an empty collection. Keep the
+    // pending state until all pages complete, while displaying matches eagerly.
+    if (!isComplete && matchingCount === 0) {
+      return <AttachmentLibrarySkeletonGrid />;
+    }
+
+    if (attachmentSection === "all") {
       const total = stats.media + stats.documents + stats.audio;
       if (total === 0) return <div className="py-16 text-center text-sm text-muted-foreground">{t("attachment-library.empty.all")}</div>;
       return (

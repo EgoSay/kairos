@@ -92,4 +92,36 @@ describe("cloud backup evidence and configuration gates", () => {
     expect(screen.getByText(/活动配置：状态未知/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "1. 检测实际读写" })).toBeDisabled();
   });
+  it("shows the actual restored test version separately from the backup identity and never hides the latest failure", () => {
+    state.query.data!.history[0].instanceVersion = "1.0.1-backup";
+    state.query.data!.restores = [
+      {
+        status: "isolated-verified",
+        snapshotId: "abc",
+        repositoryId: "current",
+        manifestVerified: true,
+        applicationVerified: true,
+        applicationVerification: {
+          checkId: "one",
+          status: "success",
+          startedTs: 1,
+          completedTs: 2,
+          testedVersion: "1.1.0",
+          testedCommit: "actual-test-commit",
+        },
+      },
+    ];
+    const page = renderPage(<JournalBackupStatus />);
+    expect(screen.getByText(/备份时应用标识：1.0.1-backup/)).toBeInTheDocument();
+    expect(screen.getByText(/实际测试版本：1.1.0 · 提交：actual-test-commit/)).toBeInTheDocument();
+    expect(screen.getByText(/应用可用性：已验证/)).toBeInTheDocument();
+    state.query.data!.restores[0].applicationVerification!.status = "failed";
+    page.rerender(
+      <MemoryRouter>
+        <JournalBackupStatus />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText(/应用可用性：最近检查未通过/)).toBeInTheDocument();
+    expect(screen.queryByText(/应用可用性：已验证/)).not.toBeInTheDocument();
+  });
 });

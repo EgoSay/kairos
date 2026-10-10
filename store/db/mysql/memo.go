@@ -36,6 +36,11 @@ func (d *DB) CreateMemo(ctx context.Context, create *store.Memo) (*store.Memo, e
 func insertMySQLMemo(ctx context.Context, tx *sql.Tx, create *store.Memo) (*store.Memo, error) {
 	fields := []string{"`uid`", "`creator_id`", "`content`", "`visibility`", "`payload`", "`space_id`"}
 	placeholder := []string{"?", "?", "?", "?", "?", "?"}
+	indexedPayload, err := store.WithMemoExplicitTags(create.Content, create.Payload)
+	if err != nil {
+		return nil, err
+	}
+	create.Payload = indexedPayload
 	payload := "{}"
 	if create.Payload != nil {
 		payloadBytes, err := protojson.Marshal(create.Payload)

@@ -2,24 +2,28 @@
 """Verify a restored journal through a loopback-only, isolated application.
 
 Preparation copies an already-sanitized agent restore into a new data directory.
-Only that copy receives one-hour synthetic PATs. The live volume and original
-restore are never changed. Private expectations/credentials remain mode 0600.
+Only that copy receives one-hour synthetic PATs. The live volume and restored
+data are never changed; the matching restore report receives a bound summary.
+Private expectations/credentials remain mode 0600.
 """
 from __future__ import annotations
 
 import argparse
-from contextlib import closing
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+import fcntl
 import hashlib
 import http.client
 import json
 import math
 import os
 from pathlib import Path
+import re
 import secrets
 import shutil
 import sqlite3
+import stat
 import subprocess
 import threading
 import time
@@ -32,6 +36,7 @@ from journal_snapshot import DATABASE
 
 LOGICAL_ROOT = Path('/var/opt/memos')
 PROTECTED_TABLES = ('memo', 'attachment', 'memo_relation', 'journal_document')
+AUTHORIZATION_TABLES = ('user', 'user_setting', 'system_setting', 'memo_share', 'space', 'space_member', 'idp', 'user_identity')
 
 
 class VerificationFailure(ValueError):
@@ -59,6 +64,82 @@ def canonical(value):
     return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()
 
 
+def private_json(path):
+    """Trust operator-owned metadata, never files writable by the tested app."""
+    metadata = path.lstat()
+    require(stat.S_ISREG(metadata.st_mode) and metadata.st_uid == os.geteuid() and not metadata.st_mode & 0o077,
+            'verification metadata must be private and owned by the operator')
+    parent = path.parent.lstat()
+    require(stat.S_ISDIR(parent.st_mode) and parent.st_uid == os.geteuid() and not parent.st_mode & 0o022,
+            'verification metadata directory must not be writable by others')
+    return json.loads(path.read_text())
+
+
+def bound_restore(prepared):
+    restore = Path(prepared['restore'])
+    require(restore.is_absolute() and restore == restore.resolve() and restore.parent.name == 'restores'
+            and restore.name == prepared.get('isolationId'), 'verification restore identity is invalid')
+    report = private_json(restore / 'restore-report.json')
+    require(all(report.get(key) and report[key] == prepared.get(key) for key in ('snapshotId', 'repositoryId', 'isolationId')),
+            'verification snapshot, repository or restore identity changed')
+    require(report.get('manifestVerified') is True and report.get('storageIsolated') is True
+            and report.get('sessionsAndAccessTokensRevoked') is True, 'restore isolation evidence is incomplete')
+    return restore, report
+
+
+@contextmanager
+def restore_report_lock(prepared):
+    restore, _ = bound_restore(prepared)
+    descriptor = os.open(restore / '.application-verification.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(descriptor, 'a') as lock:
+        metadata = os.fstat(lock.fileno())
+        require(metadata.st_uid == os.geteuid() and not metadata.st_mode & 0o077, 'verification lock is not operator-private')
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        # Re-read after locking: another verifier may have replaced the report.
+        restore, report = bound_restore(prepared)
+        yield restore, report
+
+
+def verification_summary(prepared, result):
+    """Only these aggregate fields may enter the application's status response."""
+    names = ('checkId', 'status', 'startedTs', 'completedTs', 'applicationVerified', 'reportSha256',
+             'memosVerified', 'trashedMemosExcluded', 'servedFilesVerified', 'originalsVerified',
+             'previewsVerified', 'negativeAccessChecks', 'adminReadsVerified', 'retainedFilesVerified',
+             'rateLimitRetries', 'rateLimitWaitSeconds', 'memosExcludedArchivedOwner', 'attachmentsExcludedArchivedOwner',
+             'sourceIndexMigration', 'authorizationVerified', 'authorizationHashes', 'authorizationAllowedChanges',
+             'message', 'imageId', 'configuredImage')
+    summary = {key: result[key] for key in names if key in result}
+    summary.update({key: prepared[key] for key in ('snapshotId', 'repositoryId', 'isolationId', 'sourceDatabaseSha256')})
+    profile = result.get('profile', {})
+    summary.update(testedVersion=profile.get('version'), testedCommit=profile.get('commit'))
+    return summary
+
+
+def begin_application_check(prepared, result):
+    with restore_report_lock(prepared) as (restore, report):
+        previous = report.get('applicationVerification', {})
+        if previous.get('applicationVerified') is True and previous.get('status') == 'success':
+            history = report.get('applicationVerificationHistory', [])
+            if not any(item.get('checkId') == previous.get('checkId') for item in history):
+                report['applicationVerificationHistory'] = [previous, *history][:10]
+        report.update(applicationVerified=False, applicationVerification=verification_summary(prepared, result))
+        atomic_json(restore / 'restore-report.json', report)
+
+
+def finish_application_check(prepared, result):
+    with restore_report_lock(prepared) as (restore, report):
+        if report.get('applicationVerification', {}).get('checkId') != result['checkId']:
+            return False  # A newer run owns the displayed outcome.
+        if result.get('applicationVerified') is True:
+            require(result.get('status') == 'success' and result.get('authorizationVerified') is True and result.get('profile', {}).get('commit')
+                    and result.get('imageId') and result.get('reportSha256'), 'verified application identity is incomplete')
+            require(file_hash(restore / 'data' / DATABASE) == prepared['sourceDatabaseSha256'], 'original restore changed during verification')
+        report.update(applicationVerified=result.get('applicationVerified') is True,
+                      applicationVerification=verification_summary(prepared, result))
+        atomic_json(restore / 'restore-report.json', report)
+        return True
+
+
 def table_hashes(db):
     result = {}
     for table in PROTECTED_TABLES:
@@ -68,8 +149,124 @@ def table_hashes(db):
     return result
 
 
-def assert_paused(db):
-    require(db.execute("SELECT count(*) FROM user_setting WHERE key IN ('PERSONAL_ACCESS_TOKENS','REFRESH_TOKENS','WEBHOOKS')").fetchone()[0] == 0,
+def memo_index_hash(db, manifest, target=False):
+    """Normalize only the two declared derived fields on source-eligible rows."""
+    entries = {row['id']: row for row in manifest['records']}
+    require(len(entries) == len(manifest['records']), 'tag migration manifest repeats records')
+    cursor = db.execute('SELECT * FROM memo')
+    columns = [column[0] for column in cursor.description]
+    rows, seen, migrated = [], set(), 0
+    for values in cursor:
+        row = dict(zip(columns, values))
+        entry = entries.get(row['id'])
+        require(entry is not None and entry['contentSha256'] == sha(row['content'].encode()), 'tag migration source record differs')
+        seen.add(row['id'])
+        if entry['migrate']:
+            payload = json.loads(row['payload'])
+            payload = {} if payload is None else payload
+            require(isinstance(payload, dict), 'tag migration payload is not an object')
+            if target:
+                require(type(payload.get('explicitTagsVersion')) is int and payload['explicitTagsVersion'] == 1
+                        and canonical(payload.get('explicitTags')) == canonical(entry['expectedExactTags']),
+                        'tag migration derived fields differ from source parser')
+                migrated += 1
+            payload.pop('explicitTags', None)
+            payload.pop('explicitTagsVersion', None)
+            row['payload'] = canonical(payload).decode()
+        rows.append([row[column] for column in columns])
+    require(seen == set(entries), 'tag migration record set differs')
+    return sha(canonical(sorted(rows, key=canonical))), migrated
+
+
+def prepare_index_manifest(db, helper, snapshot_id, source_hash):
+    helper = Path(helper).resolve()
+    metadata = helper.stat()
+    require(stat.S_ISREG(metadata.st_mode) and metadata.st_uid == os.geteuid() and not metadata.st_mode & 0o022,
+            'tag parser helper must be operator-owned and not writable by others')
+    parent = helper.parent.stat()
+    require(parent.st_uid == os.geteuid() and not parent.st_mode & 0o022, 'tag parser helper directory must be operator-controlled')
+    rows = list(db.execute('SELECT id,content,payload FROM memo ORDER BY id'))
+    request = {'action': 'derive-tags', 'snapshotId': snapshot_id, 'sourceDatabaseSha256': source_hash,
+               'records': [{'id': row[0], 'content': row[1]} for row in rows]}
+    result = subprocess.run([str(helper)], input=canonical(request), capture_output=True, timeout=120)
+    require(result.returncode == 0, 'source tag parser failed; use the reviewed helper from the candidate commit')
+    manifest = json.loads(result.stdout)
+    require(manifest.get('format') == 'kairos-explicit-tag-index-v1' and manifest.get('snapshotId') == snapshot_id
+            and manifest.get('sourceDatabaseSha256') == source_hash and re.fullmatch(r'[a-f0-9]{40}', manifest.get('parserCommit', '')),
+            'source tag parser returned an invalid identity')
+    records = manifest['records']
+    require(len(records) == len(rows), 'source tag parser returned an incomplete record set')
+    for expected, row in zip(records, rows):
+        require(expected.get('id') == row[0] and expected.get('contentSha256') == sha(row[1].encode())
+                and isinstance(expected.get('expectedExactTags'), list)
+                and all(isinstance(tag, str) for tag in expected['expectedExactTags']), 'source tag parser record differs')
+        payload = json.loads(row[2])
+        payload = {} if payload is None else payload
+        require(isinstance(payload, dict), 'source tag migration payload is not an object')
+        expected['migrate'] = not (type(payload.get('explicitTagsVersion')) is int and payload['explicitTagsVersion'] == 1)
+    manifest['sourceNormalizedMemoSha256'], _ = memo_index_hash(db, manifest)
+    return manifest
+
+
+def verified_data_hashes(work, prepared, expected, profile, allow_index_migration):
+    with closing(sqlite3.connect((work / 'data' / DATABASE).as_uri() + '?mode=ro', uri=True)) as db:
+        actual = table_hashes(db)
+        if not allow_index_migration:
+            require(actual == expected['tableHashes'], 'read verification changed restored records, relations or journal state')
+            return {'dataHashes': actual}
+        manifest_path = work / 'explicit-tag-index.json'
+        manifest = private_json(manifest_path)
+        require(file_hash(manifest_path) == prepared.get('explicitTagIndexManifestSha256')
+                and manifest.get('snapshotId') == prepared['snapshotId']
+                and manifest.get('sourceDatabaseSha256') == prepared['sourceDatabaseSha256'], 'tag migration manifest belongs to another source')
+        require(manifest.get('parserCommit') == profile.get('commit'), 'tag migration parser commit differs from tested image')
+        normalized, migrated = memo_index_hash(db, manifest, target=True)
+        require(normalized == manifest['sourceNormalizedMemoSha256'], 'tag migration changed non-index memo fields')
+        require(all(actual[table] == expected['tableHashes'][table] for table in PROTECTED_TABLES if table != 'memo'),
+                'tag migration changed attachments, relations or journal state')
+        return {'dataHashes': actual, 'sourceDataHashes': expected['tableHashes'], 'sourceIndexMigration': {
+            'rule': 'explicit-tags-v1-only', 'manifestSha256': prepared['explicitTagIndexManifestSha256'],
+            'parserCommit': manifest['parserCommit'], 'parserVersion': manifest.get('parserVersion'),
+            'testedCommit': profile.get('commit'), 'migratedRows': migrated,
+            'sourceMemoSha256': expected['tableHashes']['memo'], 'actualMemoSha256': actual['memo'],
+            'sourceNormalizedMemoSha256': manifest['sourceNormalizedMemoSha256'], 'actualNormalizedMemoSha256': normalized}}
+
+
+def authorization_hashes(db, usage_since=None):
+    """Only usage timestamps on the prepared synthetic PATs may change."""
+    result = {}
+    for table in AUTHORIZATION_TABLES:
+        cursor = db.execute('SELECT * FROM "' + table + '"')
+        columns = [column[0] for column in cursor.description]
+        rows = []
+        for values in cursor:
+            row = dict(zip(columns, values))
+            if table == 'user_setting' and row['key'] == 'PERSONAL_ACCESS_TOKENS':
+                value = json.loads(row['value'])
+                for token in value['tokens']:
+                    if 'lastUsedAt' in token:
+                        used = epoch(token.pop('lastUsedAt'))
+                        require(usage_since is not None and usage_since <= used <= int(time.time()) + 5
+                                and used < epoch(token['expiresAt']), 'synthetic credential usage timestamp is invalid')
+                row['value'] = canonical(value).decode()
+            rows.append([row[column] for column in columns])
+        result[table] = sha(canonical({'columns': columns, 'rows': sorted(rows, key=canonical)}))
+    return result
+
+
+def verify_authorization_state(work, expected):
+    with closing(sqlite3.connect((work / 'data' / DATABASE).as_uri() + '?mode=ro', uri=True)) as db:
+        db.execute('BEGIN')
+        assert_paused(db, allow_synthetic_pats=True)
+        hashes = authorization_hashes(db, expected.get('authorizationBaselineTs'))
+    require(hashes == expected.get('authorizationHashes'), 'restored users, permissions, credentials or service configuration changed')
+    return {'authorizationVerified': True, 'authorizationHashes': hashes,
+            'authorizationAllowedChanges': ['prepared synthetic PAT lastUsedAt within the verification lifetime']}
+
+
+def assert_paused(db, allow_synthetic_pats=False):
+    revoked = ('REFRESH_TOKENS', 'WEBHOOKS') if allow_synthetic_pats else ('PERSONAL_ACCESS_TOKENS', 'REFRESH_TOKENS', 'WEBHOOKS')
+    require(db.execute('SELECT count(*) FROM user_setting WHERE key IN (' + ','.join('?' for _ in revoked) + ')', revoked).fetchone()[0] == 0,
             'restored credentials or webhooks were not revoked')
     require(db.execute('SELECT count(*) FROM memo_share').fetchone()[0] == 0, 'restored share links remain active')
     settings = dict(db.execute('SELECT name,value FROM system_setting'))
@@ -103,10 +300,10 @@ def media_path(data, reference):
     return candidate
 
 
-def prepare(restore, work, uid=10001, gid=10001):
+def prepare(restore, work, uid=10001, gid=10001, explicit_tag_helper=None):
     restore, work = Path(restore).resolve(), Path(work).resolve()
     require(restore.parent.name == 'restores', 'only an agent-generated isolated restore is accepted')
-    report = json.loads((restore / 'restore-report.json').read_text())
+    report = private_json(restore / 'restore-report.json')
     require(report.get('isolationId') == restore.name and report.get('manifestVerified') is True
             and report.get('storageIsolated') is True and report.get('sessionsAndAccessTokensRevoked') is True,
             'restore has not passed manifest and authorization isolation')
@@ -127,6 +324,8 @@ def prepare(restore, work, uid=10001, gid=10001):
         expected = {'tableHashes': table_hashes(db), 'memos': [], 'attachments': [], 'snapshotId': report['snapshotId'],
                     'fileHashes': {path.relative_to(data).as_posix(): file_hash(path) for path in data.rglob('*')
                                    if path.is_file() and path.name not in (DATABASE, DATABASE + '-wal', DATABASE + '-shm')}}
+        if explicit_tag_helper:
+            atomic_json(work / 'explicit-tag-index.json', prepare_index_manifest(db, explicit_tag_helper, report['snapshotId'], source_hash))
         users = {row['id']: dict(row) for row in db.execute('SELECT id,username,row_status FROM user')}
         trash = {row[0] for row in db.execute("SELECT document_key FROM journal_document WHERE kind='trash'")}
         memos = {row['id']: dict(row) for row in db.execute('SELECT * FROM memo')}
@@ -167,6 +366,8 @@ def prepare(restore, work, uid=10001, gid=10001):
             value = {'tokens': [{'tokenId': secrets.token_hex(12), 'tokenHash': sha(token.encode()),
                                  'description': 'isolated restore verification only', 'expiresAt': expires}]}
             db.execute("INSERT INTO user_setting(user_id,key,value) VALUES(?, 'PERSONAL_ACCESS_TOKENS', ?)", (owner, json.dumps(value)))
+        expected['authorizationBaselineTs'] = int(time.time())
+        expected['authorizationHashes'] = authorization_hashes(db)
     for path in [data, *data.rglob('*')]:
         path.chmod(0o700 if path.is_dir() else 0o600)
         if os.geteuid() == 0:
@@ -176,9 +377,12 @@ def prepare(restore, work, uid=10001, gid=10001):
                                           'syntheticOutsider': outsider_id, 'unregisteredToken': 'memos_pat_' + secrets.token_hex(32)})
     atomic_json(work / 'expected.json', expected)
     result = {'format': 'kairos-isolated-app-verification-v1', 'restore': str(restore), 'sourceDatabaseSha256': source_hash,
-              'snapshotId': report['snapshotId'], 'data': str(data), 'logicalRoot': str(LOGICAL_ROOT),
+              'snapshotId': report['snapshotId'], 'repositoryId': report['repositoryId'], 'isolationId': report['isolationId'],
+              'data': str(data), 'logicalRoot': str(LOGICAL_ROOT),
               'expiresAt': expires, 'preparedTs': int(time.time()), 'memosToVerify': len(expected['memos']),
               'attachmentsToVerify': len(expected['attachments']), 'applicationVerified': False}
+    if explicit_tag_helper:
+        result['explicitTagIndexManifestSha256'] = file_hash(work / 'explicit-tag-index.json')
     atomic_json(work / 'prepare-report.json', result)
     return {key: result[key] for key in ('format', 'snapshotId', 'expiresAt', 'memosToVerify', 'attachmentsToVerify', 'applicationVerified')}
 
@@ -370,24 +574,57 @@ def normalized_location(value):
     return [value.get('latitude', 0), value.get('longitude', 0), value.get('placeholder', '')]
 
 
-def verify_application(work, container, base_url=None):
+def verify_application(work, container, base_url=None, allow_index_migration=False):
     work = Path(work).resolve()
-    prepared = json.loads((work / 'prepare-report.json').read_text())
-    atomic_json(work / 'application-report.json', {'snapshotId': prepared['snapshotId'], 'checkedTs': int(time.time()),
-                                                 'status': 'running', 'applicationVerified': False})
-    expected = json.loads((work / 'expected.json').read_text())
-    credentials = json.loads((work / 'credentials.json').read_text())
-    require(epoch(credentials['expiresAt']) > int(time.time()), 'verification credentials expired; prepare a new copy')
-    isolation = inspect_isolation(container, work / 'data', base_url)
-    api = API(base_url) if base_url else DockerAPI(container)
+    # Distinct prepared copies may run concurrently; one copy cannot have two
+    # writers replacing its private evidence file while a digest is published.
+    private_json(work / 'prepare-report.json')
+    descriptor = os.open(work / '.verification.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(descriptor, 'a') as lock:
+        metadata = os.fstat(lock.fileno())
+        require(metadata.st_uid == os.geteuid() and not metadata.st_mode & 0o077, 'verification lock is not operator-private')
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return verify_application_locked(work, container, base_url, allow_index_migration)
+
+
+def verify_application_locked(work, container, base_url, allow_index_migration):
+    prepared = private_json(work / 'prepare-report.json')
+    started = {'snapshotId': prepared['snapshotId'], 'repositoryId': prepared['repositoryId'], 'isolationId': prepared['isolationId'],
+               'sourceDatabaseSha256': prepared['sourceDatabaseSha256'], 'checkId': secrets.token_hex(16), 'startedTs': int(time.time()),
+               'status': 'running', 'applicationVerified': False}
+    atomic_json(work / 'application-report.json', started)
+    api = None
     try:
-        return verify_api(work, prepared, expected, credentials, isolation, api)
+        begin_application_check(prepared, started)
+        require(file_hash(Path(prepared['restore']) / 'data' / DATABASE) == prepared['sourceDatabaseSha256'],
+                'original restore changed before verification')
+        expected = private_json(work / 'expected.json')
+        credentials = private_json(work / 'credentials.json')
+        require(expected['snapshotId'] == prepared['snapshotId'], 'expected data belongs to another snapshot')
+        verify_authorization_state(work, expected)
+        require(epoch(credentials['expiresAt']) > int(time.time()), 'verification credentials expired; prepare a new copy')
+        isolation = inspect_isolation(container, work / 'data', base_url)
+        api = API(base_url) if base_url else DockerAPI(container)
+        result = {**started, **verify_api(work, prepared, expected, credentials, isolation, api, allow_index_migration), 'completedTs': int(time.time())}
+        atomic_json(work / 'application-report.json', result)
+        result['reportSha256'] = file_hash(work / 'application-report.json')
+        require(finish_application_check(prepared, result), 'verification was superseded by a newer check')
+        return result
+    except Exception as error:
+        failure = {**started, 'status': 'failed', 'applicationVerified': False, 'completedTs': int(time.time()),
+                   'message': str(error) if isinstance(error, VerificationFailure) else 'isolated application verification failed'}
+        atomic_json(work / 'application-report.json', failure)
+        try:
+            finish_application_check(prepared, failure)
+        except (OSError, ValueError, KeyError):
+            pass  # Never overwrite a changed identity, or mask the original error.
+        raise
     finally:
         if isinstance(api, DockerAPI):
             api.close()
 
 
-def verify_api(work, prepared, expected, credentials, isolation, api):
+def verify_api(work, prepared, expected, credentials, isolation, api, allow_index_migration=False):
     evidence = {'format': prepared['format'], 'snapshotId': prepared['snapshotId'], 'checkedTs': int(time.time()), **isolation,
                 'memosVerified': 0, 'trashedMemosExcluded': 0, 'servedFilesVerified': 0, 'originalsVerified': 0,
                 'previewsVerified': 0, 'negativeAccessChecks': 0, 'applicationVerified': False,
@@ -397,6 +634,7 @@ def verify_api(work, prepared, expected, credentials, isolation, api):
                 'credentialEvidence': 'original credential rows absent before preparation; newly generated unregistered token rejected'}
     status, profile = api.get('/api/v1/instance/profile')
     require(status == 200, 'restored application profile unavailable')
+    require(profile.get('accessMode') == 'INSTANCE_ACCESS_MODE_PRIVATE', 'restored application profile is not private')
     evidence['profile'] = {key: profile.get(key) for key in ('version', 'commit', 'accessMode')}
     tokens = credentials['tokens']
     for index, memo in enumerate(expected['memos']):
@@ -444,15 +682,14 @@ def verify_api(work, prepared, expected, credentials, isolation, api):
             status, preview_hash = api.get(file_path + ('&' if '?' in file_path else '?') + 'thumbnail=true', token, digest=True)
             require(status == 200 and preview_hash != sha(b''), f'image preview failed at item {index}')
             evidence['previewsVerified'] += 1
-    with closing(sqlite3.connect((work / 'data' / DATABASE).as_uri() + '?mode=ro', uri=True)) as db:
-        require(table_hashes(db) == expected['tableHashes'], 'read verification changed restored records, relations or journal state')
+    evidence.update(verified_data_hashes(work, prepared, expected, evidence['profile'], allow_index_migration))
+    evidence.update(verify_authorization_state(work, expected))
     for name, digest in expected['fileHashes'].items():
         require(file_hash(work / 'data' / name) == digest, 'retained media or historical original changed')
     require(file_hash(Path(prepared['restore']) / 'data' / DATABASE) == prepared['sourceDatabaseSha256'], 'original restore was changed')
-    evidence.update(applicationVerified=True, status='success', dataHashes=expected['tableHashes'],
+    evidence.update(applicationVerified=True, status='success',
                     retainedFilesVerified=len(expected['fileHashes']), evidenceScope='isolated app copy; no live instance writes; not personal acceptance',
                     rateLimitRetries=api.rate_limit_retries, rateLimitWaitSeconds=api.rate_limit_wait_seconds)
-    atomic_json(work / 'application-report.json', evidence)
     return evidence
 
 
@@ -465,19 +702,20 @@ def main():
     setup.add_argument('--work', required=True, type=Path)
     setup.add_argument('--uid', type=int, default=10001)
     setup.add_argument('--gid', type=int, default=10001)
+    setup.add_argument('--explicit-tag-helper', type=Path, help='Generate a private source index manifest using the candidate helper')
     check = commands.add_parser('verify')
     check.add_argument('--work', required=True, type=Path)
     check.add_argument('--container', required=True)
     check.add_argument('--base-url', help='Optional host loopback transport; default is docker exec with network none')
+    check.add_argument('--allow-explicit-tag-index-migration', action='store_true', help='Permit only the prepared exact explicit-tag index migration')
     args = parser.parse_args()
     try:
-        result = prepare(args.restore, args.work, args.uid, args.gid) if args.action == 'prepare' else verify_application(args.work, args.container, args.base_url)
+        result = (prepare(args.restore, args.work, args.uid, args.gid, args.explicit_tag_helper) if args.action == 'prepare'
+                  else verify_application(args.work, args.container, args.base_url, args.allow_explicit_tag_index_migration))
     except (OSError, ValueError, KeyError, sqlite3.Error, urllib.error.URLError, subprocess.TimeoutExpired) as error:
         # Avoid printing response bodies, private paths, credentials or content.
         failure = {'status': 'failed', 'applicationVerified': False,
                    'message': str(error) if isinstance(error, VerificationFailure) else 'isolated application verification failed; inspect the controlled local fixture and checks'}
-        if args.action == 'verify' and (args.work / 'prepare-report.json').is_file():
-            atomic_json(args.work / 'application-report.json', failure)
         print(json.dumps(failure))
         raise SystemExit(1) from None
     print(json.dumps(result, ensure_ascii=False))

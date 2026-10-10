@@ -34,6 +34,11 @@ func (d *DB) CreateMemo(ctx context.Context, create *store.Memo) (*store.Memo, e
 func insertSQLiteMemo(ctx context.Context, tx dbExecutor, create *store.Memo) error {
 	fields := []string{"`uid`", "`creator_id`", "`content`", "`visibility`", "`payload`", "`space_id`"}
 	placeholder := []string{"?", "?", "?", "?", "?", "?"}
+	indexedPayload, err := store.WithMemoExplicitTags(create.Content, create.Payload)
+	if err != nil {
+		return err
+	}
+	create.Payload = indexedPayload
 	payload := "{}"
 	if create.Payload != nil {
 		payloadBytes, err := protojson.Marshal(create.Payload)

@@ -20,6 +20,18 @@ export interface BackupReceipt {
   manifestVerified?: boolean;
   applicationVerified?: boolean;
   isolationId?: string;
+  instanceVersion?: string;
+  applicationVerification?: {
+    checkId: string;
+    status: string;
+    startedTs: number;
+    completedTs?: number;
+    testedVersion?: string;
+    testedCommit?: string;
+    imageId?: string;
+    message?: string;
+    sourceIndexMigration?: { migratedRows: number; parserCommit: string };
+  };
   errorType?: string;
   message?: string;
   stale?: boolean;
