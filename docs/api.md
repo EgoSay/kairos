@@ -13,7 +13,7 @@ Kairos 的 HTTP、Connect RPC、媒体和前端来自同一个服务，使用实
 
 ## 过滤
 
-列表筛选由本仓库 [filter](../filter/README.md) 编译和校验。前端当前仍有高级表达式入口，易用性改进在 [#25](https://github.com/EgoSay/kairos/issues/25)。
+列表筛选由本仓库 [filter](../filter/README.md) 编译和校验。前端当前仍有高级表达式入口，易用性改进在 [#5](https://github.com/EgoSay/kairos/issues/5)。
 
 ## 兼容性
 
