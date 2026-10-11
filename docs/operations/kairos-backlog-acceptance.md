@@ -18,10 +18,10 @@
 
 以下137行保留源issue/历史AC的精确条款。AC10–AC14、AC37 为“暂缓”，AC23 的 AI 调用部分暂缓；其它为“验证中”：本节所述场景通过不代表最终发布通过，也未关闭issue或宣称用户本人体验确认。
 
-已推送代码候选为 `d902ac7463bea4f9edc385661b8f311349e78b27`，草稿 [PR #20](https://github.com/EgoSay/kairos/pull/20)，4 个 CI 工作流/14 项检查全部成功。包含 ZIP 文档、菜单弹窗、历史重试以及最后的长文聚焦滚动、短视口元数据、纯文本粘贴修复。此前 `1b8b2c251` 同提交镜像已完成新鲜 S3 快照隔离恢复，最终发布候选恢复证据需另行绑定。此后范围说明更新属于文档变更；当前尚未正式上线。
+已推送代码候选为 `d902ac7463bea4f9edc385661b8f311349e78b27`，草稿 [PR #20](https://github.com/EgoSay/kairos/pull/20)，4 个 CI 工作流/14 项检查全部成功。包含 ZIP 文档、菜单弹窗、历史重试以及最后的长文聚焦滚动、短视口元数据、纯文本粘贴修复。此前 `1b8b2c251` 同提交镜像已完成新鲜 S3 快照隔离恢复，最终发布候选恢复证据需另行绑定。此后范围说明更新属于文档变更，新增 `memo-pin-failure.test.tsx` 补齐置顶/取消置顶失败后的状态恢复与重试证据，产品源码未变；完整前端229文件/2069项、lint与构建通过。当前尚未正式上线。
 
 - **G / DB**：Go1.27，完整Go测试、race、tidy和lint通过；SQLite/MySQL/PostgreSQL真实事务、fresh/升级与精确标签派生索引回归通过。最新ZIP修复后API两包race通过，ZIP导入/历史文档在三数据库回归通过。旧1.0.1镜像读取升级数据、新写入再升级的12项演练保留正文/原件。
-- **F / FE / E / I / C / T**：Node24.16/pnpm11.0.1，最新工作树lint、**228测试文件/2065项**及前端构建通过；分别覆盖组件、真实CodeMirror、离线队列、日历/搜索、标签。模拟网络/定位/DOM的结果不冒充实际设备行为。测试环境的`scrollTo`未实现警告不当作浏览器滚动证据。
+- **F / FE / E / I / C / T**：Node24.16/pnpm11.0.1，最新工作树lint、**229测试文件/2069项**及前端构建通过；分别覆盖组件、真实CodeMirror、离线队列、日历/搜索、标签。模拟网络/定位/DOM的结果不冒充实际设备行为。测试环境的`scrollTo`未实现警告不当作浏览器滚动证据。
 - **P / P-Docker**：105项备份/发布Python回归通过；真实隔离Docker/Compose四场故障演练已完成，涵盖容器缺失、健康失败保留pending、定时/重复恢复与实际新写入阻止覆盖；Dokploy HTTP/systemd采用明确的本机适配，不是生产破坏性演练。
 - **B**：本机ego lite、合成账户，证据截至2026-10-11T02:01:03Z。新增真实冲突/刷新/合并、复杂源码与关联往返、组合搜索跨视图、标签键盘与保存视图、详情取消置顶、回顾/漫步/排除、动态分享撤出、纯图片/音频、390px及24px字号格式/非空选区/聚焦子Esc、AI开始前告知均已留证。原生多图剪贴板、离线冷刷、各媒体特殊名/回收恢复、分区保存证据继续有效。
 - **B34-corrected**：最初取消置顶/删除分区的直接fetch遗漏Authorization并返回401，旧字段比较无效。17:17Z后用授权HTTP200+精确记录名，并将先前独立ZIP审计SQLite快照与现行DB所有字段/附件/关系逐字节对比重新通过；以下只采用后证据，不沿用错误断言。
@@ -48,7 +48,7 @@
 | 代号 | 相对证据文件/定位 | 适用范围 |
 | --- | --- | --- |
 | G/DB | `final-candidate-local.json`、`review-final-go-all.log`、`recovery-guard-final-race.log`、`recovery-store-{sqlite,mysql,postgres}-final.log`、`final-zip-api-race.log` | 最终1f65基线及补丁相关测试；具体断言以行内测试名为准 |
-| FE/E/I/C/T | `editor-final-full-tests.log`、`editor-final-lint.log`、`editor-final-qa-build.log`、`editor-followup-independent-review.md`、`offline-inline-review.md`、`search-independent-review.md` | 228/2065及编辑/离线/检索专项红绿；不是最终补丁CI |
+| FE/E/I/C/T | `release-final-frontend-tests.log`、`release-final-frontend-lint.log`、`release-final-frontend-build.log`、`editor-followup-independent-review.md`、`offline-inline-review.md`、`search-independent-review.md` | 229/2069及编辑/离线/检索专项红绿；不是最终补丁CI |
 | P/P-Docker | `python-final-with-verifier.log`、`real-docker-release-drill.json`、`real-docker-release-drill.md` | 隔离发布恢复、脚本锁/健康/声明/数据保护 |
 | B | `browser-evidence.jsonl`行1–59（各行自带UTC时间；下表用B:行号） | ego实际操作；不复制合成正文或身份到公开文档 |
 | H | `qa-http-boundaries.json` | 40场景/135请求逐对象边界；按scenario语义采用，早期matrixIds错位不沿用 |
@@ -93,9 +93,9 @@
 | --- | --- | --- | --- |
 | 03-01 | 仅切换分区、移出分区、重新启用暂停分区均持久化成功。 | 验证中 | 自动化：G `TestAtomicPartitionSaveUsesOnlyCommittedDestination`；F: journal-atomic-partition-save、journal-partition-save 显式重启暂停映射；实际：仅分区、正文+分区保存重开均显示真实归属；旧版本恢复后明确暂停，普通编辑不发送；显式重选同分区才发送当前正文，UI行为与签名接收事件一致。 证据：B:26–29,34–35；D；共同待办：P0 |
 | 03-02 | 保存后重新打开，显示实际归属及同步状态。 | 验证中 | 自动化：F: journal-partition-picker suspended/selected metadata；服务端原子结果 G；实际：仅分区、正文+分区保存重开均显示真实归属；旧版本恢复后明确暂停，普通编辑不发送；显式重选同分区才发送当前正文，UI行为与签名接收事件一致。 证据：B:26–29,34–35；D；共同待办：P0 |
-| 03-03 | 分区保存失败不提示成功或静默丢弃选择；重试行为明确。 | 验证中 | 自动化：F: journal-atomic-partition-save `keeps the draft selection on failure and retries the same atomic request`；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2065项全套。 证据：B:28–29；FE；共同待办：P0 |
-| 03-04 | 确实没有任何修改时仍维持原有无修改提示。 | 验证中 | 自动化：F 同文件 `keeps the no-change result for an unchanged selection`；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2065项全套。 证据：B:28–29；FE；共同待办：P0 |
-| 03-05 | 上述场景纳入前端回归测试。 | 验证中 | 自动化：分区原子保存/失败重试/暂停显式重启前端回归；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2065项全套。 证据：B:28–29；FE；共同待办：P0 |
+| 03-03 | 分区保存失败不提示成功或静默丢弃选择；重试行为明确。 | 验证中 | 自动化：F: journal-atomic-partition-save `keeps the draft selection on failure and retries the same atomic request`；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入229文件/2069项全套。 证据：B:28–29；FE；共同待办：P0 |
+| 03-04 | 确实没有任何修改时仍维持原有无修改提示。 | 验证中 | 自动化：F 同文件 `keeps the no-change result for an unchanged selection`；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入229文件/2069项全套。 证据：B:28–29；FE；共同待办：P0 |
+| 03-05 | 上述场景纳入前端回归测试。 | 验证中 | 自动化：分区原子保存/失败重试/暂停显式重启前端回归；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入229文件/2069项全套。 证据：B:28–29；FE；共同待办：P0 |
 
 ## #4 [P2] 定时回滚完成后，流水线仍需恢复生产部署声明
 
@@ -227,14 +227,14 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 17-01 | 卡片与详情页均能置顶/取消置顶，桌面与手机入口可发现，成功和失败反馈明确。 | 验证中 | 自动化：F journal-memo-media/action menu；G owner权限；实际：卡片旧记录置顶与刷新已过；详情取消后UI与另一客户端读取一致，授权HTTP200+exactName及独立预存SQLite快照复核原日期/正文/payload/visibility不变。早先缺Authorization的401字段比较无效，采用后续更正证据。 证据：B:3,42,49；B34-corrected；H；共同待办：P0 |
+| 17-01 | 卡片与详情页均能置顶/取消置顶，桌面与手机入口可发现，成功和失败反馈明确。 | 验证中 | 自动化：F journal-memo-media/action menu、memo-pin-failure 四组合真实 hooks 验证错误反馈/缓存完整回滚/重试；G owner权限；实际：卡片旧记录置顶与刷新已过；详情取消后UI与另一客户端读取一致，授权HTTP200+exactName及独立预存SQLite快照复核原日期/正文/payload/visibility不变。早先缺Authorization的401字段比较无效，采用后续更正证据。 证据：B:3,42,49；B34-corrected；H；共同待办：P0 |
 | 17-02 | 一年前的正常记录置顶后可在个人首页编辑区下方找到，并有置顶标记。 | 验证中 | 自动化：DB pinned old createdTs在查询头部；G时间不变；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
 | 17-03 | 多条置顶按记录时间倒序；跨分页不重复、不遗漏，不把仅当前页的数据当作全部置顶。 | 验证中 | 自动化：DB `TestMemoSearchFacetsAndPinnedPagination` oldpin顺序及分页；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
 | 17-04 | 刷新、重新登录和换设备后状态一致；取消后回到正常时间位置。 | 验证中 | 自动化：G服务端pin持久化；F cache mutation仅局部；实际：卡片旧记录置顶与刷新已过；详情取消后UI与另一客户端读取一致，授权HTTP200+exactName及独立预存SQLite快照复核原日期/正文/payload/visibility不变。早先缺Authorization的401字段比较无效，采用后续更正证据。 证据：B:3,42,49；B34-corrected；H；共同待办：P0 |
 | 17-05 | 原始记录日期未改变，日历和某日回看的时间顺序保持正确。 | 验证中 | 自动化：G `TestJournalSearchScopeCountsAndPinLifecycle` create/update timestamp unchanged；C时区；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
 | 17-06 | 带关键词、标签、日期条件时，不出现无关置顶记录。 | 验证中 | 自动化：DB查询先filter后pin排序；F memo views composition；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
 | 17-07 | 归档/移入回收站立即退出首页置顶区，恢复后原置顶状态仍在。 | 验证中 | 自动化：G state恢复保留pin+trash排除；未组合真UI；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
-| 17-08 | 操作遵守本人记录权限，失败不会留下与服务器状态不一致的置顶展示。 | 验证中 | 自动化：G另一用户PermissionDenied；F useMemoPin关联cache待FE；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
+| 17-08 | 操作遵守本人记录权限，失败不会留下与服务器状态不一致的置顶展示。 | 验证中 | 自动化：G另一用户PermissionDenied；F memo-pin-failure 真实 useMemoPin/useUpdateMemo 挂载：延迟拒绝后详情/列表/无限列表/地图缓存完整恢复，只报error，明确重试成功；实际：旧记录置顶、日期筛选不被绕过及刷新持久化已证；排序/跨页不重复、归档/trash退出和恢复保留、其他用户拒绝及失败UI不伪成功由精确API/三DB/组件回归覆盖。原日期以授权复核为准。 证据：B:3–4,10,42,49；B34-corrected；H；G/DB；共同待办：P0 |
 
 ## #18 [R11] 完善 MCP 接入：只读授权、日期检索与可追溯回顾
 
