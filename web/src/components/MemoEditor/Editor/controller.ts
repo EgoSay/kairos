@@ -4,6 +4,7 @@ import { EditorSelection, type EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { formatTag } from "@/utils/tag-grammar";
 import type { EditorController, FormattingController } from "../types/editorController";
+import { blockPad } from "../utils/inlineImageDraft";
 import { findMarkdownTagMatches } from "./markdownTagRanges";
 import {
   cancelUploadAnchor,
@@ -14,13 +15,6 @@ import {
 } from "./uploadAnchors";
 
 const isEmptyDoc = (state: EditorState) => state.doc.toString().trim() === "";
-
-/** Block padding for insertMarkdown: ensure the inserted text is its own block. */
-function blockPad(before: string, after: string): { prefix: string; suffix: string } {
-  const prefix = before.length === 0 || before.endsWith("\n\n") ? "" : before.endsWith("\n") ? "\n" : "\n\n";
-  const suffix = after.length === 0 || after.startsWith("\n\n") ? "" : after.startsWith("\n") ? "\n" : "\n\n";
-  return { prefix, suffix };
-}
 
 export function createController(view: EditorView, formatting: FormattingController): EditorController {
   const currentTags = () => findMarkdownTagMatches(view.state, 0, view.state.doc.length).map((match) => match.value);
@@ -106,15 +100,16 @@ export function createController(view: EditorView, formatting: FormattingControl
       const doc = view.state.doc.toString();
       const { prefix, suffix } = blockPad(doc.slice(0, position), doc.slice(position));
       const insert = prefix + markdown + suffix;
+      const changes = view.state.changes({ from: position, insert });
       view.dispatch({
-        changes: { from: position, insert },
+        changes,
+        selection: view.state.selection.map(changes, 1),
         effects: removeUploadAnchorEffect(id),
-        selection: { anchor: position + insert.length },
-        scrollIntoView: true,
+        annotations: isolateHistory.of("full"),
       });
-      view.focus();
     },
     cancelUploadAnchor: (id) => cancelUploadAnchor(view, id),
+    getUploadAnchorPosition: (id) => getUploadAnchorPosition(view.state, id),
     getCursor: () => view.state.selection.main.head,
     setCursor: (position: number) => {
       const cursor = Math.min(Math.max(position, 0), view.state.doc.length);

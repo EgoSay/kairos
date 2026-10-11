@@ -70,4 +70,32 @@ describe("editor upload anchors", () => {
     expect(fresh).toHaveBeenCalledTimes(1);
     expect(stale).not.toHaveBeenCalled();
   });
+  it("keeps images before text typed at the paste point and resolves consecutive pastes in order", () => {
+    const editorView = view("before");
+    const controller = createController(editorView, {} as never);
+    controller.setCursor(6);
+    controller.createUploadAnchor(descriptor("first"));
+    controller.createUploadAnchor(descriptor("second"));
+    editorView.dispatch({ changes: { from: 6, insert: "after" }, selection: { anchor: 11 } });
+    expect(controller.getUploadAnchorPosition?.("first")).toBe(6);
+    controller.resolveUploadAnchor("first", "![first](/file/attachments/first)");
+    expect(editorView.state.doc.sliceString(controller.getCursor() - 5, controller.getCursor())).toBe("after");
+    controller.resolveUploadAnchor("second", "![second](/file/attachments/second)");
+    const source = controller.getMarkdown();
+    expect(source.indexOf("![first]")).toBeLessThan(source.indexOf("![second]"));
+    expect(source.indexOf("![second]")).toBeLessThan(source.indexOf("after"));
+    expect(source.endsWith("after")).toBe(true);
+    expect(controller.getCursor()).toBe(source.length);
+    editorView.destroy();
+  });
+  it("keeps a pending image at the deletion boundary when surrounding text is removed", () => {
+    const editorView = view("before pending after");
+    const controller = createController(editorView, {} as never);
+    controller.createUploadAnchor(descriptor("retained"), 10);
+    editorView.dispatch({ changes: { from: 7, to: 15, insert: "" } });
+    expect(controller.getUploadAnchorPosition?.("retained")).toBe(7);
+    controller.resolveUploadAnchor("retained", "![retained](/file/attachments/retained)");
+    expect(controller.getMarkdown()).toBe("before \n\n![retained](/file/attachments/retained)\n\nafter");
+    editorView.destroy();
+  });
 });

@@ -7,10 +7,11 @@ import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
 import { loadMemoEditor } from "../loader";
 import { cacheService } from "../services/cacheService";
 import { memoService } from "../services/memoService";
+import { resolvePendingInlineImages } from "../services/pendingInlineImages";
 import { useEditorContext } from "../state";
 import type { MemoEditorProps } from "../types";
 
-const processing = new Set<string>();
+const processing = new Map<string, AbortController>();
 
 /** Explicitly saved local records are separate from drafts until every upload succeeds. */
 export function PendingRecords({ owner, draftKey }: { owner: string; draftKey: string }) {
@@ -21,12 +22,14 @@ export function PendingRecords({ owner, draftKey }: { owner: string; draftKey: s
   const [resumed, setResumed] = useState<{ Component: ComponentType<MemoEditorProps>; memo: Memo }>();
   const [resumeSaving, setResumeSaving] = useState(false);
   const mounted = useRef(true);
+  const lifetime = useRef(new AbortController());
   const queryClient = useQueryClient();
   const refresh = useCallback(() => {
+    const controller = lifetime.current;
     void journalDrafts
       .list(owner)
       .then((items) => {
-        if (mounted.current)
+        if (mounted.current && lifetime.current === controller && !controller.signal.aborted)
           setEntries(
             items.filter(
               (item) =>
@@ -39,33 +42,47 @@ export function PendingRecords({ owner, draftKey }: { owner: string; draftKey: s
       .catch(() => undefined);
   }, [owner]);
   const synchronize = useCallback(async () => {
-    if (!owner || !navigator.onLine || processing.has(owner)) return;
-    processing.add(owner);
+    const controller = lifetime.current;
+    const { signal } = controller;
+    const active = () => mounted.current && lifetime.current === controller && !signal.aborted;
+    const existing = processing.get(owner);
+    if (!owner || !navigator.onLine || signal.aborted || (existing && !existing.signal.aborted)) return;
+    processing.set(owner, controller);
     setBusy(true);
     setError("");
     try {
       const process = async () => {
         for (const entry of await journalDrafts.pending(owner)) {
-          const state = restoreJournalState(entry);
+          signal.throwIfAborted();
+          const original = restoreJournalState(entry);
           try {
-            await memoService.save(state, entry.options ?? {});
+            const state = await resolvePendingInlineImages(
+              original,
+              (next) => journalDrafts.save(entry.key, owner, next, entry.options, "pending"),
+              signal,
+            );
+            signal.throwIfAborted();
+            await memoService.save(state, entry.options ?? {}, signal);
+            signal.throwIfAborted();
             await journalDrafts.remove(entry.key);
           } catch (failure) {
-            if (mounted.current) setError(failure instanceof Error ? failure.message : "同步未完成，记录和原文件仍保存在此设备。");
+            if (signal.aborted) throw failure;
+            if (active()) setError(failure instanceof Error ? failure.message : "同步未完成，记录和原文件仍保存在此设备。");
           } finally {
-            for (const file of state.localFiles) URL.revokeObjectURL(file.previewUrl);
+            for (const file of original.localFiles) URL.revokeObjectURL(file.previewUrl);
           }
         }
       };
-      if (navigator.locks) await navigator.locks.request(`memos-pending:${owner}`, process);
+      if (navigator.locks) await navigator.locks.request(`memos-pending:${owner}`, { signal }, process);
       else await process();
+      signal.throwIfAborted();
       await queryClient.invalidateQueries({ queryKey: ["memos"] });
       await queryClient.invalidateQueries({ queryKey: ["journal"] });
     } catch (failure) {
-      if (mounted.current) setError(failure instanceof Error ? failure.message : "同步未完成，记录和原文件仍保存在此设备。");
+      if (active()) setError(failure instanceof Error ? failure.message : "同步未完成，记录和原文件仍保存在此设备。");
     } finally {
-      processing.delete(owner);
-      if (mounted.current) {
+      if (processing.get(owner) === controller) processing.delete(owner);
+      if (active()) {
         setBusy(false);
         refresh();
       }
@@ -73,6 +90,8 @@ export function PendingRecords({ owner, draftKey }: { owner: string; draftKey: s
   }, [owner, queryClient, refresh]);
   useEffect(() => {
     mounted.current = true;
+    const controller = new AbortController();
+    lifetime.current = controller;
     refresh();
     void synchronize();
     const online = () => {
@@ -86,6 +105,7 @@ export function PendingRecords({ owner, draftKey }: { owner: string; draftKey: s
     window.addEventListener("journal-drafts-changed", changed);
     return () => {
       mounted.current = false;
+      controller.abort();
       window.removeEventListener("online", online);
       window.removeEventListener("journal-drafts-changed", changed);
     };
@@ -120,7 +140,8 @@ export function PendingRecords({ owner, draftKey }: { owner: string; draftKey: s
     const name = entry.options?.memoName;
     if (!name || busy || processing.has(owner)) return;
     setBusy(true);
-    processing.add(owner);
+    const controller = lifetime.current;
+    processing.set(owner, controller);
     const state = restoreJournalState(entry);
     try {
       const key = cacheService.key(owner, `edit:${name}`);
@@ -139,7 +160,7 @@ export function PendingRecords({ owner, draftKey }: { owner: string; draftKey: s
       setError(failure instanceof Error ? failure.message : "无法继续编辑，待同步内容仍保留在此设备。");
     } finally {
       for (const file of state.localFiles) URL.revokeObjectURL(file.previewUrl);
-      processing.delete(owner);
+      if (processing.get(owner) === controller) processing.delete(owner);
       setBusy(false);
     }
   };

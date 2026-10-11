@@ -61,6 +61,14 @@ class CloudBackupTest(unittest.TestCase):
                 backup.run(self.config)
         self.assertEqual(self.receipt("last-success.json"), self.previous)
 
+    def test_another_remote_snapshot_cannot_confirm_this_attempt(self):
+        def mismatched_listing(config, *arguments, **kwargs):
+            return '[{"id":"unrelated-snapshot"}]' if arguments[0] == "snapshots" else self.remote_success(config, *arguments, **kwargs)
+        with patch.object(backup, "restic", side_effect=mismatched_listing):
+            with self.assertRaisesRegex(RuntimeError, "not confirmed"):
+                backup.run(self.config)
+        self.assertEqual(self.receipt("last-success.json"), self.previous)
+
     def test_corrupted_staging_database_after_upload_is_not_success(self):
         def changed_file(config, *arguments, **kwargs):
             if arguments[0] == "backup":

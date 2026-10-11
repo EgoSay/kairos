@@ -230,6 +230,9 @@
       "bold": "מודגש",
       "italic": "נטוי",
       "strikethrough": "קו חוצה",
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "בלוק קוד",
       "bullet-list": "רשימת תבליטים",
       "ordered-list": "רשימה ממוספרת",
@@ -415,6 +418,7 @@
     "back-to-top": "חזרה לראש הדף"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "אסימון הגישה הועתק ללוח",
       "access-token-deleted": "אסימון הגישה `{{description}}` נמחק",

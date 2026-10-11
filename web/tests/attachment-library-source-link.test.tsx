@@ -70,6 +70,12 @@ describe("<AttachmentMediaGrid>", () => {
     expect(fileLink).toHaveAttribute("href", "/file/attachments/photo/photo.jpg");
     expect(fileLink).toHaveAttribute("target", "_blank");
 
+    const preview = screen.getByRole("button", { name: "common.open photo.jpg" });
+    expect(preview).toHaveAttribute("tabindex", "0");
+    fireEvent.keyDown(preview, { key: "Enter" });
+    expect(onPreview).toHaveBeenCalledExactlyOnceWith(attachment.name);
+    onPreview.mockClear();
+
     fireEvent.click(memoLink);
     expect(onPreview).not.toHaveBeenCalled();
     expect(screen.getByTestId("location-state")).toHaveTextContent('{"from":"/spaces/product/attachments?filter=tagSearch%3Awork"}');

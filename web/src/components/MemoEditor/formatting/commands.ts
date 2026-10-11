@@ -7,6 +7,8 @@ import {
   ListOrderedIcon,
   ListTodoIcon,
   type LucideIcon,
+  MinusIcon,
+  QuoteIcon,
   StrikethroughIcon,
 } from "lucide-react";
 import type { Translations } from "@/utils/i18n";
@@ -36,6 +38,8 @@ export type EditorCommandId =
   | "strikethrough"
   | "code"
   | "codeBlock"
+  | "quote"
+  | "horizontalRule"
   | "bulletList"
   | "orderedList"
   | "taskList"
@@ -127,6 +131,9 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     icon: ListTodoIcon,
     group: "block",
   },
+  { id: "code", labelKey: "editor.format.inline-code", icon: CodeIcon, group: "mark" },
+  { id: "quote", labelKey: "editor.format.quote", icon: QuoteIcon, group: "block" },
+  { id: "horizontalRule", labelKey: "editor.format.horizontal-rule", icon: MinusIcon, group: "block" },
   {
     id: "codeBlock",
     labelKey: "editor.format.code-block",
@@ -179,6 +186,9 @@ export function isCommandActive(active: ActiveFormatState, id: EditorCommandId):
       return active.headingLevel === 2;
     case "heading3":
       return active.headingLevel === 3;
+    case "quote":
+    case "horizontalRule":
+      return false;
     // The remaining ids (marks, blocks, link) map 1:1 to the snapshot.
     default:
       return active[id];

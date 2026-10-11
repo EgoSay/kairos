@@ -1,5 +1,6 @@
 import { fromJson, type JsonValue } from "@bufbuild/protobuf";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { journalRequest } from "@/hooks/useJournalQueries";
@@ -9,10 +10,12 @@ export default function JournalRecordHistoryDialog({
   name,
   open,
   onOpenChange,
+  finalFocus,
 }: {
   name: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  finalFocus?: RefObject<HTMLElement | null>;
 }) {
   const uid = encodeURIComponent(name.replace(/^memos\//, ""));
   const client = useQueryClient();
@@ -28,17 +31,22 @@ export default function JournalRecordHistoryDialog({
   const restore = useMutation({
     mutationFn: (id: string) => journalRequest(`/memos/${uid}/revisions/${encodeURIComponent(id)}/restore`, { method: "POST" }),
     onSuccess: async () => {
-      await client.invalidateQueries({ queryKey: ["memos"] });
-      await versions.refetch();
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["memos"] }),
+        client.invalidateQueries({ queryKey: ["journal"] }),
+        client.invalidateQueries({ queryKey: ["journal-partitions"] }),
+      ]);
       onOpenChange(false);
     },
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl">
+      <DialogContent size="xl" initialFocus finalFocus={finalFocus}>
         <DialogHeader>
           <DialogTitle>最近版本</DialogTitle>
-          <DialogDescription>保留最近 30 天。恢复后仍可找回当前版本。</DialogDescription>
+          <DialogDescription>
+            保留最近 30 天。恢复后仍可找回当前版本；记录保持私密，旧分享撤回，同步暂停。需要再次同步时，请在编辑器重新选择分区并保存。
+          </DialogDescription>
         </DialogHeader>
         <div className="overflow-y-auto space-y-3">
           {versions.data && (
@@ -60,8 +68,15 @@ export default function JournalRecordHistoryDialog({
             </p>
           )}
           {versions.isPending && <p role="status">正在读取…</p>}
-          {versions.isError && <p role="alert">无法读取版本，请重试。</p>}
-          {!versions.isPending && !versions.data?.revisions.length && (
+          {versions.isError && (
+            <div className="space-y-2">
+              <p role="alert">无法读取版本，请重试。</p>
+              <Button variant="outline" disabled={versions.isFetching} onClick={() => void versions.refetch()}>
+                {versions.isFetching ? "正在重试…" : "重试"}
+              </Button>
+            </div>
+          )}
+          {versions.isSuccess && versions.data.revisions.length === 0 && (
             <p className="text-sm text-muted-foreground">这条记录还没有最近的修改版本。</p>
           )}
           {versions.data?.revisions.map((version) => {

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -274,10 +275,37 @@ func (s *APIV1Service) journalRestoreMemo(c *echo.Context) error {
 	if journalrecord.Expired(trash.DeletedTs, time.Now()) {
 		return journalError(c, status.Error(codes.FailedPrecondition, "recovery window has ended"))
 	}
+	guard, err := s.prepareJournalShareGuard(ctx, user.ID)
+	if err != nil {
+		return journalError(c, err)
+	}
+	expected, err := s.journalRecordHash(ctx, memo)
+	if err != nil {
+		return journalError(c, err)
+	}
+	if err := s.suspendPartitionMemoDeliveries(ctx, user.ID, memo.UID); err != nil {
+		return journalError(c, err)
+	}
+	if err := s.revokeLegacyMemoShares(ctx, memo); err != nil {
+		return journalError(c, err)
+	}
+	if err := journal.RevokeMemoDerivatives(ctx, s.Store, user.ID, memo.UID); err != nil {
+		return journalError(c, err)
+	}
+	mappingGuards, err := s.prepareMemoPartitionRestore(ctx, memo)
+	if err != nil {
+		return journalError(c, err)
+	}
 	normal, private := store.Normal, store.Private
 	// Keep the tombstone until private restoration succeeds. Never replay sync.
-	if err := s.Store.UpdateMemo(ctx, &store.UpdateMemo{ID: memo.ID, RowStatus: &normal, Visibility: &private}); err != nil {
-		return journalError(c, err)
+	if err := s.Store.ApplyMemoMutation(ctx, &store.MemoMutation{MemoID: memo.ID, MemoCreatorID: user.ID, ExpectedMemoContent: memo.Content, ExpectedRecordHash: expected,
+		MemoUpdate: &store.UpdateMemo{ID: memo.ID, RowStatus: &normal, Visibility: &private}, Policy: memoWritePolicy(user.ID, false),
+		JournalDocuments: append(mappingGuards, guard),
+	}); err != nil {
+		if errors.Is(err, store.ErrMemoMutationConflict) {
+			return journalError(c, status.Error(codes.Aborted, "sharing authorization changed; retry recovery"))
+		}
+		return journalError(c, mapMemoWriteError(err, "recovery conflicted with a sharing authorization; retry recovery"))
 	}
 	if err := s.Store.DeleteJournalDocument(ctx, user.ID, "trash", memo.UID, doc.Version); err != nil {
 		return journalError(c, err)
@@ -369,6 +397,10 @@ func (s *APIV1Service) journalRestoreRevision(c *echo.Context) error {
 	if err := protojson.Unmarshal(revision.Memo, snapshot); err != nil {
 		return journalError(c, err)
 	}
+	guard, err := s.prepareJournalShareGuard(ctx, user.ID)
+	if err != nil {
+		return journalError(c, err)
+	}
 	expected, err := s.journalRecordHash(ctx, memo)
 	if err != nil {
 		return journalError(c, err)
@@ -380,6 +412,7 @@ func (s *APIV1Service) journalRestoreRevision(c *echo.Context) error {
 
 	// Recreate removed attachments from retained originals. A revision never
 	// invents missing historical bytes or silently restores broken references.
+	restoredAttachments := map[string]string{}
 	for _, attachment := range snapshot.Attachments {
 		uid := strings.TrimPrefix(attachment.Name, "attachments/")
 		existing, err := s.Store.GetAttachment(ctx, &store.FindAttachment{UID: &uid})
@@ -418,11 +451,24 @@ func (s *APIV1Service) journalRestoreRevision(c *echo.Context) error {
 		if err != nil {
 			return journalError(c, err)
 		}
-		snapshot.Content = strings.ReplaceAll(snapshot.Content, "/file/"+attachment.Name, "/file/"+restored.Name)
+		restoredAttachments[uid] = strings.TrimPrefix(restored.Name, "attachments/")
 		attachment.Name = restored.Name
 	}
+	snapshot.Content = remapJournalAttachmentLinks(snapshot.Content, restoredAttachments)
+	// Withdraw existing grants before restoring bytes. Failure leaves the current
+	// record intact and its outbound grants paused, never a briefly public version.
+	if err := s.suspendPartitionMemoDeliveries(ctx, user.ID, memo.UID); err != nil {
+		return journalError(c, err)
+	}
+	if err := s.revokeLegacyMemoShares(ctx, memo); err != nil {
+		return journalError(c, err)
+	}
+	if err := journal.RevokeMemoDerivatives(ctx, s.Store, user.ID, memo.UID); err != nil {
+		return journalError(c, err)
+	}
 	snapshot.Name = "memos/" + memo.UID
-	result, err := s.UpdateMemo(ctx, &v1pb.UpdateMemoRequest{Memo: snapshot, UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"content", "attachments", "location", "create_time", "update_time"}}})
+	snapshot.Visibility = v1pb.Visibility_PRIVATE
+	result, err := s.applyMemoUpdate(ctx, &v1pb.UpdateMemoRequest{Memo: snapshot, UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"content", "attachments", "location", "create_time", "update_time", "visibility"}}}, true, guard)
 	if err != nil {
 		return journalError(c, err)
 	}
@@ -431,6 +477,18 @@ func (s *APIV1Service) journalRestoreRevision(c *echo.Context) error {
 		return journalError(c, err)
 	}
 	return c.JSONBlob(http.StatusOK, raw)
+}
+
+var journalAttachmentLink = regexp.MustCompile(`(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//[^\s)\]<>"']+|(/file/(?:attachments/)?)([a-zA-Z0-9_-]+)([^\s)\]<>"']*)`)
+
+func remapJournalAttachmentLinks(content string, restored map[string]string) string {
+	return journalAttachmentLink.ReplaceAllStringFunc(content, func(path string) string {
+		parts := journalAttachmentLink.FindStringSubmatch(path)
+		if uid := restored[parts[2]]; uid != "" {
+			return parts[1] + uid + parts[3]
+		}
+		return path
+	})
 }
 
 func (s *APIV1Service) journalOwnedOriginal(c *echo.Context) (*store.Attachment, string, error) {
@@ -490,6 +548,7 @@ func (s *APIV1Service) purgeJournalRevisions(ctx context.Context, owner int32, u
 	if err != nil {
 		return err
 	}
+	originals := map[string]struct{}{}
 	for _, doc := range docs {
 		var revision journalrecord.Revision
 		if err := json.Unmarshal(doc.Payload, &revision); err != nil {
@@ -500,12 +559,14 @@ func (s *APIV1Service) purgeJournalRevisions(ctx context.Context, owner int32, u
 			return err
 		}
 		for _, attachment := range memo.Attachments {
-			originalUID := strings.TrimPrefix(attachment.Name, "attachments/")
-			if path, err := attachmentOriginalPath(s.Profile.Data, originalUID); err == nil {
-				_ = os.Remove(path)
-			}
+			originals[strings.TrimPrefix(attachment.Name, "attachments/")] = struct{}{}
 		}
-		if err := s.Store.DeleteJournalDocument(ctx, owner, "revision", doc.Key, -1); err != nil {
+		if err := s.Store.DeleteJournalDocument(ctx, owner, "revision", doc.Key, doc.Version); err != nil {
+			return err
+		}
+	}
+	for originalUID := range originals {
+		if err := s.removeUnreferencedJournalOriginal(ctx, originalUID); err != nil {
 			return err
 		}
 	}

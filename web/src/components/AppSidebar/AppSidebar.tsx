@@ -45,10 +45,12 @@ import { useAttachmentLibraryStats } from "@/hooks/useAttachmentLibrary";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useFilteredMemoStats } from "@/hooks/useFilteredMemoStats";
 import useMediaQuery from "@/hooks/useMediaQuery";
+import { useMemoFilters } from "@/hooks/useMemoFilters";
 import { useNotifications } from "@/hooks/useUserQueries";
 import { combineCELFilters } from "@/lib/cel-filter";
 import { cn } from "@/lib/utils";
 import { collectionNavigationPath, ROUTES } from "@/router/routes";
+import { State } from "@/types/proto/api/v1/common_pb";
 import { User_Role, UserNotification_Status } from "@/types/proto/api/v1/user_service_pb";
 import { useTranslate } from "@/utils/i18n";
 import CommonSidebarContent from "./CommonSidebarContent";
@@ -100,8 +102,9 @@ const CollectionSidebarContent = ({
   // User-level collections stay aligned with their unscoped feeds even when a Space is remembered.
   const isUserLevelCollection = context === "archived";
   const collectionFilter = isUserLevelCollection ? undefined : memoFilter;
-  const statsFilter = scopeFilter ? combineCELFilters(collectionFilter, scopeFilter) : collectionFilter;
-  const { statistics, tags } = useFilteredMemoStats({
+  const activeFilter = useMemoFilters({ includeMemoViews: true, includePinned: true });
+  const statsFilter = combineCELFilters(collectionFilter, scopeFilter, activeFilter);
+  const { statistics, tags, loading, error, retry, retrying } = useFilteredMemoStats({
     context: context === "archived" ? "archived" : "collection",
     filter: statsFilter,
     enabled: authInitialized && instanceInitialized && (md || mobileOpen),
@@ -114,7 +117,13 @@ const CollectionSidebarContent = ({
       {showStatistics && (
         <SidebarSection ariaLabel={t("common.statistics")}>
           {currentUser ? (
-            <JournalCalendar onDateSelect={() => setMobileOpen(false)} />
+            <JournalCalendar
+              onDateSelect={() => setMobileOpen(false)}
+              scope={{
+                filter: statsFilter,
+                state: context === "archived" ? State.ARCHIVED : State.NORMAL,
+              }}
+            />
           ) : (
             <StatisticsView statisticsData={statistics} onDateSelect={() => setMobileOpen(false)} />
           )}
@@ -122,17 +131,27 @@ const CollectionSidebarContent = ({
       )}
       {/* Every collection route narrows the same way: views (yours, so signed-in only), days, tags. */}
       {currentUser && <ViewsSection />}
-      <TagsSection tagCount={tags} scope={tagStateScope} onSelect={() => setMobileOpen(false)} />
+      <TagsSection
+        tagCount={tags}
+        scope={tagStateScope}
+        onSelect={() => setMobileOpen(false)}
+        loading={loading}
+        error={error}
+        onRetry={retry}
+        retrying={retrying}
+      />
     </div>
   );
 };
 
 const AttachmentsSidebarContent = () => {
   const t = useTranslate();
+  const { search } = useLocation();
+  const onlyTrash = new URLSearchParams(search).get("lifecycle") === "trash";
   const currentUser = useCurrentUser();
   const { memoFilter, selectedSpaceName, creatorUsername } = useSpaceContext();
   const { attachmentSection, setAttachmentSection, setMobileOpen } = useAppSidebar();
-  const { isComplete, stats } = useAttachmentLibraryStats(memoFilter);
+  const { isComplete, stats } = useAttachmentLibraryStats(memoFilter, onlyTrash);
   const total = stats.media + stats.documents + stats.audio;
   const rows: Array<{ value: AttachmentSection; icon: LucideIcon; label: string; count?: number }> = [
     { value: "all", icon: ListIcon, label: t("common.all"), count: isComplete ? total : undefined },
@@ -146,7 +165,7 @@ const AttachmentsSidebarContent = () => {
     },
   ];
   // Unlinked uploads do not belong to any Space, so "Unused" is only a Memos-level collection.
-  if (!selectedSpaceName && (!creatorUsername || creatorUsername === currentUser?.username)) {
+  if (!onlyTrash && !selectedSpaceName && (!creatorUsername || creatorUsername === currentUser?.username)) {
     rows.push({
       value: "unused",
       icon: Trash2Icon,

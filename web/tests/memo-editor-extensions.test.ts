@@ -66,7 +66,10 @@ describe("MemoEditor CodeMirror extensions", () => {
 
     view.contentDOM.dispatchEvent(event);
 
-    expect(onFiles).toHaveBeenCalledWith([file], eventType === "paste" ? { source: "paste" } : { source: "drop", position: 0 });
+    expect(onFiles).toHaveBeenCalledWith(
+      [file],
+      eventType === "paste" ? { source: "paste", position: 2 } : { source: "drop", position: 0 },
+    );
     expect(event.defaultPrevented).toBe(true);
     expect(view.state.doc.toString()).toBe("memo");
   });

@@ -1,10 +1,13 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
-import dayjs from "dayjs";
 import { countBy } from "lodash-es";
 import { useMemo } from "react";
+import { useMemoFilterContext } from "@/contexts/MemoFilterContext";
 import { type MemoTimeBasis, useView } from "@/contexts/ViewContext";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { useJournalPreferences } from "@/hooks/useJournalQueries";
 import { useAllUserStats, useUserStats } from "@/hooks/useUserQueries";
+import { journalDate } from "@/lib/journal";
+import { searchIncludesArchived } from "@/lib/memo-search";
 import { mergeTagCounts } from "@/lib/tag";
 import { State } from "@/types/proto/api/v1/common_pb";
 import type { UserStats } from "@/types/proto/api/v1/user_service_pb";
@@ -14,6 +17,9 @@ export interface FilteredMemoStats {
   statistics: StatisticsData;
   tags: Record<string, number>;
   loading: boolean;
+  error: Error | null;
+  retrying: boolean;
+  retry: () => void;
 }
 
 export type MemoStatsContext = "home" | "collection" | "archived";
@@ -24,8 +30,6 @@ export interface UseFilteredMemoStatsOptions {
   enabled?: boolean;
   filter?: string;
 }
-
-const toDateString = (date: Date) => dayjs(date).format("YYYY-MM-DD");
 
 const timestampsForBasis = (stats: UserStats, basis: MemoTimeBasis) => {
   const createdArray = stats.memoCreatedTimestamps ?? [];
@@ -42,18 +46,28 @@ export const useFilteredMemoStats = (options: UseFilteredMemoStatsOptions = {}):
   const { userName, context, enabled = true, filter } = options;
   const currentUser = useCurrentUser();
   const { timeBasis } = useView();
+  const preferences = useJournalPreferences();
+  const timezone = preferences.data?.timezone ?? "Asia/Shanghai";
+  const { filters } = useMemoFilterContext();
+  const includeArchived = searchIncludesArchived(filters) && context !== "archived";
 
   // Legacy personal collections use backend per-user stats.
-  const { data: userStats, isLoading: isLoadingUserStats } = useUserStats(userName, { enabled, filter });
+  const userStatsQuery = useUserStats(userName, { enabled, filter });
+  const { data: userStats, isLoading: isLoadingUserStats } = userStatsQuery;
   // Collection and Archived fetch grouped stats and aggregate them locally.
   // ListAllUserStats AND's the request filter with the server's auth filter, so
   // private memos are not included unless explicitly visible to the current user.
   const allUserStatsRequest =
-    context === "collection" ? { state: State.NORMAL, filter } : context === "archived" ? { state: State.ARCHIVED, filter } : {};
+    context === "collection"
+      ? { state: State.NORMAL, filter, includeArchived }
+      : context === "archived"
+        ? { state: State.ARCHIVED, filter }
+        : {};
   const shouldFetchAllUserStats = context === "collection" || (context === "archived" && !!currentUser?.name);
-  const { data: allUserStats = [], isLoading: isLoadingAllUserStats } = useAllUserStats(allUserStatsRequest, {
+  const allStatsQuery = useAllUserStats(allUserStatsRequest, {
     enabled: enabled && shouldFetchAllUserStats,
   });
+  const { data: allUserStats = [], isLoading: isLoadingAllUserStats } = allStatsQuery;
 
   const data = useMemo(() => {
     const loading = isLoadingUserStats || isLoadingAllUserStats;
@@ -68,7 +82,7 @@ export const useFilteredMemoStats = (options: UseFilteredMemoStatsOptions = {}):
           ...timestampsForBasis(stats, timeBasis)
             .map((ts) => (ts ? timestampDate(ts) : undefined))
             .filter((date): date is Date => date !== undefined)
-            .map(toDateString),
+            .map((date) => journalDate(date, timezone)),
         );
       }
       activityStats = countBy(displayDates);
@@ -80,7 +94,7 @@ export const useFilteredMemoStats = (options: UseFilteredMemoStatsOptions = {}):
           sourceArray
             .map((ts) => (ts ? timestampDate(ts) : undefined))
             .filter((date): date is Date => date !== undefined)
-            .map(toDateString),
+            .map((date) => journalDate(date, timezone)),
         );
       }
       if (userStats.tagCount) {
@@ -89,7 +103,15 @@ export const useFilteredMemoStats = (options: UseFilteredMemoStatsOptions = {}):
     }
 
     return { statistics: { activityStats, timeBasis }, tags: tagCount, loading };
-  }, [context, userName, userStats, allUserStats, isLoadingUserStats, isLoadingAllUserStats, timeBasis]);
+  }, [context, userName, userStats, allUserStats, isLoadingUserStats, isLoadingAllUserStats, timeBasis, timezone]);
 
-  return data;
+  const query = context === "collection" || context === "archived" ? allStatsQuery : userStatsQuery;
+  return {
+    ...data,
+    error: query.error ?? null,
+    retrying: query.isFetching,
+    retry: () => {
+      void query.refetch();
+    },
+  };
 };

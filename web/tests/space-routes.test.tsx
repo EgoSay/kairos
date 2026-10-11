@@ -23,6 +23,8 @@ const state = vi.hoisted(() => ({
   spaceError: null as ConnectError | null,
   retrySpace: vi.fn(),
 }));
+vi.mock("@/hooks/useCurrentUser", () => ({ default: () => undefined }));
+vi.mock("@/hooks/useJournalQueries", () => ({ useJournalPreferences: () => ({ data: { timezone: "Asia/Shanghai" } }) }));
 vi.mock("@/contexts/SpaceContext", () => ({ useSpaceContext: () => state }));
 vi.mock("@/utils/i18n", async (original) => ({
   ...(await original<typeof import("@/utils/i18n")>()),

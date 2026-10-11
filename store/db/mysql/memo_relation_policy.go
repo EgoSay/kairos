@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	stderrors "errors"
+	"slices"
 
 	"github.com/EgoSay/kairos/store"
 )
@@ -14,6 +15,7 @@ type mysqlRelationMemoState struct {
 	rowStatus  store.RowStatus
 	visibility store.Visibility
 	spaceID    *int32
+	trashed    bool
 }
 
 func validateMySQLMemoRelationEndpoints(ctx context.Context, tx *sql.Tx, mutation *store.MemoMutation) error {
@@ -32,6 +34,9 @@ func validateMySQLMemoRelationEndpoints(ctx context.Context, tx *sql.Tx, mutatio
 		state, err := getMySQLRelationMemoState(ctx, tx, endpointID)
 		if err != nil {
 			if stderrors.Is(err, sql.ErrNoRows) {
+				if mutation.PruneUnavailableReference(endpointID) {
+					continue
+				}
 				return store.ErrMemoMutationConflict
 			}
 			return err
@@ -44,6 +49,7 @@ func validateMySQLMemoRelationEndpoints(ctx context.Context, tx *sql.Tx, mutatio
 			EndpointRowStatus:  state.rowStatus,
 			EndpointVisibility: state.visibility,
 			EndpointSpaceID:    state.spaceID,
+			EndpointTrashed:    state.trashed,
 		}
 		if state.spaceID != nil {
 			snapshot.EndpointSpaceExists, err = mysqlSpaceExists(ctx, tx, *state.spaceID)
@@ -58,6 +64,9 @@ func validateMySQLMemoRelationEndpoints(ctx context.Context, tx *sql.Tx, mutatio
 			}
 		}
 		if err := store.ValidateMemoRelationEndpointRead(snapshot); err != nil {
+			if actor.Active && mutation.PruneUnavailableReference(endpointID) {
+				continue
+			}
 			return err
 		}
 	}
@@ -67,8 +76,9 @@ func validateMySQLMemoRelationEndpoints(ctx context.Context, tx *sql.Tx, mutatio
 func getMySQLRelationMemoState(ctx context.Context, tx *sql.Tx, memoID int32) (*mysqlRelationMemoState, error) {
 	state := &mysqlRelationMemoState{}
 	var spaceID sql.NullInt64
-	if err := tx.QueryRowContext(ctx, `SELECT id, creator_id, row_status, visibility, space_id FROM memo WHERE id = ?`, memoID).Scan(
-		&state.id, &state.creatorID, &state.rowStatus, &state.visibility, &spaceID,
+	if err := tx.QueryRowContext(ctx, `SELECT id, creator_id, row_status, visibility, space_id,
+ EXISTS(SELECT 1 FROM journal_document trash WHERE trash.owner_id=memo.creator_id AND trash.kind='trash' AND trash.document_key=memo.uid) FROM memo WHERE id = ? FOR UPDATE`, memoID).Scan(
+		&state.id, &state.creatorID, &state.rowStatus, &state.visibility, &spaceID, &state.trashed,
 	); err != nil {
 		return nil, err
 	}
@@ -96,5 +106,6 @@ func mysqlRelationAuthorizationEndpointIDs(mutation *store.MemoMutation) []int32
 			add(relation.RelatedMemoID)
 		}
 	}
+	slices.Sort(ids)
 	return ids
 }

@@ -173,4 +173,4 @@ jobs:
         env:
           DEPLOY_HOST: ${{ secrets.MEMOS_DEPLOY_HOST }}
         run: |
-          ssh -T -i "$RUNNER_TEMP/memos-key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$RUNNER_TEMP/memos-hosts" -o ConnectTimeout=15 root@"$DEPLOY_HOST" rollback > "$RUNNER_TEMP/memos-rollback.json"
+          ssh -T -i "$RUNNER_TEMP/memos-key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$RUNNER_TEMP/memos-hosts" -o ConnectTimeout=15 root@"$DEPLOY_HOST" rollback < "$RUNNER_TEMP/memos-release.json" > "$RUNNER_TEMP/memos-rollback.json"

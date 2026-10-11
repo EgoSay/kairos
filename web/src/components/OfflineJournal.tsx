@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { cacheService } from "@/components/MemoEditor/services/cacheService";
 import { createInitialState, type EditorState } from "@/components/MemoEditor/state";
+import { editInlineImageDraft, type TextEditSelection } from "@/components/MemoEditor/utils/inlineImageDraft";
 import type { DeviceOwner } from "@/lib/journal-device";
 import { type JournalDraft, journalDrafts, restoreJournalState } from "@/lib/journal-drafts";
 
@@ -16,6 +18,7 @@ export default function OfflineJournal({ owner }: { owner?: DeviceOwner }) {
   const [online, setOnline] = useState(navigator.onLine);
   const urls = useRef(new Set<string>());
   const generation = useRef(0);
+  const textSelection = useRef<TextEditSelection | undefined>(undefined);
   const stateRef = useRef(state);
   stateRef.current = state;
   useEffect(() => {
@@ -99,6 +102,7 @@ export default function OfflineJournal({ owner }: { owner?: DeviceOwner }) {
       const current = stateRef.current;
       await journalDrafts.save(`pending:${owner.name}:${current.clientId}`, owner.name, current, options, "pending");
       await journalDrafts.remove(key);
+      cacheService.clear(key);
       setState(createInitialState());
       setKey(`offline:${owner.name}`);
       setOptions(undefined);
@@ -138,9 +142,32 @@ export default function OfflineJournal({ owner }: { owner?: DeviceOwner }) {
             placeholder="写点什么…"
             value={state.content}
             disabled={!ready || busy}
+            onKeyDown={(event) => {
+              textSelection.current =
+                event.key === "Backspace" || event.key === "Delete"
+                  ? {
+                      from: event.currentTarget.selectionStart,
+                      to: event.currentTarget.selectionEnd,
+                      inputType: event.key === "Backspace" ? "deleteContentBackward" : "deleteContentForward",
+                    }
+                  : undefined;
+            }}
+            onPaste={(event) => {
+              textSelection.current = { from: event.currentTarget.selectionStart, to: event.currentTarget.selectionEnd };
+            }}
+            onBeforeInput={(event) => {
+              textSelection.current = {
+                from: event.currentTarget.selectionStart,
+                to: event.currentTarget.selectionEnd,
+                inputType: (event.nativeEvent as InputEvent).inputType || textSelection.current?.inputType,
+              };
+            }}
             onChange={(event) => {
               setError("");
-              setState((previous) => ({ ...previous, content: event.target.value }));
+              const content = event.target.value;
+              const selection = textSelection.current;
+              textSelection.current = undefined;
+              setState((previous) => editInlineImageDraft(previous, content, selection));
             }}
             className="w-full min-h-48 bg-transparent border border-border rounded-md p-4 outline-none focus:ring-1 focus:ring-ring"
           />

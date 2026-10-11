@@ -1,4 +1,5 @@
 import { useState } from "react";
+import CloudBackupConfiguration from "@/components/Backup/CloudBackupConfiguration";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getRequestToken } from "@/connect";
@@ -101,6 +102,7 @@ export default function JournalBackup() {
         <h1 className="font-serif text-3xl font-medium tracking-tight">数据与备份</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">把自己的日子带走，也能在另一处接着保存。</p>
       </header>
+      <CloudBackupConfiguration />
       <section className="space-y-4 rounded-xl border border-border/70 bg-card p-5">
         <h2 className="text-lg font-medium">下载可迁移档案</h2>
         <p className="text-sm leading-6 text-muted-foreground">

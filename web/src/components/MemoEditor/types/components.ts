@@ -48,6 +48,8 @@ export interface MemoEditorProps {
 }
 
 export interface EditorContentProps {
+  sourceMode?: boolean;
+  consumePlainPaste?: () => boolean;
   placeholder?: string;
   /** Invoked by the in-editor save shortcut (Cmd/Ctrl+Enter). */
   onSubmit: () => void;
@@ -67,6 +69,7 @@ export interface EditorViewToggles {
 }
 
 export interface EditorToolbarProps {
+  onReturnToEditor?: () => void;
   onSave: () => void;
   onCancel?: () => void;
   memoName?: string;
@@ -115,6 +118,7 @@ export interface FocusModeExitButtonProps {
 }
 
 export interface InsertMenuProps {
+  onReturnToEditor?: () => void;
   isUploading?: boolean;
   isSaving?: boolean;
   location?: Location;

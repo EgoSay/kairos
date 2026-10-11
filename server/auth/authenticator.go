@@ -100,7 +100,7 @@ func (a *Authenticator) AuthenticateByRefreshToken(ctx context.Context, refreshT
 
 // AuthenticateByPAT validates a Personal Access Token.
 func (a *Authenticator) AuthenticateByPAT(ctx context.Context, token string) (*store.User, *storepb.PersonalAccessTokensUserSetting_PersonalAccessToken, error) {
-	if !strings.HasPrefix(token, PersonalAccessTokenPrefix) {
+	if !isPersonalAccessToken(token) {
 		return nil, nil, errors.New("invalid PAT format")
 	}
 
@@ -108,6 +108,12 @@ func (a *Authenticator) AuthenticateByPAT(ctx context.Context, token string) (*s
 	result, err := a.store.GetUserByPATHash(ctx, tokenHash)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "invalid PAT")
+	}
+
+	// An old-version rewrite can drop unknown scope fields. Fail closed after
+	// upgrading again instead of treating that Agent prefix as a legacy PAT.
+	if strings.HasPrefix(token, AgentAccessTokenPrefix) && (!result.PAT.ReadOnly || result.PAT.ExpiresAt == nil) {
+		return nil, nil, errors.New("Agent credential scope is missing; create a new credential")
 	}
 
 	// Check expiry
@@ -128,6 +134,7 @@ type AuthResult struct {
 	User        *store.User // Set for PAT authentication
 	Claims      *UserClaims // Set for Access Token V2 (stateless)
 	AccessToken string      // Non-empty if authenticated via JWT
+	ReadOnly    bool        // Restricted owner-only journal credential
 }
 
 // bearerAuth is the outcome of successfully validating a Bearer token: the resolved
@@ -152,7 +159,7 @@ func (a *Authenticator) resolveBearer(ctx context.Context, token string) (*beare
 		return nil, nil
 	}
 
-	if !strings.HasPrefix(token, PersonalAccessTokenPrefix) {
+	if !isPersonalAccessToken(token) {
 		// Access Token V2 (stateless). An invalid token yields no identity and no
 		// error, so the caller can fall back to other credentials.
 		claims, err := a.AuthenticateByAccessTokenV2(token)
@@ -219,7 +226,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, authHeader string) *Au
 		return nil
 	}
 	if bearer.pat != nil {
-		return &AuthResult{User: bearer.user, AccessToken: token}
+		return &AuthResult{User: bearer.user, AccessToken: token, ReadOnly: bearer.pat.ReadOnly}
 	}
 	return &AuthResult{Claims: bearer.claims, AccessToken: token}
 }

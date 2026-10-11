@@ -70,6 +70,26 @@ describe("memo access transitions", () => {
     client.clear();
   });
 
+  it("never displays a cached relation snippet while rechecking access on opening", async () => {
+    const { client, wrapper } = setup();
+    const cached = create(MemoSchema, { name: "memos/restricted", content: "previous content", snippet: "previous content" });
+    client.setQueryData(memoKeys.detail(cached.name), cached);
+    client.setQueryData(memoKeys.list({}), create(ListMemosResponseSchema, { memos: [cached] }));
+    let deny!: (error: Error) => void;
+    api.getMemo.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          deny = reject;
+        }),
+    );
+    const { result } = renderHook(() => useResolvedRelationMemos([cached.name]), { wrapper });
+    expect(result.current[cached.name]).toBeUndefined();
+    await act(async () => deny(new ConnectError("no longer readable", Code.PermissionDenied)));
+    await waitFor(() => expect(result.current[cached.name]).toBeNull());
+    expect(findMemoInCollectionQueries(client, cached.name)).toBeUndefined();
+    client.clear();
+  });
+
   it("retains transient errors as retryable errors instead of marking a memo unavailable", async () => {
     const { client, wrapper } = setup();
     api.getMemo.mockRejectedValue(new ConnectError("offline", Code.Unavailable));

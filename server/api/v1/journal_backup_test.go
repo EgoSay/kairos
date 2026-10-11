@@ -67,10 +67,10 @@ func TestJournalBackupNewInstanceRoundtripAndNoReplay(t *testing.T) {
 	put("preferences", "main", journal.Preferences{Timezone: "Asia/Shanghai", CalendarVisible: true, CalendarColor: true, ExcludedMemoNames: []string{"memos/second-record"}})
 	put(partition.PartitionKind, "private-zone", partition.Partition{ID: "private-zone", Name: "愿意公开的片段"})
 	put(partition.MappingKind, first.UID, partition.Mapping{MemoUID: first.UID, PartitionID: "private-zone"})
-	put(partition.TargetKind, "destination", partition.Target{ID: "destination", PartitionID: "private-zone", Name: "My receiver", URL: "https://secret.invalid/SENSITIVE_URL", SigningSecret: "SENSITIVE_SIGNING_SECRET", Enabled: true, Epoch: 1, Fields: partition.Fields{Content: true}})
+	put(partition.TargetKind, "destination", partition.Target{ID: "destination", PartitionID: "private-zone", Name: "My receiver", URL: "https://secret.invalid/SENSITIVE_URL", SigningSecret: "SENSITIVE_SIGNING_SECRET", HasSigningSecret: true, Enabled: true, AutoUpdate: true, Epoch: 1, Fields: partition.Fields{Content: true}})
 	put("share", "shared-selection", journal.Share{ID: "shared-selection", Token: "SENSITIVE_SHARE_TOKEN", PasscodeHash: "SENSITIVE_PASSCODE", Filter: journal.ShareFilter{Timezone: "UTC", MemoNames: []string{"memos/first-record"}}, Mode: "fixed", Items: []journal.ShareItem{{MemoName: "memos/first-record", Content: body}}})
 	put(partition.ExternalKind, partition.RecordTargetKey("destination", first.UID), partition.External{TargetID: "destination", MemoUID: first.UID, ExternalID: "platform-post-7", PublishedURL: "https://social.example/posts/7"})
-	put(partition.DeliveryKind, "stable-event", partition.Delivery{ID: "stable-event", TargetID: "destination", PartitionID: "private-zone", MemoUID: first.UID, Status: "pending", Sequence: 7})
+	put(partition.DeliveryKind, "stable-event", partition.Delivery{ID: "stable-event", TargetID: "destination", PartitionID: "private-zone", MemoUID: first.UID, Status: "pending", Sequence: 7, LastError: "SENSITIVE_DELIVERY_ERROR", LeaseUntilTs: time.Now().Add(time.Hour).Unix(), NextAttemptTs: time.Now().Add(time.Hour).Unix()})
 	put(partition.SequenceKind, partition.RecordTargetKey("destination", first.UID), backupSequence{Sequence: 7, TargetID: "destination", MemoUID: first.UID})
 	put("insight", "saved-reflection", journalInsightResult{ID: "saved-reflection", Text: "原有感受，仅供参考", Sources: []journalInsightSource{{Name: "memos/first-record"}}, Citations: []string{"memos/first-record"}})
 	revisionRaw, err := protojson.Marshal(&v1pb.Memo{Name: "memos/first-record", Creator: "users/archive-owner", Content: "修改前原文", Visibility: v1pb.Visibility_PUBLIC, Attachments: []*v1pb.Attachment{{Name: "attachments/media-original"}}})
@@ -78,7 +78,7 @@ func TestJournalBackupNewInstanceRoundtripAndNoReplay(t *testing.T) {
 	put("revision", "first-record_revision", journalrecord.Revision{ID: "revision", CreatedTs: time.Now().Unix(), Memo: revisionRaw})
 	var zip bytes.Buffer
 	require.NoError(t, source.writeJournalBackup(ctx, owner, &zip, true))
-	for _, secret := range []string{"NEVER_EXPORT_FOREIGN", "SENSITIVE_URL", "SENSITIVE_SIGNING_SECRET", "SENSITIVE_SHARE_TOKEN", "SENSITIVE_PASSCODE", "SENSITIVE_S3_SECRET"} {
+	for _, secret := range []string{"NEVER_EXPORT_FOREIGN", "SENSITIVE_URL", "SENSITIVE_SIGNING_SECRET", "SENSITIVE_SHARE_TOKEN", "SENSITIVE_PASSCODE", "SENSITIVE_S3_SECRET", "SENSITIVE_DELIVERY_ERROR"} {
 		require.NotContains(t, zip.String(), secret)
 	}
 	a, err := journalbackup.Read(bytes.NewReader(zip.Bytes()), int64(zip.Len()))
@@ -86,6 +86,43 @@ func TestJournalBackupNewInstanceRoundtripAndNoReplay(t *testing.T) {
 	require.NoError(t, validateJournalBackup(a))
 	require.Len(t, a.Manifest.Memos, 2)
 	require.Len(t, a.Manifest.Attachments, 1)
+	expectedKinds := []string{"preferences", "partition", "partition-mapping", "partition-target", "share", "partition-external", "partition-delivery", "partition-sequence", "insight", "revision"}
+	exportedKinds := []string{}
+	for _, doc := range a.Manifest.Documents {
+		exportedKinds = append(exportedKinds, doc.Kind)
+		switch doc.Kind {
+		case partition.TargetKind:
+			var target partition.Target
+			require.NoError(t, json.Unmarshal(doc.Payload, &target))
+			require.False(t, target.Enabled)
+			require.False(t, target.HasSigningSecret)
+			require.Empty(t, target.URL)
+			require.Empty(t, target.SigningSecret)
+			require.Equal(t, "My receiver", target.Name)
+			require.Equal(t, "private-zone", target.PartitionID)
+			require.True(t, target.AutoUpdate, "configuration is retained without granting execution")
+			require.True(t, target.Fields.Content)
+		case "share":
+			var share journal.Share
+			require.NoError(t, json.Unmarshal(doc.Payload, &share))
+			require.True(t, share.Paused)
+			require.Empty(t, share.Token)
+			require.Empty(t, share.PasscodeHash)
+			require.Equal(t, []string{"memos/first-record"}, share.Filter.MemoNames)
+			require.Len(t, share.Items, 1)
+			require.Equal(t, body, share.Items[0].Content)
+		case partition.DeliveryKind:
+			var delivery partition.Delivery
+			require.NoError(t, json.Unmarshal(doc.Payload, &delivery))
+			require.Equal(t, "cancelled", delivery.Status)
+			require.Empty(t, delivery.LastError)
+			require.Zero(t, delivery.LeaseUntilTs)
+			require.Zero(t, delivery.NextAttemptTs)
+			require.Equal(t, int64(7), delivery.Sequence)
+		default:
+		}
+	}
+	require.ElementsMatch(t, expectedKinds, exportedKinds, "every organization/history document must actually enter the archive")
 	digestBytes := sha256.Sum256(zip.Bytes())
 	digest := hex.EncodeToString(digestBytes[:])
 
@@ -100,6 +137,7 @@ func TestJournalBackupNewInstanceRoundtripAndNoReplay(t *testing.T) {
 	require.Equal(t, 2, report.Memos)
 	require.Equal(t, 1, report.Attachments)
 	require.Equal(t, 1, report.Originals)
+	require.Equal(t, len(expectedKinds), report.Documents)
 	restored, err := dest.Store.GetMemo(ctx, &store.FindMemo{UID: &first.UID})
 	require.NoError(t, err)
 	require.Equal(t, body, restored.Content)
@@ -129,8 +167,13 @@ func TestJournalBackupNewInstanceRoundtripAndNoReplay(t *testing.T) {
 	actual, err = os.ReadFile(path)
 	require.NoError(t, err)
 	require.Equal(t, original, actual)
-	docs, err := dest.Store.ListJournalDocuments(ctx, &store.FindJournalDocument{OwnerID: &newOwner.ID})
-	require.NoError(t, err)
+	docs := []*store.JournalDocument{}
+	for _, kind := range expectedKinds {
+		found, err := dest.Store.ListJournalDocuments(ctx, &store.FindJournalDocument{OwnerID: &newOwner.ID, Kind: kind})
+		require.NoError(t, err)
+		require.Len(t, found, 1, "restored %s must exist before its safety checks", kind)
+		docs = append(docs, found...)
+	}
 	for _, doc := range docs {
 		switch doc.Kind {
 		case "share":
@@ -138,22 +181,33 @@ func TestJournalBackupNewInstanceRoundtripAndNoReplay(t *testing.T) {
 			require.NoError(t, json.Unmarshal(doc.Payload, &share))
 			require.True(t, share.Paused)
 			require.NotEmpty(t, share.Token)
+			require.NotEqual(t, "SENSITIVE_SHARE_TOKEN", share.Token)
 			require.Empty(t, share.PasscodeHash)
 		case partition.TargetKind:
 			var target partition.Target
 			require.NoError(t, json.Unmarshal(doc.Payload, &target))
 			require.False(t, target.Enabled)
+			require.False(t, target.HasSigningSecret)
 			require.Empty(t, target.URL)
 			require.Empty(t, target.SigningSecret)
+			require.True(t, target.AutoUpdate)
+			require.True(t, target.Fields.Content)
 		case partition.MappingKind:
 			var mapping partition.Mapping
 			require.NoError(t, json.Unmarshal(doc.Payload, &mapping))
 			require.True(t, mapping.Suspended)
+			require.Equal(t, first.UID, mapping.MemoUID)
+			p, err := dest.Store.GetJournalDocument(ctx, newOwner.ID, partition.PartitionKind, mapping.PartitionID)
+			require.NoError(t, err)
+			require.NotNil(t, p, "restored mapping must refer to the restored partition")
 		case partition.DeliveryKind:
 			var delivery partition.Delivery
 			require.NoError(t, json.Unmarshal(doc.Payload, &delivery))
 			require.Equal(t, "cancelled", delivery.Status)
 			require.Equal(t, "stable-event", delivery.SourceEventID)
+			require.Empty(t, delivery.LastError)
+			require.Zero(t, delivery.LeaseUntilTs)
+			require.Zero(t, delivery.NextAttemptTs)
 		case partition.ExternalKind:
 			var external partition.External
 			require.NoError(t, json.Unmarshal(doc.Payload, &external))
@@ -175,6 +229,14 @@ func TestJournalBackupNewInstanceRoundtripAndNoReplay(t *testing.T) {
 			require.Equal(t, v1pb.Visibility_PRIVATE, memo.Visibility)
 			require.Equal(t, "users/restored-owner", memo.Creator)
 			require.Equal(t, "修改前原文", memo.Content)
+		case "preferences":
+			var prefs journal.Preferences
+			require.NoError(t, json.Unmarshal(doc.Payload, &prefs))
+			require.Equal(t, "Asia/Shanghai", prefs.Timezone)
+		case partition.PartitionKind:
+			var p partition.Partition
+			require.NoError(t, json.Unmarshal(doc.Payload, &p))
+			require.Equal(t, "愿意公开的片段", p.Name)
 		default:
 		}
 	}
@@ -196,6 +258,111 @@ func TestJournalBackupNewInstanceRoundtripAndNoReplay(t *testing.T) {
 	all, err := dest.Store.ListMemos(ctx, &store.FindMemo{CreatorID: &newOwner.ID})
 	require.NoError(t, err)
 	require.Len(t, all, 2, "retrying identical archive cannot duplicate records")
+}
+
+func TestJournalBackupDocumentSelectionAndOptionalHistory(t *testing.T) {
+	ctx := context.Background()
+	svc := newIntegrationService(t)
+	owner := createSpaceTestUser(ctx, t, svc, "backup-doc-owner", store.RoleUser)
+	other := createSpaceTestUser(ctx, t, svc, "backup-doc-other", store.RoleUser)
+	memo, err := svc.Store.CreateMemo(ctx, &store.Memo{UID: "selected-original", CreatorID: owner.ID, Content: "保留此刻的原文", Visibility: store.Private})
+	require.NoError(t, err)
+	space, err := svc.Store.CreateSpace(ctx, &store.Space{UID: "departed-space", Title: "Other owner's Space"}, other.ID)
+	require.NoError(t, err)
+	_, err = svc.Store.CreateSpaceInvitation(ctx, &store.SpaceInvitation{SpaceID: space.ID, UserID: owner.ID, Role: store.SpaceMemberRoleUser}, other.ID)
+	require.NoError(t, err)
+	_, err = svc.Store.AcceptSpaceInvitation(ctx, &store.AcceptSpaceInvitation{SpaceID: space.ID, UserID: owner.ID}, owner.ID)
+	require.NoError(t, err)
+	denied, err := svc.Store.CreateMemo(ctx, &store.Memo{UID: "inaccessible-original", CreatorID: owner.ID, SpaceID: &space.ID, Content: "NEVER_EXPORT_DENIED_BODY", Visibility: store.SpaceAudience})
+	require.NoError(t, err)
+	require.NoError(t, svc.Store.DeleteSpaceMember(ctx, &store.DeleteSpaceMember{SpaceID: space.ID, UserID: owner.ID}, other.ID))
+	_, err = svc.Store.CreateMemo(ctx, &store.Memo{UID: "foreign-original", CreatorID: other.ID, Content: "NEVER_EXPORT_FOREIGN_BODY", Visibility: store.Public})
+	require.NoError(t, err)
+	put := func(kind, key string, value any) { putBackupTestDocument(t, svc, owner.ID, kind, key, value) }
+	put("preferences", "main", journal.Preferences{Timezone: "Asia/Shanghai"})
+	put(partition.PartitionKind, "selected-partition", partition.Partition{ID: "selected-partition", Name: "我的生活"})
+	put(partition.MappingKind, memo.UID, partition.Mapping{MemoUID: memo.UID, PartitionID: "selected-partition"})
+	put(partition.MappingKind, denied.UID, partition.Mapping{MemoUID: denied.UID, PartitionID: "selected-partition"})
+	put("insight", "selected-insight", journalInsightResult{ID: "selected-insight", Text: "基于可读原文的思考", Sources: []journalInsightSource{{Name: "memos/" + memo.UID}}, Citations: []string{"memos/" + memo.UID}})
+	put("insight", "denied-insight", journalInsightResult{ID: "denied-insight", Text: "NEVER_EXPORT_DENIED_INSIGHT", Sources: []journalInsightSource{{Name: "memos/" + memo.UID}, {Name: "memos/" + denied.UID}}})
+	putBackupTestDocument(t, svc, other.ID, partition.PartitionKind, "foreign-partition", partition.Partition{ID: "foreign-partition", Name: "NEVER_EXPORT_FOREIGN_DOCUMENT"})
+	put("share", "selected-share", journal.Share{ID: "selected-share", Mode: "fixed", Token: "NEVER_EXPORT_SHARE_TOKEN", Filter: journal.ShareFilter{Timezone: "UTC", MemoNames: []string{"memos/" + memo.UID}}, Items: []journal.ShareItem{
+		{MemoName: "memos/" + memo.UID, Content: memo.Content},
+		{MemoName: "memos/" + denied.UID, Content: "NEVER_EXPORT_DENIED_SNAPSHOT"},
+	}})
+	for _, kind := range []string{"partition-pending", "share-guard", "backup-preview", "backup-restored-map", "agent-credentials", "unknown-future-kind"} {
+		put(kind, "must-not-export", map[string]string{"secret": "NEVER_EXPORT_INTERNAL_DOCUMENT"})
+	}
+
+	// This attachment survives only in a revision. The history toggle controls
+	// both its snapshot and original bytes, not just the manifest flag.
+	media := []byte("HISTORY_ONLY_MEDIA")
+	mediaPath := filepath.Join(svc.Profile.Data, "history-media")
+	require.NoError(t, os.WriteFile(mediaPath, media, 0600))
+	_, err = svc.Store.CreateAttachment(ctx, &store.Attachment{UID: "history-media", CreatorID: owner.ID, Filename: "旧 照片.txt", Type: "text/plain", Size: int64(len(media)), StorageType: storepb.AttachmentStorageType_LOCAL, Reference: mediaPath})
+	require.NoError(t, err)
+	originalPath, err := attachmentOriginalPath(svc.Profile.Data, "history-media")
+	require.NoError(t, err)
+	require.NoError(t, os.MkdirAll(filepath.Dir(originalPath), 0700))
+	require.NoError(t, os.WriteFile(originalPath, []byte("HISTORY_ONLY_ORIGINAL"), 0600))
+	putRevision := func(key, memoUID, body string, created int64, attachments []*v1pb.Attachment) {
+		t.Helper()
+		raw, err := protojson.Marshal(&v1pb.Memo{Name: "memos/" + memoUID, Content: body, Attachments: attachments})
+		require.NoError(t, err)
+		put("revision", key, journalrecord.Revision{ID: key, CreatedTs: created, Memo: raw})
+	}
+	putRevision("selected-revision", memo.UID, "HISTORY_ONLY_TEXT", time.Now().Unix(), []*v1pb.Attachment{{Name: "attachments/history-media"}})
+	putRevision("expired-revision", memo.UID, "NEVER_EXPORT_EXPIRED_REVISION", time.Now().Add(-journalrecord.Retention-time.Hour).Unix(), nil)
+	putRevision("denied-revision", denied.UID, "NEVER_EXPORT_DENIED_REVISION", time.Now().Unix(), nil)
+
+	for _, history := range []bool{false, true} {
+		name := "without-history"
+		if history {
+			name = "with-history"
+		}
+		t.Run(name, func(t *testing.T) {
+			var output bytes.Buffer
+			require.NoError(t, svc.writeJournalBackup(ctx, owner, &output, history))
+			archive, err := journalbackup.Read(bytes.NewReader(output.Bytes()), int64(output.Len()))
+			require.NoError(t, err)
+			require.NoError(t, validateJournalBackup(archive))
+			require.Equal(t, history, archive.Manifest.IncludeHistory)
+			require.Len(t, archive.Manifest.Memos, 1)
+			require.Equal(t, memo.UID, archive.Manifest.Memos[0].UID)
+			body, err := archive.Text(archive.Manifest.Memos[0].ContentPath)
+			require.NoError(t, err)
+			require.Equal(t, memo.Content, string(body))
+			documentKeys := []string{}
+			for _, doc := range archive.Manifest.Documents {
+				documentKeys = append(documentKeys, doc.Kind+":"+doc.Key)
+			}
+			expected := []string{"preferences:main", "partition:selected-partition", "partition-mapping:selected-original", "insight:selected-insight", "share:selected-share"}
+			if history {
+				expected = append(expected, "revision:selected-revision")
+			}
+			require.ElementsMatch(t, expected, documentKeys)
+			for _, secret := range []string{"NEVER_EXPORT_DENIED_BODY", "NEVER_EXPORT_FOREIGN_BODY", "NEVER_EXPORT_DENIED_INSIGHT", "NEVER_EXPORT_FOREIGN_DOCUMENT", "NEVER_EXPORT_SHARE_TOKEN", "NEVER_EXPORT_DENIED_SNAPSHOT", "NEVER_EXPORT_INTERNAL_DOCUMENT", "NEVER_EXPORT_EXPIRED_REVISION", "NEVER_EXPORT_DENIED_REVISION"} {
+				require.NotContains(t, output.String(), secret)
+			}
+			if history {
+				require.Len(t, archive.Manifest.Attachments, 1)
+				file := archive.Manifest.Attachments[0]
+				require.Equal(t, "history-media", file.UID)
+				actual, err := archive.Text(file.Path)
+				require.NoError(t, err)
+				require.Equal(t, media, actual)
+				actual, err = archive.Text(file.OriginalPath)
+				require.NoError(t, err)
+				require.Equal(t, "HISTORY_ONLY_ORIGINAL", string(actual))
+				require.Contains(t, output.String(), "HISTORY_ONLY_TEXT")
+			} else {
+				require.Empty(t, archive.Manifest.Attachments)
+				for _, historical := range []string{"HISTORY_ONLY_TEXT", "HISTORY_ONLY_MEDIA", "HISTORY_ONLY_ORIGINAL"} {
+					require.NotContains(t, output.String(), historical)
+				}
+			}
+		})
+	}
 }
 
 func TestJournalBackupPreviewIsolationAndValidationBeforeMutation(t *testing.T) {

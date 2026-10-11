@@ -1,14 +1,20 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import { toast } from "react-hot-toast";
-import JournalOriginalsDialog from "@/components/JournalOriginalsDialog";
-import JournalRecordHistoryDialog from "@/components/JournalRecordHistoryDialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { journalRequest } from "@/hooks/useJournalQueries";
 
-export default function JournalRecordActions({ name, includeDelete = true }: { name: string; includeDelete?: boolean }) {
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [originalsOpen, setOriginalsOpen] = useState(false);
+/** Menu commands only: the stable host owns dialogs beyond popup unmount. */
+export default function JournalRecordActions({
+  name,
+  includeDelete = true,
+  onOpenHistory,
+  onOpenOriginals,
+}: {
+  name: string;
+  includeDelete?: boolean;
+  onOpenHistory: () => void;
+  onOpenOriginals: () => void;
+}) {
   const client = useQueryClient();
   const uid = encodeURIComponent(name.replace(/^memos\//, ""));
   const remove = useMutation({
@@ -23,13 +29,7 @@ export default function JournalRecordActions({ name, includeDelete = true }: { n
   });
   return (
     <>
-      <DropdownMenuItem
-        className="min-h-11"
-        onClick={(event) => {
-          event.preventDefault();
-          setHistoryOpen(true);
-        }}
-      >
+      <DropdownMenuItem className="min-h-11" onClick={onOpenHistory}>
         最近版本
       </DropdownMenuItem>
       {includeDelete && (
@@ -37,17 +37,9 @@ export default function JournalRecordActions({ name, includeDelete = true }: { n
           移到最近删除
         </DropdownMenuItem>
       )}
-      <DropdownMenuItem
-        className="min-h-11"
-        onClick={(event) => {
-          event.preventDefault();
-          setOriginalsOpen(true);
-        }}
-      >
+      <DropdownMenuItem className="min-h-11" onClick={onOpenOriginals}>
         原文件
       </DropdownMenuItem>
-      <JournalOriginalsDialog name={name} open={originalsOpen} onOpenChange={setOriginalsOpen} />
-      <JournalRecordHistoryDialog name={name} open={historyOpen} onOpenChange={setHistoryOpen} />
     </>
   );
 }

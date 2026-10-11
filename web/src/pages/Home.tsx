@@ -11,6 +11,7 @@ import { NewMemoProvider } from "@/contexts/NewMemoContext";
 import { useSpaceContext } from "@/contexts/SpaceContext";
 import { useMemoFilters, useMemoSorting } from "@/hooks";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { useJournalPreferences } from "@/hooks/useJournalQueries";
 import useMediaQuery from "@/hooks/useMediaQuery";
 import { spaceScopedCacheKey } from "@/lib/resource-names";
 import { State } from "@/types/proto/api/v1/common_pb";
@@ -23,7 +24,9 @@ const Home = () => {
   const { claimHomeAutoFocus } = useGlobalMemoEditor();
   const { filters } = useMemoFilterContext();
   const { memoFilter: contextFilter, selectedSpaceName, creatorUsername } = useSpaceContext();
-  const defaultCreateTime = useMemo(() => deriveDefaultCreateTimeFromFilters(filters), [filters]);
+  const preferences = useJournalPreferences();
+  const timezone = preferences.data?.timezone ?? "Asia/Shanghai";
+  const defaultCreateTime = useMemo(() => deriveDefaultCreateTimeFromFilters(filters, new Date(), timezone), [filters, timezone]);
   // Doubles as the remount key: the draft cache only reloads on mount, so the editor
   // has to be rebuilt for the new Space rather than just re-pointed at another cache.
   const editorCacheKey = spaceScopedCacheKey("home-memo-editor", selectedSpaceName);

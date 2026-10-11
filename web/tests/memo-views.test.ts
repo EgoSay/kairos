@@ -47,7 +47,7 @@ describe("memo views", () => {
       includePinned: true,
     });
     expect(combineCELFilters('space == "spaces/product"', filter)).toBe(
-      '(space == "spaces/product") && ((creator == "users/steven") && (has_link || has_code) && (content.contains("plan") || pinned) && (tag in ["work"]))',
+      '(space == "spaces/product") && ((creator == "users/steven") && (has_link || has_code) && (content.contains("plan") || pinned) && ((("work" in tags || tags.exists(t, t.startsWith("work/"))))))',
     );
   });
   it("extracts the saved view ID", () => {
@@ -67,7 +67,7 @@ describe("memo views", () => {
         visibilities: [Visibility.PUBLIC],
       }),
     ).toBe(
-      '(creator == "users/steven") && (has_task_list && has_incomplete_tasks) && (content.contains("plan")) && (tag in ["work"]) && (visibility in ["PUBLIC"])',
+      '(creator == "users/steven") && (has_task_list && has_incomplete_tasks) && (content.contains("plan")) && ((("work" in tags || tags.exists(t, t.startsWith("work/"))))) && (visibility in ["PUBLIC"])',
     );
   });
 
@@ -105,14 +105,14 @@ describe("memo views", () => {
     ).toBe('(tag in ["work"])');
   });
 
-  it("builds display-time filters from valid local calendar-day boundaries", () => {
-    const start = new Date(2026, 7, 2);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+  it("builds display-time filters from valid Kairos calendar-day boundaries", () => {
+    const start = new Date("2026-08-01T16:00:00Z");
+    const end = new Date("2026-08-02T16:00:00Z");
 
     expect(
       buildMemoFilter({
         filters: [{ factor: "displayTime", value: "2026-08-02" }],
+        timezone: "Asia/Shanghai",
         includePinned: false,
       }),
     ).toBe(
@@ -121,13 +121,13 @@ describe("memo views", () => {
   });
 
   it("selects on update time when that is the basis", () => {
-    const start = new Date(2026, 7, 2);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+    const start = new Date("2026-08-01T16:00:00Z");
+    const end = new Date("2026-08-02T16:00:00Z");
 
     expect(
       buildMemoFilter({
         filters: [{ factor: "displayTime", value: "2026-08-02" }],
+        timezone: "Asia/Shanghai",
         includePinned: false,
         timeBasis: "update_time",
       }),

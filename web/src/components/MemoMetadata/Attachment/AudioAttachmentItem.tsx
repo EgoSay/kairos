@@ -82,6 +82,7 @@ const AudioAttachmentItem = ({ filename, sourceUrl, mimeType, size }: AudioAttac
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState<(typeof AUDIO_PLAYBACK_RATES)[number]>(1);
+  const [playbackError, setPlaybackError] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   // Only the open player reads the playhead, so the row does not re-render on every timeupdate while it plays.
   const [currentTime, setCurrentTime] = useState(0);
@@ -105,7 +106,11 @@ const AudioAttachmentItem = ({ filename, sourceUrl, mimeType, size }: AudioAttac
       return;
     }
 
-    await toggleAudioPlayback(audio, sourceUrl, () => setIsPlaying(false));
+    setPlaybackError(false);
+    await toggleAudioPlayback(audio, sourceUrl, () => {
+      setIsPlaying(false);
+      setPlaybackError(true);
+    });
   };
 
   const handleSeek = (nextTime: number) => {
@@ -159,8 +164,21 @@ const AudioAttachmentItem = ({ filename, sourceUrl, mimeType, size }: AudioAttac
         </button>
       </div>
 
+      {playbackError && (
+        <p role="alert" className="px-2 py-1 text-xs text-destructive">
+          暂时无法播放此音频。请重试，或
+          <a href={sourceUrl} download className="underline">
+            下载原件
+          </a>
+          后打开。
+        </p>
+      )}
       <audio
         ref={audioRef}
+        onError={() => {
+          setIsPlaying(false);
+          setPlaybackError(true);
+        }}
         preload="none"
         className="hidden"
         onLoadedMetadata={(e) => handleDuration(e.currentTarget.duration)}

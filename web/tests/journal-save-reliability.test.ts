@@ -1,10 +1,11 @@
 import { create } from "@bufbuild/protobuf";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { memoService } from "@/components/MemoEditor/services/memoService";
 import { createInitialState } from "@/components/MemoEditor/state";
 import { restoreJournalState, snapshotJournalState } from "@/lib/journal-drafts";
-import { MemoSchema, Visibility } from "@/types/proto/api/v1/memo_service_pb";
+import { LocationSchema, MemoRelation_Type, MemoRelationSchema, MemoSchema, Visibility } from "@/types/proto/api/v1/memo_service_pb";
 
 const client = vi.hoisted(() => ({ getMemo: vi.fn(), updateMemo: vi.fn(), createMemo: vi.fn() }));
 vi.mock("@/connect", () => ({ memoServiceClient: client, attachmentServiceClient: {} }));
@@ -26,6 +27,57 @@ describe("journal save reliability", () => {
     client.createMemo.mockRejectedValue(new ConnectError("exists", Code.AlreadyExists));
     client.getMemo.mockResolvedValue(create(MemoSchema, { content: "another version", visibility: Visibility.PRIVATE }));
     await expect(memoService.save(state, {})).rejects.toMatchObject({ code: Code.AlreadyExists });
+  });
+  it.each([
+    "location",
+    "createTime",
+    "space",
+    "removed relation",
+    "added relation",
+  ])("preserves a retry whose %s differs from the already-created record", async (field) => {
+    const initial = createInitialState();
+    const state = { ...initial, content: "same words", metadata: { ...initial.metadata }, timestamps: { ...initial.timestamps } };
+    const relation = create(MemoRelationSchema, { type: MemoRelation_Type.REFERENCE, relatedMemo: { name: "memos/other" } });
+    const existing = create(MemoSchema, { name: `memos/${state.clientId}`, content: state.content, visibility: Visibility.PRIVATE });
+    if (field === "location") state.metadata.location = create(LocationSchema, { latitude: 31, longitude: 121, placeholder: "new place" });
+    if (field === "createTime") state.timestamps.createTime = new Date("2026-10-09T12:00:00Z");
+    if (field === "space") state.metadata.space = "spaces/new";
+    if (field === "removed relation") existing.relations = [relation];
+    if (field === "added relation") state.metadata.relations = [relation];
+    client.createMemo.mockRejectedValue(new ConnectError("exists", Code.AlreadyExists));
+    client.getMemo.mockImplementation(async ({ name }) => (name === existing.name ? existing : create(MemoSchema, { name })));
+    await expect(memoService.save(state, {})).rejects.toMatchObject({ code: Code.AlreadyExists });
+    expect(client.updateMemo).not.toHaveBeenCalled();
+  });
+  it("accepts matching explicit metadata at the database timestamp precision", async () => {
+    const initial = createInitialState();
+    const state = { ...initial, content: "same words", metadata: { ...initial.metadata }, timestamps: { ...initial.timestamps } };
+    state.metadata.location = create(LocationSchema, { latitude: 31, longitude: 121, placeholder: "same place" });
+    state.metadata.space = "spaces/same";
+    state.timestamps.createTime = new Date("2026-10-09T12:00:00.123Z");
+    const existing = create(MemoSchema, {
+      name: `memos/${state.clientId}`,
+      content: state.content,
+      visibility: Visibility.PRIVATE,
+      location: state.metadata.location,
+      space: state.metadata.space,
+      createTime: timestampFromDate(new Date("2026-10-09T12:00:00Z")),
+    });
+    client.createMemo.mockRejectedValue(new ConnectError("exists", Code.AlreadyExists));
+    client.getMemo.mockResolvedValue(existing);
+    await expect(memoService.save(state, {})).resolves.toMatchObject({ memoName: existing.name, hasChanges: true });
+  });
+  it("retains the unavailable-reference warning when resolving a lost creation response", async () => {
+    const initial = createInitialState();
+    const state = { ...initial, content: "same words", metadata: { ...initial.metadata }, timestamps: { ...initial.timestamps } };
+    state.metadata.relations = [create(MemoRelationSchema, { type: MemoRelation_Type.REFERENCE, relatedMemo: { name: "memos/gone" } })];
+    const existing = create(MemoSchema, { name: `memos/${state.clientId}`, content: state.content, visibility: Visibility.PRIVATE });
+    client.createMemo.mockRejectedValue(new ConnectError("exists", Code.AlreadyExists));
+    client.getMemo.mockImplementation(async ({ name }) => {
+      if (name === existing.name) return existing;
+      throw new ConnectError("gone", Code.NotFound);
+    });
+    await expect(memoService.save(state, {})).resolves.toMatchObject({ memoName: existing.name, relationWarning: expect.any(String) });
   });
   it("preserves a local edit when another device changed the original", async () => {
     const baseline = create(MemoSchema, { name: "memos/one", content: "original", visibility: Visibility.PRIVATE });

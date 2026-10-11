@@ -11,7 +11,12 @@ original and verifies ownership, normal state, trash exclusion, membership,
 partition assignment/version, target epoch and source revision before each send.
 Changes that invalidate authorization cancel pending and retrying payloads.
 Deleting/archiving suspends the mapping so restoring the record does not resume
-publication. The user can explicitly select a partition again.
+publication. Restoring a historical version also withdraws existing shares and
+pauses its mapping before replacing the body. The record and suspended mapping
+then commit under the same CAS transaction, so a concurrent reassignment cannot
+authorize recovered text. A failed restore can leave grants withdrawn, but never
+publishes recovered content. Ordinary edits preserve this suspension; the user
+must explicitly select a partition again to resume sending.
 
 ## Delivery contract
 
@@ -75,7 +80,16 @@ resuming does not replay it. Historical sending requires a user-selected batch.
 Private routes live under `/api/v1/journal` and use the existing authorizer.
 Create/update/delete partitions, configure targets, list delivery states and
 request selected historical sends through `server/api/v1/journal_partition.go`.
-The editor confirms all attachments before calling `finishPartitionSave`.
+The editor uploads local attachments first, then sends its optional
+`JournalPartitionSelection` with `CreateMemo` or `UpdateMemo`. The memo, mapping
+CAS and durable `partition-pending` save intent commit in one database transaction.
+A partition-only edit does not create a content revision or change record dates.
+The worker reconciles save intents after a lost response or restart, cancels stale
+authorizations, and creates idempotent delivery IDs from the current committed
+record and mapping. Legacy clients without the optional selection retain the
+existing API behavior; the legacy separate assignment/send routes remain available.
+The mapping version originally loaded by the editor prevents a stale selection
+from silently overwriting another device's assignment.
 Legacy user-wide webhook settings remain stored but their automatic dispatch
 entrypoints are disabled; they must be explicitly configured as partition
 targets before any private record can leave the journal.

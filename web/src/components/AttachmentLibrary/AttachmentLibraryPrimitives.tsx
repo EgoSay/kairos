@@ -17,6 +17,7 @@ interface AttachmentMetadataLineProps {
 
 interface AttachmentSourceChipProps {
   memoName?: string;
+  trashed?: boolean;
   unlinkedLabelKey?: "attachment-library.labels.not-linked" | "attachment-library.labels.unused";
 }
 
@@ -74,6 +75,7 @@ export const AttachmentMetadataLine = ({ className, items }: AttachmentMetadataL
 
 export const AttachmentSourceChip = ({
   memoName,
+  trashed,
   unlinkedLabelKey = "attachment-library.labels.not-linked",
 }: AttachmentSourceChipProps) => {
   const location = useLocation();
@@ -89,11 +91,11 @@ export const AttachmentSourceChip = ({
 
   return (
     <Link
-      to={`/${memoName}`}
+      to={trashed ? "/journal/trash" : `/${memoName}`}
       state={createMemoNavigationState(`${location.pathname}${location.search}`)}
       className="inline-flex max-w-full items-center truncate rounded-full border border-border/60 bg-muted/30 px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted/50"
     >
-      <span className="truncate">{t("attachment-library.labels.memo")}</span>
+      <span className="truncate">{trashed ? "所属记录在回收站" : t("attachment-library.labels.memo")}</span>
     </Link>
   );
 };

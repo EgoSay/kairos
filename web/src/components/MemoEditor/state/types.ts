@@ -16,6 +16,8 @@ export interface EditorState {
   metadata: {
     visibility: Visibility;
     journalPartitionId?: string;
+    /** Mapping version originally observed by this editor, retained in durable drafts. */
+    journalPartitionVersion?: number;
     journalSyncEnabled?: boolean;
     journalPartitionSuspended?: boolean;
     journalPartitionExplicit?: boolean;

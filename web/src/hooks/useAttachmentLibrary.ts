@@ -10,7 +10,7 @@ import {
 import { useInfiniteAttachments } from "@/hooks/useAttachmentQueries";
 import { combineCELFilters } from "@/lib/cel-filter";
 import type { Attachment, ListAttachmentsRequest } from "@/types/proto/api/v1/attachment_service_pb";
-import { isMotionAttachment } from "@/utils/attachment";
+import { getAttachmentUrl, isMotionAttachment } from "@/utils/attachment";
 import { useTranslate } from "@/utils/i18n";
 import { type AttachmentVisualItem, buildAttachmentVisualItems, countLogicalAttachmentItems } from "@/utils/media-item";
 
@@ -47,11 +47,6 @@ export interface AttachmentLibraryMonthGroup {
   items: AttachmentLibraryMediaItem[];
 }
 
-const PAGE_SIZE = 50;
-const ATTACHMENT_LIBRARY_REQUEST = {
-  pageSize: PAGE_SIZE,
-  orderBy: "create_time desc",
-};
 const COMPLETE_ATTACHMENT_LIBRARY_REQUEST = {
   pageSize: 1000,
   orderBy: "create_time desc",
@@ -66,10 +61,12 @@ const useCompleteAttachments = (request: Partial<ListAttachmentsRequest>, enable
   const query = useInfiniteAttachments(request, { enabled });
 
   useEffect(() => {
-    if (enabled && query.isSuccess && query.hasNextPage && !query.isFetchingNextPage) {
-      void query.fetchNextPage();
+    if (enabled && query.isSuccess && query.hasNextPage && !query.isFetching) {
+      // Multiple mounted views share this query and may request the same next
+      // page in one render; keep the in-flight request instead of restarting it.
+      void query.fetchNextPage({ cancelRefetch: false });
     }
-  }, [enabled, query.fetchNextPage, query.hasNextPage, query.isFetchingNextPage, query.isSuccess]);
+  }, [enabled, query.fetchNextPage, query.hasNextPage, query.isFetching, query.isSuccess]);
 
   return {
     ...query,
@@ -123,7 +120,7 @@ const toLibraryListItem = (attachment: Attachment, locale: string): AttachmentLi
     fileTypeLabel,
     fileSizeLabel,
     memoName: attachment.memo,
-    sourceUrl: attachment.externalLink || `${window.location.origin}/file/${attachment.name}/${attachment.filename}`,
+    sourceUrl: getAttachmentUrl(attachment),
   };
 };
 
@@ -171,9 +168,11 @@ const groupMediaByMonth = (
     }));
 };
 
-export function useAttachmentLibrary(locale: string, filter?: string) {
+export function useAttachmentLibrary(locale: string, filter?: string, onlyTrash = false) {
   const t = useTranslate();
-  const query = useInfiniteAttachments({ ...ATTACHMENT_LIBRARY_REQUEST, filter });
+  // Share the complete cache with sidebar counts so type tabs cannot stop at
+  // a page containing only another file type. Existing matches remain visible.
+  const query = useCompleteAttachments({ ...COMPLETE_ATTACHMENT_LIBRARY_REQUEST, filter, onlyTrash });
 
   const attachments = useMemo(() => (query.data?.pages ?? []).flatMap((page) => page.attachments), [query.data?.pages]);
 
@@ -242,8 +241,8 @@ export function useAttachmentLibrary(locale: string, filter?: string) {
   };
 }
 
-export function useAttachmentLibraryStats(filter?: string) {
-  const query = useCompleteAttachments({ ...COMPLETE_ATTACHMENT_LIBRARY_REQUEST, filter });
+export function useAttachmentLibraryStats(filter?: string, onlyTrash = false) {
+  const query = useCompleteAttachments({ ...COMPLETE_ATTACHMENT_LIBRARY_REQUEST, filter, onlyTrash });
   const attachments = useMemo(() => (query.data?.pages ?? []).flatMap((page) => page.attachments), [query.data?.pages]);
   const stats = useMemo(() => buildAttachmentLibraryStats(attachments), [attachments]);
 

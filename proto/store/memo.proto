@@ -11,6 +11,11 @@ message MemoPayload {
 
   repeated string tags = 3;
 
+  // Tags explicitly present in Markdown, without implied hierarchy ancestors.
+  repeated string explicit_tags = 4;
+  // Version of the derived explicit-tag index; zero denotes legacy payloads.
+  int32 explicit_tags_version = 5;
+
   // The calculated properties from the memo content.
   message Property {
     bool has_link = 1;

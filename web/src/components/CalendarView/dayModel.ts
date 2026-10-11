@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import type { Element, Root as HtmlRoot } from "hast";
 import type { Root, RootContent } from "mdast";
 import { fromMarkdown } from "mdast-util-from-markdown";
@@ -12,7 +11,7 @@ import { visit } from "unist-util-visit";
 import { SANITIZE_SCHEMA } from "@/components/MemoContent/constants";
 import type { MemoTimeBasis } from "@/contexts/ViewContext";
 import { getMemoSortTime } from "@/hooks/useMemoSorting";
-import { ISO_DATE_FORMAT } from "@/lib/calendar-utils";
+import { journalDate } from "@/lib/journal";
 import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
 import { getAttachmentThumbnailUrl, getAttachmentUrl, isImage } from "@/utils/attachment";
 import { classifyManagedAttachmentImageURL, extractAttachmentUIDFromName } from "@/utils/managed-attachment";
@@ -43,6 +42,7 @@ export interface CalendarDaySummary {
 export type CalendarMonthModel = Record<string, CalendarDaySummary>;
 
 export interface BuildCalendarMonthModelOptions {
+  timezone?: string;
   /** Hidden memos count, but never contribute text, filenames, or images. */
   isRedacted?: (memo: Memo) => boolean;
 }
@@ -127,7 +127,7 @@ export const getMemoThumbnail = (memo: Memo): string | undefined => {
 export const buildCalendarMonthModel = (
   memos: Memo[],
   timeBasis: MemoTimeBasis,
-  { isRedacted }: BuildCalendarMonthModelOptions = {},
+  { isRedacted, timezone = "Asia/Shanghai" }: BuildCalendarMonthModelOptions = {},
 ): CalendarMonthModel => {
   const dated = memos
     .map((memo) => ({ memo, time: getMemoSortTime(memo, timeBasis) }))
@@ -137,7 +137,7 @@ export const buildCalendarMonthModel = (
   const model: CalendarMonthModel = {};
   const fileFallbacks = new Map<string, CalendarDayExcerpt>();
   for (const { memo, time } of dated) {
-    const date = dayjs(time).format(ISO_DATE_FORMAT);
+    const date = journalDate(time, timezone);
     const summary = (model[date] ??= { memos: [], creators: [], images: [] });
     summary.memos.push(memo);
     if (!summary.creators.includes(memo.creator)) summary.creators.push(memo.creator);

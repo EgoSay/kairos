@@ -100,6 +100,23 @@ describe("memo editor relation updates", () => {
     expect(request.comment.space).toBeUndefined();
   });
 
+  it("reports an unavailable target separately after saving the new record body", async () => {
+    const state = createInitialState();
+    state.content = "Keep this draft";
+    state.metadata.relations = [createReference("memos/unavailable")];
+    clients.createMemo.mockImplementationOnce(async ({ memo }: { memo: Memo }) => ({ ...memo, name: "memos/created", relations: [] }));
+    const result = await memoService.save(state, {});
+    expect(clients.createMemo.mock.calls[0][0].memo.content).toBe("Keep this draft");
+    expect(result).toMatchObject({ memoName: "memos/created", hasChanges: true, relationWarning: expect.stringContaining("正文已保存") });
+  });
+
+  it("does not warn when the final response retains every requested outgoing relation", async () => {
+    const state = createInitialState();
+    state.content = "Keep related record";
+    state.metadata.relations = [createReference("memos/available")];
+    expect((await memoService.save(state, {})).relationWarning).toBeUndefined();
+  });
+
   it("sends only mutable references when editing a comment", async () => {
     const commentName = "memos/comment";
     const parentRelation = createRelation(MemoRelation_Type.COMMENT, commentName, "memos/parent");

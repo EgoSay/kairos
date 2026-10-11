@@ -15,8 +15,15 @@ services:
       MEMOS_DATA: /var/opt/memos
       MEMOS_DRIVER: sqlite
       MEMOS_INSTANCE_URL: ${MEMOS_INSTANCE_URL:?Set the external HTTPS URL}
+      MEMOS_BACKUP_SOCKET: /run/kairos-backup/agent.sock
     volumes:
       - memos-data:/var/opt/memos
+      - type: bind
+        source: /run/kairos-backup
+        target: /run/kairos-backup
+        read_only: true
+        bind:
+          create_host_path: false
     # Dokploy/Tunnel reaches this port on the container network. No host port
     # or public router is created before the owner account is initialized.
     expose:

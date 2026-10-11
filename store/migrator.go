@@ -133,6 +133,9 @@ func (s *Store) Migrate(ctx context.Context) error {
 			return errors.Wrap(err, "failed to seed")
 		}
 	}
+	if err := s.backfillMemoExplicitTags(ctx); err != nil {
+		return errors.Wrap(err, "failed to initialize explicit memo tags")
+	}
 	if err := s.initializeInstanceAccessSetting(ctx); err != nil {
 		return errors.Wrap(err, "failed to initialize instance access setting")
 	}

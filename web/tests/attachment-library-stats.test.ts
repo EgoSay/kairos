@@ -1,9 +1,16 @@
 import { create } from "@bufbuild/protobuf";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { createElement, type PropsWithChildren } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { buildAttachmentLibraryStats, useAttachmentLibraryStats, useUnusedAttachmentLibrary } from "@/hooks/useAttachmentLibrary";
+import {
+  buildAttachmentLibraryStats,
+  useAttachmentLibrary,
+  useAttachmentLibraryStats,
+  useUnusedAttachmentLibrary,
+} from "@/hooks/useAttachmentLibrary";
+import Attachments from "@/pages/Attachments";
 import {
   type Attachment,
   AttachmentSchema,
@@ -13,6 +20,25 @@ import {
 } from "@/types/proto/api/v1/attachment_service_pb";
 
 const clients = vi.hoisted(() => ({ listAttachments: vi.fn() }));
+vi.mock("@/contexts/AppSidebarContext", () => ({ useAppSidebar: () => ({ attachmentSection: "audio", setAttachmentSection: vi.fn() }) }));
+vi.mock("@/contexts/SpaceContext", () => ({ useSpaceContext: () => ({}) }));
+vi.mock("@/hooks/useCurrentUser", () => ({ default: () => ({ username: "owner" }) }));
+vi.mock("@/hooks/useUserQueries", () => ({ useUsersByNames: () => ({ data: new Map() }), userKeys: { stats: () => ["user-stats"] } }));
+vi.mock("@/hooks/useJournalQueries", () => ({ journalRequest: vi.fn() }));
+vi.mock("@/components/PreviewImageDialog", () => ({ default: () => null }));
+vi.mock("@/components/ConfirmDialog", () => ({ default: () => null }));
+vi.mock("@/i18n", () => ({ default: { language: "en" } }));
+vi.mock("@/utils/i18n", () => ({ useTranslate: () => (key: string) => key }));
+vi.mock("@/components/AttachmentLibrary", () => ({
+  AttachmentLibrarySkeletonGrid: () => createElement("div", { "data-testid": "attachment-loading" }),
+  AttachmentLibraryEmptyState: ({ tab }: { tab: string }) => createElement("div", null, `empty:${tab}`),
+  AttachmentLibraryErrorState: ({ onRetry }: { onRetry: () => void }) => createElement("button", { onClick: onRetry }, "retry attachments"),
+  AttachmentAudioRows: ({ items }: { items: { attachment: Attachment }[] }) =>
+    createElement("div", null, items.map((item) => item.attachment.filename).join(",")),
+  AttachmentDocumentRows: () => null,
+  AttachmentMediaGrid: () => null,
+  AttachmentUnusedRows: () => null,
+}));
 
 vi.mock("@/connect", () => ({
   attachmentServiceClient: { listAttachments: clients.listAttachments },
@@ -103,5 +129,124 @@ describe("buildAttachmentLibraryStats", () => {
         filter: "(memo_id == null) && (space == null)",
       }),
     );
+  });
+});
+
+it("uses the encoded file URL for audio/documents and sends lifecycle scope to every page", async () => {
+  clients.listAttachments.mockReset();
+  clients.listAttachments.mockResolvedValueOnce({
+    attachments: [
+      { ...attachment("audio", "audio/mpeg", "memos/one"), filename: "声音 #?.mp3" },
+      { ...attachment("document", "application/pdf", "memos/two"), filename: "文档 #?.pdf" },
+    ],
+    nextPageToken: "",
+  });
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const wrapper = ({ children }: PropsWithChildren) => createElement(QueryClientProvider, { client: queryClient }, children);
+  const { result } = renderHook(() => useAttachmentLibrary("zh-Hans", undefined, true), { wrapper });
+  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  expect(clients.listAttachments.mock.calls[0][0].onlyTrash).toBe(true);
+  for (const item of [...result.current.audioItems, ...result.current.documentItems]) {
+    const url = new URL(item.sourceUrl);
+    expect(decodeURIComponent(url.pathname.split("/").at(-1)!)).toBe(item.attachment.filename);
+    expect(url.hash).toBe("");
+    expect(url.search).toBe("");
+  }
+});
+
+it("keeps complete sidebar counts isolated between active and trash pages", async () => {
+  clients.listAttachments.mockReset();
+  clients.listAttachments.mockImplementation(async (request) => {
+    if (!request.onlyTrash) return { attachments: [attachment("active.png", "image/png", "memos/active")], nextPageToken: "" };
+    return request.pageToken
+      ? { attachments: [attachment("trash.wav", "audio/wav", "memos/deleted")], nextPageToken: "" }
+      : { attachments: [attachment("trash.png", "image/png", "memos/deleted")], nextPageToken: "next" };
+  });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const wrapper = ({ children }: PropsWithChildren) => createElement(QueryClientProvider, { client }, children);
+  const { result, rerender } = renderHook(({ trash }) => useAttachmentLibraryStats(undefined, trash), {
+    wrapper,
+    initialProps: { trash: false },
+  });
+  await waitFor(() => expect(result.current.isComplete).toBe(true));
+  expect(result.current.stats).toEqual({ media: 1, audio: 0, documents: 0, unused: 0 });
+  rerender({ trash: true });
+  await waitFor(() => expect(result.current.isComplete && result.current.stats.audio === 1).toBe(true));
+  expect(result.current.stats).toEqual({ media: 1, audio: 1, documents: 0, unused: 0 });
+  expect(clients.listAttachments.mock.calls.filter(([request]) => request.onlyTrash).map(([request]) => request.pageToken)).toEqual([
+    "",
+    "next",
+  ]);
+  rerender({ trash: false });
+  await waitFor(() => expect(result.current.stats.audio).toBe(0));
+});
+
+describe("attachment type pagination", () => {
+  const photos = Array.from({ length: 50 }, (_, index) => attachment(`photo-${index}.png`, "image/png", "memos/deleted"));
+  const renderAudioPage = () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      createElement(
+        QueryClientProvider,
+        { client },
+        createElement(MemoryRouter, { initialEntries: ["/attachments?lifecycle=trash"] }, createElement(Attachments)),
+      ),
+    );
+    return client;
+  };
+  it("loads past 50 other-type items and never calls an incomplete audio result empty", async () => {
+    let finishPage!: (page: { attachments: Attachment[]; nextPageToken: string }) => void;
+    const next = new Promise<{ attachments: Attachment[]; nextPageToken: string }>((resolve) => {
+      finishPage = resolve;
+    });
+    clients.listAttachments
+      .mockReset()
+      .mockImplementation((request) => (request.pageToken ? next : Promise.resolve({ attachments: photos, nextPageToken: "audio-page" })));
+    const client = renderAudioPage();
+    await waitFor(() => expect(clients.listAttachments).toHaveBeenCalledTimes(2));
+    expect(screen.getByTestId("attachment-loading")).toBeInTheDocument();
+    expect(screen.queryByText("empty:audio")).not.toBeInTheDocument();
+    await act(async () => finishPage({ attachments: [attachment("51st-audio.wav", "audio/wav", "memos/deleted")], nextPageToken: "" }));
+    expect(await screen.findByText("51st-audio.wav")).toBeInTheDocument();
+    expect(screen.queryByText("empty:audio")).not.toBeInTheDocument();
+    expect(clients.listAttachments.mock.calls.every(([request]) => request.onlyTrash)).toBe(true);
+    client.clear();
+  });
+  it("shows definitive empty only after the final page, with failed next-page requests retryable", async () => {
+    let fail = true;
+    clients.listAttachments.mockReset().mockImplementation(async (request) => {
+      if (!request.pageToken) return { attachments: photos, nextPageToken: "last-page" };
+      if (fail) throw new Error("network unavailable");
+      return { attachments: [], nextPageToken: "" };
+    });
+    const client = renderAudioPage();
+    expect(await screen.findByRole("button", { name: "retry attachments" })).toBeInTheDocument();
+    expect(screen.queryByText("empty:audio")).not.toBeInTheDocument();
+    const callsAtError = clients.listAttachments.mock.calls.length;
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(clients.listAttachments).toHaveBeenCalledTimes(callsAtError);
+    fail = false;
+    fireEvent.click(screen.getByRole("button", { name: "retry attachments" }));
+    expect(await screen.findByText("empty:audio")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "retry attachments" })).not.toBeInTheDocument();
+    client.clear();
+  });
+  it("shares complete fetched pages between the sidebar and main pane", async () => {
+    clients.listAttachments.mockReset().mockImplementation(async (request) => ({
+      attachments: request.pageToken ? [attachment("last-audio.wav", "audio/wav", "memos/one")] : photos,
+      nextPageToken: request.pageToken ? "" : "last-page",
+    }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: PropsWithChildren) => createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(
+      () => ({ pane: useAttachmentLibrary("en", undefined, true), sidebar: useAttachmentLibraryStats(undefined, true) }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.sidebar.isComplete && result.current.pane.audioItems.length === 1).toBe(true));
+    expect(result.current.pane.stats).toEqual(result.current.sidebar.stats);
+    expect(clients.listAttachments).toHaveBeenCalledTimes(2);
+    client.clear();
   });
 });

@@ -7,13 +7,15 @@ import (
 
 // MemoShare is an access grant that permits read-only access to a memo via a bearer token.
 type MemoShare struct {
-	ID        int32
-	UID       string
-	MemoID    int32
-	CreatorID int32
-	CreatedTs int64
-	ExpiresTs *int64 // nil means the share never expires
-	Policy    *MemoWritePolicy
+	ID                 int32
+	UID                string
+	MemoID             int32
+	CreatorID          int32
+	CreatedTs          int64
+	ExpiresTs          *int64 // nil means the share never expires
+	Policy             *MemoWritePolicy
+	ExpectedRecordHash string
+	JournalDocuments   []*JournalDocumentMutation
 }
 
 // FindMemoShare is used to filter memo shares in list/get queries.
@@ -42,10 +44,22 @@ func (s *Store) CreateMemoShare(ctx context.Context, create *MemoShare) (*MemoSh
 	if err := validateMemoWritePolicy(create.Policy); err != nil {
 		return nil, err
 	}
+	for _, mutation := range create.JournalDocuments {
+		if mutation == nil || mutation.Document == nil || mutation.Document.OwnerID <= 0 || create.Policy == nil {
+			return nil, ErrMemoPermissionDenied
+		}
+		if err := validateJournalDocument(mutation.Document, mutation.ExpectedVersion); err != nil {
+			return nil, err
+		}
+	}
 	if create.Policy == nil {
 		return s.driver.CreateMemoShare(ctx, create)
 	}
-	return s.driver.CreateMemoShare(ctx, create)
+	result, err := s.driver.CreateMemoShare(ctx, create)
+	if (create.ExpectedRecordHash != "" || len(create.JournalDocuments) > 0) && s.driver.IsRetryableAuthenticationMutationError(err) {
+		return nil, ErrMemoMutationConflict
+	}
+	return result, err
 }
 
 // ListMemoShares returns all share grants matching the filter.

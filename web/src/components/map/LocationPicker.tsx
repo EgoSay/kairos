@@ -35,7 +35,7 @@ const LocationMarker = ({ position: initialPosition, onChange, readonly: readOnl
   useEffect(() => {
     if (initialPosition) {
       setPosition(initialPosition);
-      map.setView(initialPosition);
+      map.setView(initialPosition, 13);
     } else {
       setPosition(undefined);
     }
@@ -196,16 +196,23 @@ interface LocationPickerProps {
   readonly?: boolean;
   latlng?: MapPoint;
   onChange?: (position: MapPoint) => void;
+  onError?: () => void;
   className?: string;
 }
 
-const DEFAULT_CENTER: MapPoint = { lat: 48.8584, lng: 2.2945 };
+const DEFAULT_CENTER: MapPoint = { lat: 20, lng: 0 };
 const noopOnLocationChange = () => {};
 
-const LocationPicker = ({ readonly: readOnly = false, latlng, onChange = noopOnLocationChange, className }: LocationPickerProps) => {
+const LocationPicker = ({
+  readonly: readOnly = false,
+  latlng,
+  onChange = noopOnLocationChange,
+  onError,
+  className,
+}: LocationPickerProps) => {
   const mapCenter = useMemo(() => toLatLng(latlng ?? DEFAULT_CENTER), [latlng?.lat, latlng?.lng]);
   const markerPosition = latlng ? mapCenter : undefined;
-  const statusLabel = latlng ? "Selected location" : "Choose a location";
+  const statusLabel = latlng ? "待确认的所选位置" : "浏览地图 · 尚未选择位置";
 
   return (
     <div
@@ -217,13 +224,13 @@ const LocationPicker = ({ readonly: readOnly = false, latlng, onChange = noopOnL
       <MapContainer
         className="map-attribution-minimal h-full w-full !bg-muted"
         center={mapCenter}
-        zoom={13}
+        zoom={latlng ? 13 : 2}
         scrollWheelZoom={false}
         zoomControl={false}
         attributionControl={false}
       >
         <MinimalAttributionControl />
-        <BasemapLayer />
+        <BasemapLayer onTileError={onError} />
         <LocationMarker position={markerPosition} readonly={readOnly} onChange={onChange} />
         <MapControls position={latlng} />
         <MapCleanup />

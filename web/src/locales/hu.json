@@ -180,6 +180,9 @@
       "transcribing": "Átírás..."
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Kódblokk",
       "heading": "Címsor",
       "paragraph": "Bekezdés",
@@ -344,6 +347,7 @@
     "back-to-top": "Vissza az oldal tetejére"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "Hozzáférési token vágólapra másolva",
       "access-token-deleted": "Hozzáférési token `{{description}}` törölve",

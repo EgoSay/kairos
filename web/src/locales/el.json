@@ -218,6 +218,9 @@
       "trigger": "Εγγραφή ήχου"
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Μπλοκ κωδικών",
       "link": "Σύνδεσμος",
       "heading": "Επικεφαλίδα",
@@ -382,6 +385,7 @@
     "back-to-top": "Επιστροφή στην κορυφή"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "Το διακριτικό πρόσβασης αντιγράφηκε στο πρόχειρο",
       "access-token-deleted": "Το διακριτικό πρόσβασης `{{description}}` διαγράφηκε",

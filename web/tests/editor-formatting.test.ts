@@ -78,4 +78,23 @@ describe("formatting controller", () => {
     f.run("codeBlock");
     expect(view.state.doc.toString()).toBe("first\nsecond");
   });
+  it("edits an existing link target while preserving its label and can remove it deliberately", () => {
+    const { view, f } = setup("[内容](https://old.test)", 2, 2);
+    expect(f.getLink?.()).toBe("https://old.test");
+    f.run("link", { url: "https://new.test" });
+    expect(view.state.doc.toString()).toBe("[内容](https://new.test)");
+    f.run("link", { url: "javascript:alert(1)" });
+    expect(view.state.doc.toString()).toBe("[内容](https://new.test)");
+    f.run("link", { url: "" });
+    expect(view.state.doc.toString()).toBe("内容");
+  });
+  it("adds and removes quotes across selected lines, and inserts a separate rule", () => {
+    const { view, f } = setup("一\n二", 0, 3);
+    f.run("quote");
+    expect(view.state.doc.toString()).toBe("> 一\n> 二");
+    f.run("quote");
+    expect(view.state.doc.toString()).toBe("一\n二");
+    f.run("horizontalRule");
+    expect(view.state.doc.toString()).toBe("一\n二\n\n---\n\n");
+  });
 });

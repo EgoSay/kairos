@@ -12,10 +12,8 @@ import {
   PaperclipIcon,
   TypeIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { LinkMemoDialog, LocationDialog } from "@/components/MemoMetadata";
-import type { MapPoint } from "@/components/map/types";
-import { useReverseGeocoding } from "@/components/map/useReverseGeocoding";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,7 +23,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useDebouncedEffect } from "@/hooks";
 import type { MemoRelation } from "@/types/proto/api/v1/memo_service_pb";
 import { useTranslate } from "@/utils/i18n";
 import { useFileUpload, useLinkMemo, useLocation } from "../hooks";
@@ -61,31 +58,12 @@ const InsertMenu = (props: InsertMenuProps) => {
   const location = useLocation(props.location);
   const {
     state: locationState,
-    locationInitialized,
     handlePositionChange: handleLocationPositionChange,
     getLocation,
     reset: locationReset,
     updateCoordinate,
     setPlaceholder,
   } = location;
-
-  const [debouncedPosition, setDebouncedPosition] = useState<MapPoint | undefined>(undefined);
-
-  useDebouncedEffect(
-    () => {
-      setDebouncedPosition(locationState.position);
-    },
-    1000,
-    [locationState.position],
-  );
-
-  const { data: displayName } = useReverseGeocoding(debouncedPosition?.lat, debouncedPosition?.lng);
-
-  useEffect(() => {
-    if (displayName) {
-      setPlaceholder(displayName);
-    }
-  }, [displayName, setPlaceholder]);
 
   const isUploading = selectingFlag || isUploadingProp;
   const insertionDisabled = isUploading || props.isSaving;
@@ -95,33 +73,23 @@ const InsertMenu = (props: InsertMenuProps) => {
   }, []);
 
   const handleLocationClick = useCallback(() => {
+    locationReset(initialLocation);
     setLocationDialogOpen(true);
-    if (!initialLocation && !locationInitialized) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            handleLocationPositionChange({ lat: position.coords.latitude, lng: position.coords.longitude });
-          },
-          (error) => {
-            console.error("Geolocation error:", error);
-          },
-        );
-      }
-    }
-  }, [initialLocation, locationInitialized, handleLocationPositionChange]);
+  }, [initialLocation, locationReset]);
 
   const handleLocationConfirm = useCallback(() => {
     const newLocation = getLocation();
     if (newLocation) {
       onLocationChange(newLocation);
+      locationReset(newLocation);
       setLocationDialogOpen(false);
     }
-  }, [getLocation, onLocationChange]);
+  }, [getLocation, onLocationChange, locationReset]);
 
   const handleLocationCancel = useCallback(() => {
-    locationReset();
+    locationReset(initialLocation);
     setLocationDialogOpen(false);
-  }, [locationReset]);
+  }, [locationReset, initialLocation]);
 
   const handleAttachmentUploadClick = useCallback(() => {
     if (getState().ui.isLoading.saving) return;
@@ -153,6 +121,22 @@ const InsertMenu = (props: InsertMenuProps) => {
 
   return (
     <>
+      <Button type="button" variant="quiet" size="sm" className="min-h-10 gap-1" disabled={props.isSaving} onClick={handleOpenLinkDialog}>
+        <LinkIcon className="size-4" />
+        关联记录
+      </Button>
+      <Button
+        type="button"
+        variant="quiet"
+        size="sm"
+        className="min-h-10 gap-1"
+        title={t("tooltip.select-location")}
+        disabled={props.isSaving}
+        onClick={handleLocationClick}
+      >
+        <MapPinIcon className="size-4" />
+        {initialLocation ? "修改位置" : "添加位置"}
+      </Button>
       <Tooltip>
         <TooltipTrigger
           render={
@@ -270,17 +254,28 @@ const InsertMenu = (props: InsertMenuProps) => {
         isFetching={linkMemo.isFetching}
         onSelectMemo={linkMemo.addMemoRelation}
         isAlreadyLinked={linkMemo.isAlreadyLinked}
+        error={linkMemo.error}
+        onRetry={linkMemo.retry}
+        hasNextPage={linkMemo.hasNextPage}
+        isFetchingNextPage={linkMemo.isFetchingNextPage}
+        onLoadMore={linkMemo.fetchNextPage}
+        onReturnToEditor={props.onReturnToEditor}
       />
 
       <LocationDialog
         open={locationDialogOpen}
-        onOpenChange={setLocationDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) handleLocationCancel();
+        }}
         state={locationState}
         onPositionChange={handleLocationPositionChange}
         onUpdateCoordinate={updateCoordinate}
         onPlaceholderChange={setPlaceholder}
         onCancel={handleLocationCancel}
         onConfirm={handleLocationConfirm}
+        onLocate={location.locate}
+        onResolveName={() => void location.resolveName()}
+        onReturnToEditor={props.onReturnToEditor}
       />
     </>
   );

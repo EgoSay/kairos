@@ -45,6 +45,17 @@ func (s *APIV1Service) CreateMemoShare(ctx context.Context, request *v1pb.Create
 	if memo == nil {
 		return nil, status.Errorf(codes.NotFound, "memo not found")
 	}
+	// Administrators may share another author's memo. Recovery is ordered by
+	// the record owner, not by the acting administrator. Reload the source
+	// after capturing that owner's guard so approval cannot predate recovery.
+	guard, err := s.prepareJournalShareGuard(ctx, memo.CreatorID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to read sharing authorization")
+	}
+	memo, err = s.Store.GetMemo(ctx, &store.FindMemo{UID: &memoUID})
+	if err != nil || memo == nil {
+		return nil, status.Error(codes.Aborted, "record changed; review it before sharing again")
+	}
 	if memo.RowStatus != store.Normal {
 		return nil, status.Errorf(codes.FailedPrecondition, "only active memos can be shared")
 	}
@@ -64,16 +75,25 @@ func (s *APIV1Service) CreateMemoShare(ctx context.Context, request *v1pb.Create
 	}
 
 	// Generate a URL-safe token using shortuuid (base57-encoded UUID v4, 22 chars, 122-bit entropy).
+	expected, err := s.journalRecordHash(ctx, memo)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to read sharing source")
+	}
 	policy := memoWritePolicy(user.ID, false)
 	policy.CreatingShare = true
 	ms, err := s.Store.CreateMemoShare(ctx, &store.MemoShare{
-		UID:       shortuuid.New(),
-		MemoID:    memo.ID,
-		CreatorID: user.ID,
-		ExpiresTs: expiresTs,
-		Policy:    policy,
+		UID:                shortuuid.New(),
+		MemoID:             memo.ID,
+		CreatorID:          user.ID,
+		ExpiresTs:          expiresTs,
+		Policy:             policy,
+		ExpectedRecordHash: expected,
+		JournalDocuments:   []*store.JournalDocumentMutation{guard},
 	})
 	if err != nil {
+		if errors.Is(err, store.ErrMemoMutationConflict) {
+			return nil, status.Error(codes.Aborted, "record or sharing authorization changed; review the current record before sharing again")
+		}
 		return nil, mapMemoWriteError(err, "failed to create memo share")
 	}
 
@@ -210,6 +230,12 @@ func (s *APIV1Service) GetSharedMemo(ctx context.Context, request *v1pb.GetShare
 	// A share token grants access to this memo only, not to its surrounding
 	// conversation or relation graph.
 	memoMessage.Parent = nil
+	// A restore can revoke the grant while this request is loading the source
+	// or its media. Never return newly private bytes under that stale grant.
+	current, err := s.getActiveMemoShare(ctx, request.ShareToken)
+	if err != nil || current.ID != ms.ID || current.MemoID != ms.MemoID {
+		return nil, status.Error(codes.NotFound, "not found")
+	}
 	return memoMessage, nil
 }
 

@@ -12,7 +12,26 @@ vi.mock("@/hooks/useCurrentUser", () => ({ default: () => undefined }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ userGeneralSetting: undefined }) }));
 vi.mock("@/hooks/useSpaceQueries", () => ({ useSpaces: () => ({ data: [] }) }));
 vi.mock("@/contexts/SpaceContext", () => ({ useSpaceContext: () => ({ selectedSpaceName: undefined }) }));
-vi.mock("@/components/map/useReverseGeocoding", () => ({ useReverseGeocoding: () => ({ data: undefined }) }));
+vi.mock("@/components/map/useReverseGeocoding", () => ({ lookupLocationName: vi.fn() }));
+vi.mock("@/hooks/useJournalLocations", () => ({
+  useJournalLocations: () => ({ data: undefined, save: { isPending: false } }),
+  searchPublicPlaces: vi.fn(),
+}));
+vi.mock("@/components/map/LazyLocationPicker", () => ({ LazyLocationPicker: () => <div data-testid="location-map" /> }));
+vi.mock("@/components/MemoEditor/hooks/useLinkMemo", () => ({
+  useLinkMemo: () => ({
+    searchText: "",
+    setSearchText: vi.fn(),
+    isFetching: false,
+    filteredMemos: [],
+    addMemoRelation: vi.fn(),
+    isAlreadyLinked: () => false,
+    retry: vi.fn(),
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: vi.fn(),
+  }),
+}));
 
 beforeAll(() => {
   Element.prototype.scrollIntoView = vi.fn();

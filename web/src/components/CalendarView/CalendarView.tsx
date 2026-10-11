@@ -10,10 +10,12 @@ import { useInstance } from "@/contexts/InstanceContext";
 import { useSpaceContext } from "@/contexts/SpaceContext";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useFilteredMemoStats } from "@/hooks/useFilteredMemoStats";
+import { useJournalPreferences } from "@/hooks/useJournalQueries";
 import useMediaQuery from "@/hooks/useMediaQuery";
 import { useMemoFilters } from "@/hooks/useMemoFilters";
-import { formatMonthLabel, getToday, parseLocalDate } from "@/lib/calendar-utils";
+import { formatMonthLabel, parseLocalDate } from "@/lib/calendar-utils";
 import { combineCELFilters } from "@/lib/cel-filter";
+import { journalDate } from "@/lib/journal";
 import { isMemoBlurred } from "@/lib/tag";
 import { collectionPathForLocation } from "@/router/routes";
 import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
@@ -57,6 +59,8 @@ export const CalendarView = ({ month, date }: CalendarViewProps) => {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   const user = useCurrentUser();
+  const preferences = useJournalPreferences();
+  const timezone = preferences.data?.timezone ?? "Asia/Shanghai";
   const md = useMediaQuery("md");
   const xl = useMediaQuery("xl");
   const { userTagsSetting, isInitialized: authInitialized, isUserSettingsInitialized } = useAuth();
@@ -66,7 +70,7 @@ export const CalendarView = ({ month, date }: CalendarViewProps) => {
   // The sidebar's view and tag filters narrow the month exactly as they narrow Home. They are
   // not echoed as chips here: the sidebar already shows them checked and clears them on a
   // second click, and search hands off to Home, so nothing can be active without a sidebar row.
-  const viewFilter = useMemoFilters({ includeMemoViews: true, includePinned: false });
+  const viewFilter = useMemoFilters({ includeMemoViews: true, includePinned: true });
   // The scope filter includes both creator and Space, and matches the sidebar statistics.
   const statsFilter = useMemo(() => combineCELFilters(contextFilter, viewFilter), [contextFilter, viewFilter]);
   const monthFilter = useMemo(() => combineCELFilters(contextFilter, viewFilter), [contextFilter, viewFilter]);
@@ -86,7 +90,8 @@ export const CalendarView = ({ month, date }: CalendarViewProps) => {
     month,
     filter: monthFilter,
     isRedacted,
-    enabled: isUserSettingsInitialized,
+    timezone,
+    enabled: isUserSettingsInitialized && (!user || preferences.isSuccess),
   });
 
   const monthLabel = useMemo(() => formatMonthLabel(month, i18n.language), [month, i18n.language]);
@@ -95,7 +100,7 @@ export const CalendarView = ({ month, date }: CalendarViewProps) => {
     [navigate, month, search, pathname],
   );
 
-  const today = getToday();
+  const today = journalDate(new Date(), timezone);
   const activeDate = date ?? (md ? undefined : getDefaultDate(month, today));
   const activeMemos = (activeDate && model[activeDate]?.memos) || NO_MEMOS;
   const dateLabel = useMemo(
@@ -105,7 +110,10 @@ export const CalendarView = ({ month, date }: CalendarViewProps) => {
         : "",
     [activeDate, i18n.language],
   );
-  const defaultCreateTime = useMemo(() => (activeDate ? deriveDefaultCreateTimeFromDate(activeDate) : undefined), [activeDate]);
+  const defaultCreateTime = useMemo(
+    () => (activeDate ? deriveDefaultCreateTimeFromDate(activeDate, new Date(), timezone) : undefined),
+    [activeDate, timezone],
+  );
   const [saving, setSaving] = useState(false);
   const panelOpen = Boolean(date) && md;
 
@@ -123,7 +131,7 @@ export const CalendarView = ({ month, date }: CalendarViewProps) => {
       timeDisplay="time"
       emptyText={canCompose ? undefined : t("calendar.no-memos-on-day")}
       compose={
-        canCompose
+        canCompose && preferences.isSuccess
           ? {
               cacheKey: `calendar-day-editor:${activeDate}`,
               label: t("calendar.new-memo-on-day"),
@@ -135,8 +143,11 @@ export const CalendarView = ({ month, date }: CalendarViewProps) => {
     />
   );
 
-  // A failed month must not pass for an empty one.
-  const isEmptyMonth = !isLoading && !error && Object.keys(model).length === 0;
+  // A failed timezone lookup must not masquerade as an empty or differently dated month.
+  const calendarError = user && preferences.isError ? preferences.error : error;
+  const calendarPending = isLoading || Boolean(user && preferences.isPending);
+  const retryCalendar = user && preferences.isError ? preferences.refetch : refetch;
+  const isEmptyMonth = !calendarPending && !calendarError && Object.keys(model).length === 0;
 
   return (
     <>
@@ -155,13 +166,13 @@ export const CalendarView = ({ month, date }: CalendarViewProps) => {
             today={today}
             counts={statistics.activityStats}
             model={model}
-            pending={isLoading}
+            pending={calendarPending}
             selectedDate={activeDate}
             showRows={md}
             showAuthors={showAuthors}
           />
         </MentionResolutionProvider>
-        {error && <MemoListError error={error} onRetry={refetch} />}
+        {calendarError && <MemoListError error={calendarError} onRetry={retryCalendar} />}
         {isEmptyMonth && md && (
           <p className="mt-2 shrink-0 text-center text-ui text-muted-foreground">
             {t("calendar.no-memos-in-month", { month: monthLabel })}

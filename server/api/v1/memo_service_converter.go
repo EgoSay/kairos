@@ -283,7 +283,7 @@ func (s *APIV1Service) batchConvertMemoRelations(ctx context.Context, memos []*s
 		for id := range neededIDs {
 			extraIDs = append(extraIDs, id)
 		}
-		extraFind := &store.FindMemo{IDList: extraIDs, ExcludeContent: !includeSnippets, Access: accessScope}
+		extraFind := &store.FindMemo{IDList: extraIDs, ExcludeContent: !includeSnippets, Access: accessScope, ExcludeTrashed: true}
 		extraMemos, err := s.Store.ListMemos(ctx, extraFind)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to batch fetch related memos")

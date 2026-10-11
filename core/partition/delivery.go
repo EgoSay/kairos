@@ -241,6 +241,9 @@ func (s *Service) authorize(ctx context.Context, owner int32, d *Delivery, media
 // ProcessDue claims persisted work using a lease. A crash retries with the same
 // event ID; receivers must deduplicate before creating an external post.
 func (s *Service) ProcessDue(ctx context.Context) error {
+	if err := s.ReconcileRecordSaves(ctx); err != nil {
+		return err
+	}
 	docs, err := s.Repo.ListJournalDocuments(ctx, &store.FindJournalDocument{Kind: DeliveryKind})
 	if err != nil {
 		return err

@@ -2,6 +2,7 @@ import {
   ArrowLeftRightIcon,
   AstroidIcon,
   BarChart3Icon,
+  BotIcon,
   CogIcon,
   DatabaseIcon,
   HeartHandshakeIcon,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { type ComponentType } from "react";
 import AccessTokenSection from "@/components/Settings/AccessTokenSection";
+import AgentSection from "@/components/Settings/AgentSection";
 import AISection from "@/components/Settings/AISection";
 import InstanceSection from "@/components/Settings/InstanceSection";
 import MemberSection from "@/components/Settings/MemberSection";
@@ -39,6 +41,7 @@ export type SettingSectionKey =
   | "memo-export"
   | "spaces"
   | "access-token"
+  | "agent"
   | "preference"
   | "webhook"
   | "member"
@@ -83,6 +86,13 @@ export const SETTINGS_SECTIONS: SettingSectionDefinition[] = [
     labelKey: "setting.access-token.label",
     icon: KeyRoundIcon,
     component: AccessTokenSection,
+  },
+  {
+    key: "agent",
+    scope: "basic",
+    labelKey: "setting.agent.label",
+    icon: BotIcon,
+    component: AgentSection,
   },
   {
     key: "preference",

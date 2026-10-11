@@ -30,6 +30,17 @@ export function journalDayRange(date: string, timezone: string): { start: number
   return { start: boundary(date, utc), end: boundary(nextDate, utc + 86_400_000) };
 }
 
+/** Month boundaries use the same zone as day search, including offset changes inside the month. */
+export function journalMonthRange(month: string, timezone: string): { start: number; end: number } | undefined {
+  if (!/^\d{4}-\d{2}$/.test(month)) return undefined;
+  const first = journalDayRange(`${month}-01`, timezone);
+  if (!first) return undefined;
+  const next = new Date(`${month}-01T00:00:00Z`);
+  next.setUTCMonth(next.getUTCMonth() + 1);
+  const last = journalDayRange(next.toISOString().slice(0, 10), timezone);
+  return last ? { start: first.start, end: last.start } : undefined;
+}
+
 export function isJournalCandidate(memo: Memo, owner: string, date: string, timezone: string, excluded: ReadonlySet<string>): boolean {
   return Boolean(
     memo.creator === owner &&

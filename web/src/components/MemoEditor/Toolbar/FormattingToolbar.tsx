@@ -2,15 +2,19 @@ import {
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
+  ImageIcon,
+  LinkIcon,
   type LucideIcon,
   Minimize2Icon,
   MoreHorizontalIcon,
   TypeIcon,
   XIcon,
 } from "lucide-react";
-import { type ComponentPropsWithoutRef, forwardRef, type MouseEventHandler, type RefObject, useRef } from "react";
+import { type ComponentPropsWithoutRef, forwardRef, type MouseEventHandler, type RefObject, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useTranslate } from "@/utils/i18n";
 import {
@@ -33,6 +37,7 @@ interface FormattingToolbarProps {
   exit?: { action: "minimize" | "close"; onExit: () => void };
   /** Extra classes for the host to frame the toolbar row. */
   className?: string;
+  onInsertImages?: (files: File[]) => void;
 }
 
 const MARK_COMMANDS = EDITOR_COMMANDS.filter((command) => command.group === "mark");
@@ -63,8 +68,13 @@ const preventFocusSteal: MouseEventHandler<HTMLButtonElement> = (event) => event
  * stay inline. When the editor sits in a frame, the button that dismisses it is
  * pushed to the far edge.
  */
-export function FormattingToolbar({ controllerRef, exit, className }: FormattingToolbarProps) {
+export function FormattingToolbar({ controllerRef, exit, className, onInsertImages }: FormattingToolbarProps) {
   const t = useTranslate();
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkURL, setLinkURL] = useState("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const validLink = !linkURL || /^(https?:|mailto:|\/|#)/i.test(linkURL);
+
   const rootRef = useRef<HTMLDivElement>(null);
   const width = useElementWidth(rootRef);
   const compact = isCompactWidth(width);
@@ -98,7 +108,7 @@ export function FormattingToolbar({ controllerRef, exit, className }: Formatting
   return (
     <div
       ref={rootRef}
-      className={cn("w-full flex flex-row items-center gap-0.5", className)}
+      className={cn("w-full flex flex-row flex-wrap items-center gap-0.5", className)}
       role="toolbar"
       aria-label={t("editor.format.heading")}
     >
@@ -136,10 +146,73 @@ export function FormattingToolbar({ controllerRef, exit, className }: Formatting
         blockButtons.map((button) => <SegmentButton key={button.label} {...button} onMouseDown={preventFocusSteal} />)
       )}
 
+      <SegmentButton
+        Icon={LinkIcon}
+        label={t("editor.format.link")}
+        active={active.link}
+        onMouseDown={preventFocusSteal}
+        onClick={() => {
+          setLinkURL(controllerRef.current?.formatting?.getLink?.() ?? "");
+          setLinkOpen(true);
+        }}
+      />
+      {onInsertImages && (
+        <>
+          <SegmentButton Icon={ImageIcon} label="插入图片" onMouseDown={preventFocusSteal} onClick={() => imageInputRef.current?.click()} />
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(event) => {
+              onInsertImages(Array.from(event.target.files ?? []));
+              event.target.value = "";
+            }}
+          />
+        </>
+      )}
+      <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+        <DialogContent finalFocus={returnFocusToEditor} initialFocus={true}>
+          <DialogTitle>编辑链接</DialogTitle>
+          <DialogDescription>为所选文字添加链接；光标在已有链接中时可修改地址。</DialogDescription>
+          <form
+            className="space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!validLink) return;
+              controllerRef.current?.formatting?.run("link", { url: linkURL });
+              setLinkOpen(false);
+            }}
+          >
+            <Input aria-label="链接地址" value={linkURL} onChange={(event) => setLinkURL(event.target.value)} placeholder="https://" />
+            {!validLink && (
+              <p role="alert" className="text-sm text-destructive">
+                请输入 http、https、mailto 或站内链接。
+              </p>
+            )}
+            <DialogFooter>
+              <Button type="submit" disabled={!validLink || (!linkURL && !active.link)}>
+                应用链接
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       {exit && (
         <>
           <div className="flex-1" />
-          <Button variant="quiet" size="icon-compact" aria-label={exitLabel} title={exitLabel} onClick={exit.onExit}>
+          <Button
+            variant="quiet"
+            size="icon-compact"
+            aria-label={exitLabel}
+            title={exitLabel}
+            onMouseDown={preventFocusSteal}
+            onClick={() => {
+              exit.onExit();
+              controllerRef.current?.focus();
+            }}
+          >
             <ExitIcon className="size-4" strokeWidth={1.8} />
           </Button>
         </>

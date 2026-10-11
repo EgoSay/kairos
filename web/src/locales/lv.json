@@ -218,6 +218,9 @@
       "trigger": "Ierakstīt audio"
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Koda bloks",
       "link": "Saite",
       "heading": "Virsraksts",
@@ -382,6 +385,7 @@
     "back-to-top": "Atpakaļ uz augšu"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "Piekļuves pilnvara ir kopēta starpliktuvē",
       "access-token-deleted": "Piekļuves pilnvara `{{description}}` ir izdzēsta",

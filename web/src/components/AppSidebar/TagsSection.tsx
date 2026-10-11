@@ -29,6 +29,10 @@ interface Props {
   onSelect?: () => void;
   /** Whose tags these are; keeps tree expansion state from bleeding between users and views. */
   scope: string;
+  loading?: boolean;
+  error?: Error | null;
+  onRetry?: () => void;
+  retrying?: boolean;
 }
 
 const TagPath = forwardRef<HTMLSpanElement, { tag: string }>(({ tag }, ref) => {
@@ -78,28 +82,23 @@ const FlatTagRow = ({ tag, amount, active, ariaLabel, onClick }: FlatTagRowProps
   );
 };
 
-const TagsSection = ({ tagCount, onSelect, scope }: Props) => {
+const TagsSection = ({ tagCount, onSelect, scope, loading, error, onRetry, retrying }: Props) => {
   const t = useTranslate();
   const { getFiltersByFactor, addFilter, removeFilter } = useMemoFilterContext();
-  const [treeMode, setTreeMode] = useLocalStorage<boolean>("tag-view-as-tree", false);
+  const [treePreference, setTreeMode] = useLocalStorage<boolean | null>("tag-view-as-tree-v2", null);
+  const treeMode = treePreference ?? Object.keys(tagCount).some((tag) => tag.includes("/"));
   const activeTags = new Set(getFiltersByFactor("tagSearch").map((filter) => filter.value));
   const activeTag = activeTags.values().next().value as string | undefined;
   const tags = useMemo(() => Object.entries(tagCount).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])), [tagCount]);
 
-  if (tags.length === 0) {
-    return (
-      <SidebarSection label={t("common.tags")}>
-        <p className="px-2 py-1 text-xs leading-5 text-muted-foreground">{t("common.empty-placeholder")}</p>
-      </SidebarSection>
-    );
-  }
+  const untagged = getFiltersByFactor("untagged").length > 0;
 
   const handleTagClick = (tag: string) => {
     const active = activeTags.has(tag);
     if (active) {
       removeFilter((filter) => filter.factor === "tagSearch" && filter.value === tag);
     } else {
-      removeFilter((filter) => filter.factor === "tagSearch");
+      removeFilter((filter) => filter.factor === "tagSearch" || filter.factor === "untagged");
       addFilter({ factor: "tagSearch", value: tag });
     }
     onSelect?.();
@@ -138,6 +137,34 @@ const TagsSection = ({ tagCount, onSelect, scope }: Props) => {
         </DropdownMenu>
       }
     >
+      <button
+        type="button"
+        aria-pressed={untagged}
+        className={cn(SIDEBAR_ROW_CLASSES, sidebarRowStateClasses(untagged ? "checked" : "idle"))}
+        onClick={() => {
+          removeFilter((filter) => filter.factor === "untagged" || (!untagged && filter.factor === "tagSearch"));
+          if (!untagged) addFilter({ factor: "untagged", value: "true" });
+          onSelect?.();
+        }}
+      >
+        <SidebarRowIconSlot icon={HashIcon} />
+        <span>未添加标签</span>
+      </button>
+      {error && (
+        <div role="alert" className="px-2 py-2 text-xs text-muted-foreground">
+          <p>标签统计读取失败，已选筛选条件仍保留。{tags.length > 0 ? "以下是上次读取的结果。" : ""}</p>
+          {onRetry && (
+            <Button type="button" size="sm" variant="ghost" disabled={retrying} onClick={onRetry}>
+              重试读取标签
+            </Button>
+          )}
+        </div>
+      )}
+      {loading && !error && (
+        <p role="status" className="px-2 py-2 text-xs text-muted-foreground">
+          正在读取标签…
+        </p>
+      )}
       {treeMode ? (
         <TagTree key={scope} tagAmounts={tags} activeTag={activeTag} scope={scope} onTagClick={handleTagClick} />
       ) : (

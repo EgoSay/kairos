@@ -320,3 +320,35 @@ go test ./server/mcp/...
   `proto.OpenAPIYAML()` (`loadMCPServiceOpenAPISpec`). The path-based
   `loadOpenAPISpec` in `openapi.go` exists for tests.
 - **Tools only.** The server advertises no prompts or resources in this version.
+
+## Private journal Agent access
+
+`/mcp/journal` is the owner-scoped, read-only journal endpoint. Its three tools
+are `journal_get_context`, `journal_query_records`, and `journal_get_record`.
+They call the corresponding `/api/v1/journal/agent/*` handlers through the same
+in-process adapter. The handlers reuse `ListMemos` and the common CEL/store
+queries; the MCP transport does not own a separate search engine.
+
+Settings → Agent / MCP creates independent, named, expiring PATs with
+`read_only=true` and the distinct `kairos_agent_` prefix. Older servers reject
+this prefix during rollback instead of silently granting legacy PAT access. A
+new server also rejects an Agent token whose stored scope was lost. The token hash and scope are stored in the existing user
+setting. The authorizer permits this scope only on Agent reads and current-user
+identity; Gateway, Connect, journal management (including backups), SSE and the
+legacy MCP write tools reject it. Existing PATs without the field keep their
+original behavior. Native file routes reject the dedicated prefix before any
+public/share or cookie fallback; attachment, thumbnail, motion and avatar
+downloads are outside the initial journal-text scope. Revocation and expiry are checked on every call; last use is
+recorded by the existing authenticator.
+
+Query dates use the owner's configured IANA timezone and original record
+creation date, including imports. Normal and archived records are included,
+comments and trash excluded. Results contain full original text, source links,
+original timestamps, timezone and explicit page coverage. Cursor signatures bind
+owner, criteria, timezone and page size; cursors expire after 24 hours. Pagination
+is a live read, not a frozen snapshot: changing records between pages may require
+restarting. A final page is not labeled complete by itself. Agents must follow
+all pages and cite sources, distinguishing recorded facts from interpretation.
+
+See [Agent setup](../../docs/operations/agent-access.md) for the Codex setup and
+acceptance commands. Protocol tests do not replace a real Codex client check.

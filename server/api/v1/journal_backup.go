@@ -155,9 +155,21 @@ func (s *APIV1Service) writeJournalBackup(ctx context.Context, owner *store.User
 			}
 		}
 	}
-	docs, err := s.Store.ListJournalDocuments(ctx, &store.FindJournalDocument{OwnerID: &owner.ID})
-	if err != nil {
-		return err
+	// Journal queries select exactly one kind; an empty kind is not a wildcard.
+	// Keep the archive allowlist explicit so new internal or credential-bearing
+	// document types cannot silently become portable backup content.
+	kinds := []string{"preferences", partition.PartitionKind, partition.MappingKind, "insight", "share",
+		partition.TargetKind, partition.ExternalKind, partition.DeliveryKind, partition.SequenceKind}
+	if history {
+		kinds = append(kinds, "revision")
+	}
+	docs := []*store.JournalDocument{}
+	for _, kind := range kinds {
+		found, err := s.Store.ListJournalDocuments(ctx, &store.FindJournalDocument{OwnerID: &owner.ID, Kind: kind})
+		if err != nil {
+			return err
+		}
+		docs = append(docs, found...)
 	}
 	for _, doc := range docs {
 		keep := false

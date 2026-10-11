@@ -238,6 +238,9 @@
       "bold": "粗體",
       "italic": "斜體",
       "strikethrough": "刪除線",
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "程式碼區塊",
       "bullet-list": "項目符號清單",
       "ordered-list": "編號清單",
@@ -423,6 +426,7 @@
     "back-to-top": "回到頂端"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "存取令牌已複製到剪貼簿",
       "access-token-deleted": "存取令牌 `{{description}}` 已刪除",

@@ -1,18 +1,33 @@
+import { timestampDate } from "@bufbuild/protobuf/wkt";
 import dayjs from "dayjs";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { buildMonthDays } from "@/components/ActivityCalendar/monthDays";
 import { calculateMaxCount, getActivityLevel } from "@/components/ActivityCalendar/utils";
 import { Button } from "@/components/ui/button";
-import { useJournalCalendar, useJournalPreferences, useUpdateJournalPreferences } from "@/hooks/useJournalQueries";
+import { useMemoFilterContext } from "@/contexts/MemoFilterContext";
+import { useSpaceContext } from "@/contexts/SpaceContext";
+import { useJournalPreferences, useUpdateJournalPreferences } from "@/hooks/useJournalQueries";
+import { useMemoFilters } from "@/hooks/useMemoFilters";
+import { useAllUserStats } from "@/hooks/useUserQueries";
+import { combineCELFilters } from "@/lib/cel-filter";
 import { journalDate } from "@/lib/journal";
+import { searchIncludesArchived } from "@/lib/memo-search";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/router/routes";
+import { State } from "@/types/proto/api/v1/common_pb";
 
 const fills = ["", "bg-primary/12", "bg-primary/22", "bg-primary/34", "bg-primary/48"];
 
-export default function JournalCalendar({ mobile = false, onDateSelect }: { mobile?: boolean; onDateSelect?: () => void }) {
+interface JournalCalendarProps {
+  mobile?: boolean;
+  onDateSelect?: () => void;
+  /** Reuse the collection's exact query, including archived-only views. */
+  scope?: { filter?: string; state: State; includeArchived?: boolean };
+}
+
+export default function JournalCalendar({ mobile = false, onDateSelect, scope }: JournalCalendarProps) {
   const preferences = useJournalPreferences();
   const update = useUpdateJournalPreferences();
   const timezone = preferences.data?.timezone || "Asia/Shanghai";
@@ -21,8 +36,28 @@ export default function JournalCalendar({ mobile = false, onDateSelect }: { mobi
   const month = selectedMonth ?? today.slice(0, 7);
   const [expanded, setExpanded] = useState(!mobile);
   const visible = preferences.data?.calendarVisible ?? false;
-  const calendar = useJournalCalendar(month, timezone, visible && expanded);
-  const counts = calendar.data?.counts ?? {};
+  const location = useLocation();
+  const { filters } = useMemoFilterContext();
+  const { memoFilter } = useSpaceContext();
+  const activeFilter = useMemoFilters({ includeMemoViews: true, includePinned: true });
+  const filter = scope ? scope.filter : combineCELFilters(memoFilter, activeFilter);
+  const state = scope?.state ?? State.NORMAL;
+  const includeArchived = state !== State.ARCHIVED && (scope?.includeArchived ?? searchIncludesArchived(filters));
+  const calendar = useAllUserStats({ filter, state, includeArchived }, { enabled: visible && expanded });
+  const counts: Record<string, number> = {};
+  for (const stats of calendar.data ?? []) {
+    for (const timestamp of stats.memoCreatedTimestamps) {
+      const date = journalDate(timestampDate(timestamp), timezone);
+      counts[date] = (counts[date] ?? 0) + 1;
+    }
+  }
+  const dayQuery = new URLSearchParams({
+    scoped: "1",
+    scope: filter ?? "",
+    archived: includeArchived ? "1" : "0",
+    state: state === State.ARCHIVED ? "archived" : "normal",
+    from: location.pathname + location.search,
+  });
   const maxCount = calculateMaxCount(counts);
   const days = buildMonthDays({ month, data: counts, today, weekStartDayOffset: 1 });
 
@@ -94,7 +129,7 @@ export default function JournalCalendar({ mobile = false, onDateSelect }: { mobi
                   正在读取日历…
                 </p>
               )}
-              <div className="grid grid-cols-7 gap-1" aria-label={`${month} 全部记录`}>
+              <div className="grid grid-cols-7 gap-1" aria-label={`${month} 当前范围记录`}>
                 {["一", "二", "三", "四", "五", "六", "日"].map((label) => (
                   <span key={label} aria-hidden="true" className="pb-2 text-center text-xs text-muted-foreground">
                     {label}
@@ -104,7 +139,7 @@ export default function JournalCalendar({ mobile = false, onDateSelect }: { mobi
                   day.isCurrentMonth ? (
                     <Link
                       key={day.date}
-                      to={`${ROUTES.JOURNAL}/day/${day.date}`}
+                      to={`${ROUTES.JOURNAL}/day/${day.date}?${dayQuery}`}
                       onClick={onDateSelect}
                       title={`${day.date}，${day.count} 条记录`}
                       aria-label={`${day.date}，${day.count} 条记录`}
@@ -125,7 +160,9 @@ export default function JournalCalendar({ mobile = false, onDateSelect }: { mobi
             </>
           )}
           <div className="mt-3 flex items-center justify-between gap-2 pb-2 text-xs text-muted-foreground">
-            <span title={`按记录日期统计，含归档 · ${timezone}`}>全部记录 · 含归档</span>
+            <span title={`按记录原始日期统计 · ${timezone}`}>
+              当前范围{state === State.ARCHIVED ? " · 已归档" : includeArchived ? " · 含归档" : ""}
+            </span>
             <button
               type="button"
               disabled={update.isPending}

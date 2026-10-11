@@ -45,7 +45,7 @@ func (s *APIV1Service) registerJournalShareRoutes(group *echo.Group, e *echo.Ech
 	e.POST(JournalPublicReadPath, s.journalReadShare)
 }
 
-func (s *APIV1Service) journalShareItems(c *echo.Context, owner int32, filter journal.ShareFilter, excluded []string) ([]journal.ShareItem, error) {
+func (s *APIV1Service) journalShareItems(c *echo.Context, owner int32, filter journal.ShareFilter, excluded []string, checks ...*[]store.MemoRecordCheck) ([]journal.ShareItem, error) {
 	if err := filter.Validate(); err != nil {
 		return nil, err
 	}
@@ -66,6 +66,13 @@ func (s *APIV1Service) journalShareItems(c *echo.Context, owner int32, filter jo
 		}
 		if len(items) >= 200 {
 			return nil, errors.New("范围超过 200 条，请缩小范围")
+		}
+		if len(checks) > 0 {
+			hash, err := s.journalRecordHash(ctx, m)
+			if err != nil {
+				return nil, err
+			}
+			*checks[0] = append(*checks[0], store.MemoRecordCheck{MemoID: m.ID, CreatorID: owner, Hash: hash})
 		}
 		item := journal.ShareItem{MemoName: "memos/" + m.UID, Content: journal.ShareText(m.Content), CreatedTs: m.CreatedTs, Media: []journal.ShareMedia{}}
 		attachments, err := s.Store.ListAttachments(ctx, &store.FindAttachment{MemoID: &m.ID, CreatorID: &owner, GetBlob: true, SkipDefaultLimit: true})
@@ -110,11 +117,15 @@ func (s *APIV1Service) journalPreviewShare(c *echo.Context) error {
 	if err := journalBind(c, &request); err != nil {
 		return journalError(c, err)
 	}
+	guard, err := s.prepareJournalShareGuard(c.Request().Context(), u.ID)
+	if err != nil {
+		return journalError(c, err)
+	}
 	items, err := s.journalShareItems(c, u.ID, request.Filter, request.ExcludedMemoNames)
 	if err != nil {
 		return journalError(c, err)
 	}
-	return c.JSON(http.StatusOK, map[string]any{"items": items, "previewDigest": shareDigest(items)})
+	return c.JSON(http.StatusOK, map[string]any{"items": items, "previewDigest": shareDigest(items, guard.ExpectedVersion)})
 }
 
 func sharePublicSummary(share journal.Share) map[string]any {
@@ -180,6 +191,10 @@ func (s *APIV1Service) journalWriteShare(c *echo.Context, updating bool) error {
 		return journalError(c, err)
 	}
 	ctx := c.Request().Context()
+	guard, err := s.prepareJournalShareGuard(ctx, u.ID)
+	if err != nil {
+		return journalError(c, err)
+	}
 	var req journalShareRequest
 	if err := journalBind(c, &req); err != nil {
 		return journalError(c, err)
@@ -223,14 +238,15 @@ func (s *APIV1Service) journalWriteShare(c *echo.Context, updating bool) error {
 		share.ID = hex.EncodeToString(hash[:])
 		share.CreatedTs = time.Now().Unix()
 	}
-	items, err := s.journalShareItems(c, u.ID, req.Filter, req.ExcludedMemoNames)
+	checks := []store.MemoRecordCheck{}
+	items, err := s.journalShareItems(c, u.ID, req.Filter, req.ExcludedMemoNames, &checks)
 	if err != nil {
 		return journalError(c, err)
 	}
 	if len(items) == 0 {
 		return journalError(c, errors.New("当前范围没有可分享的记录，请重新选择。"))
 	}
-	if req.PreviewDigest == "" || req.PreviewDigest != shareDigest(items) {
+	if req.PreviewDigest == "" || req.PreviewDigest != shareDigest(items, guard.ExpectedVersion) {
 		return c.JSON(http.StatusConflict, map[string]string{"message": "记录在预览后发生了变化，请重新预览后再分享。"})
 	}
 	share.Title = req.Title
@@ -261,8 +277,11 @@ func (s *APIV1Service) journalWriteShare(c *echo.Context, updating bool) error {
 		share.PasscodeHash = string(hash)
 	}
 	payload, _ := json.Marshal(share)
-	doc, err := s.Store.PutJournalDocument(ctx, &store.JournalDocument{OwnerID: u.ID, Kind: "share", Key: share.ID, Payload: payload}, version)
+	doc, err := s.commitJournalShare(ctx, u.ID, &store.JournalDocument{OwnerID: u.ID, Kind: "share", Key: share.ID, Payload: payload}, version, checks, guard)
 	if err != nil {
+		if errors.Is(err, store.ErrMemoMutationConflict) {
+			return c.JSON(http.StatusConflict, map[string]string{"message": "记录或分享授权发生了变化，请重新预览后再分享。"})
+		}
 		return journalError(c, err)
 	}
 	share.Version = doc.Version
@@ -398,11 +417,15 @@ func (s *APIV1Service) journalReadShare(c *echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]any{"title": share.Title, "timezone": share.Filter.Timezone, "items": visible})
 }
 
-// shareDigest binds approval to exact text, recorded dates and sanitized media.
-func shareDigest(items []journal.ShareItem) string {
+// shareDigest binds approval to exact text, dates, sanitized media and the
+// withdrawal epoch. Identical bytes restored after trash still need a new preview.
+func shareDigest(items []journal.ShareItem, authorizationVersion int64) string {
 	copyItems := append([]journal.ShareItem{}, items...)
 	slices.SortFunc(copyItems, func(a, b journal.ShareItem) int { return strings.Compare(a.MemoName, b.MemoName) })
-	data, _ := json.Marshal(copyItems)
+	data, _ := json.Marshal(struct {
+		AuthorizationVersion int64               `json:"authorizationVersion"`
+		Items                []journal.ShareItem `json:"items"`
+	}{authorizationVersion, copyItems})
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
 }

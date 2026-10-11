@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -239,7 +240,7 @@ func TestGetUserByPATHashPerformance(t *testing.T) {
 func getTestDSN() string {
 	// For unit tests, we expect TEST_POSTGRES_DSN to be set.
 	// Example: TEST_POSTGRES_DSN="postgresql://user:pass@localhost:5432/memos_test?sslmode=disable".
-	return ""
+	return os.Getenv("TEST_POSTGRES_DSN")
 }
 
 // TestUpsertUserSetting tests basic upsert functionality.

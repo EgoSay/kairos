@@ -3,6 +3,7 @@ package v1
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -17,8 +18,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/EgoSay/kairos/core/access"
+	"github.com/EgoSay/kairos/core/journalrecord"
 	"github.com/EgoSay/kairos/internal/motionphoto"
 	"github.com/EgoSay/kairos/internal/ratelimit"
 	v1pb "github.com/EgoSay/kairos/proto/gen/api/v1"
@@ -336,10 +339,17 @@ func (s *APIV1Service) ListAttachments(ctx context.Context, request *v1pb.ListAt
 		}
 	}
 
+	queryLimit := pageSize + 1
 	findAttachment := &store.FindAttachment{
-		Access: newMemoAccessScope(user, true),
-		Limit:  &pageSize,
-		Offset: &offset,
+		ExcludeTrashed: !request.OnlyTrash,
+		OnlyTrashed:    request.OnlyTrash,
+		Access:         newMemoAccessScope(user, true),
+		Limit:          &queryLimit,
+		Offset:         &offset,
+	}
+	if request.OnlyTrash {
+		// Trashed files are an owner recovery surface, not public or shared media.
+		findAttachment.Filters = append(findAttachment.Filters, fmt.Sprintf("creator == %q", "users/"+user.Username))
 	}
 	// Parse filter if provided
 	if request.Filter != "" {
@@ -356,13 +366,27 @@ func (s *APIV1Service) ListAttachments(ctx context.Context, request *v1pb.ListAt
 
 	response := &v1pb.ListAttachmentsResponse{}
 
-	for _, attachment := range attachments {
-		response.Attachments = append(response.Attachments, convertAttachmentFromStore(attachment))
-	}
-
-	// Set next page token if we got the full page size (indicating there might be more)
-	if len(attachments) == pageSize {
+	if len(attachments) > pageSize {
 		response.NextPageToken = fmt.Sprintf("%d", offset+pageSize)
+		attachments = attachments[:pageSize]
+	}
+	for _, attachment := range attachments {
+		converted := convertAttachmentFromStore(attachment)
+		if request.OnlyTrash && attachment.MemoUID != nil {
+			doc, err := s.Store.GetJournalDocument(ctx, user.ID, "trash", *attachment.MemoUID)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to inspect attachment lifecycle: %v", err)
+			}
+			if doc == nil {
+				continue
+			}
+			var trash journalrecord.Trash
+			if err := json.Unmarshal(doc.Payload, &trash); err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to read attachment lifecycle: %v", err)
+			}
+			converted.DeleteTime = timestamppb.New(time.Unix(trash.DeletedTs, 0))
+		}
+		response.Attachments = append(response.Attachments, converted)
 	}
 
 	return response, nil

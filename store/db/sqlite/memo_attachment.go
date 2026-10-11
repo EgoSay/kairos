@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/EgoSay/kairos/store"
+	"github.com/EgoSay/kairos/store/db/journalsql"
 )
 
 // ApplyMemoMutation atomically updates a memo, attachment bindings, and reference relations.
@@ -89,6 +90,26 @@ func (d *DB) ApplyMemoMutation(ctx context.Context, mutation *store.MemoMutation
 		}
 	}
 
+	for _, check := range mutation.RecordChecks {
+		var owner int32
+		if err := conn.QueryRowContext(ctx, `SELECT creator_id FROM memo WHERE id = ?`, check.MemoID).Scan(&owner); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return store.ErrMemoMutationConflict
+			}
+			return err
+		}
+		if owner != check.CreatorID {
+			return store.ErrMemoMutationConflict
+		}
+		snapshot, err := readSQLiteMemoRecordSnapshot(ctx, conn, check.MemoID)
+		if err != nil {
+			return err
+		}
+		if snapshot.Hash() != check.Hash {
+			return store.ErrMemoMutationConflict
+		}
+	}
+
 	removedAttachments, err := listSQLiteAttachmentSnapshots(ctx, conn, mutation.RemovedAttachmentIDs)
 	if err != nil {
 		return errors.Wrap(err, "failed to read removed attachments")
@@ -157,6 +178,9 @@ func (d *DB) ApplyMemoMutation(ctx context.Context, mutation *store.MemoMutation
 			return err
 		}
 	}
+	if err := (journalsql.Repository{DB: conn}).ApplyMutations(ctx, mutation.JournalDocuments); err != nil {
+		return err
+	}
 	if _, err := conn.ExecContext(ctx, "COMMIT"); err != nil {
 		return errors.Wrap(err, "failed to commit memo transaction")
 	}
@@ -199,6 +223,13 @@ type memoUpdateExecer interface {
 }
 
 func applyMemoUpdate(ctx context.Context, executor memoUpdateExecer, update *store.UpdateMemo) error {
+	if update.Content != nil && update.Payload != nil {
+		indexedPayload, err := store.WithMemoExplicitTags(*update.Content, update.Payload)
+		if err != nil {
+			return err
+		}
+		update.Payload = indexedPayload
+	}
 	set, args := []string{}, []any{}
 	if v := update.UID; v != nil {
 		set, args = append(set, "`uid` = ?"), append(args, *v)
@@ -226,7 +257,19 @@ func applyMemoUpdate(ctx context.Context, executor memoUpdateExecer, update *sto
 		if err != nil {
 			return errors.Wrap(err, "failed to marshal memo payload")
 		}
-		set, args = append(set, "`payload` = ?"), append(args, string(payload))
+		if update.Content == nil {
+			// Metadata-only updates cannot discard or forge the content-derived index.
+			set, args = append(set, "`payload` = json_set(?, '$.explicitTags', json_extract(payload, '$.explicitTags'), '$.explicitTagsVersion', json_extract(payload, '$.explicitTagsVersion'))"), append(args, string(payload))
+		} else {
+			set, args = append(set, "`payload` = ?"), append(args, string(payload))
+		}
+	}
+	if update.Content != nil && update.Payload == nil {
+		patch, err := store.MemoExplicitTagPatch(*update.Content)
+		if err != nil {
+			return err
+		}
+		set, args = append(set, "`payload` = json_patch(`payload`, ?)"), append(args, patch)
 	}
 	if update.ClearSpace {
 		set = append(set, "`space_id` = NULL")

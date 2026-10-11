@@ -1,10 +1,27 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Image } from "@/components/MemoContent/markdown/Image";
 import AudioAttachmentItem from "@/components/MemoMetadata/Attachment/AudioAttachmentItem";
 import MotionPhotoPlayer from "@/components/MotionPhotoPlayer";
 
 describe("media loading", () => {
+  it("shows a usable download when audio playback fails", async () => {
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockRejectedValue(new Error("unsupported"));
+    render(<AudioAttachmentItem filename="voice.heic" sourceUrl="/voice.heic" mimeType="audio/unknown" />);
+    fireEvent.click(screen.getByRole("button", { name: "Play voice.heic" }));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("暂时无法播放"));
+    expect(screen.getByRole("link", { name: "下载原件" })).toHaveAttribute("href", "/voice.heic");
+  });
+
+  it("offers both retained files when a live photo cannot be decoded", () => {
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+    const { container } = render(<MotionPhotoPlayer posterUrl="/still.heic" motionUrl="/motion.mov" alt="Live photo" active={false} />);
+    fireEvent.error(container.querySelector("video")!);
+    expect(screen.getByRole("alert")).toHaveTextContent("无法预览动态照片");
+    expect(screen.getByRole("link", { name: "下载图片" })).toHaveAttribute("href", "/still.heic");
+    expect(screen.getByRole("link", { name: "下载动态片段" })).toHaveAttribute("href", "/motion.mov");
+  });
+
   it("marks markdown images for native lazy loading", () => {
     render(<Image src="/image.jpg" alt="memo illustration" />);
 

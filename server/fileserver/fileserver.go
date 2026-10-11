@@ -127,6 +127,19 @@ func NewFileServerService(profile *profile.Profile, store *store.Store, secret s
 // RegisterRoutes registers HTTP file serving routes.
 func (s *FileServerService) RegisterRoutes(echoServer *echo.Echo) {
 	fileGroup := echoServer.Group("/file")
+	fileGroup.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c *echo.Context) error {
+			// Agent credentials authorize journal text only. Check the dedicated
+			// prefix before public/share access or browser-cookie fallback, even
+			// when the credential has expired, been revoked, or is invalid.
+			token := auth.ExtractBearerToken(c.Request().Header.Get(echo.HeaderAuthorization))
+			if strings.HasPrefix(token, auth.AgentAccessTokenPrefix) {
+				c.Response().Header().Set(echo.HeaderCacheControl, privateAttachmentCacheControl)
+				return echo.NewHTTPError(http.StatusForbidden, "Agent credentials do not permit file downloads")
+			}
+			return next(c)
+		}
+	})
 	fileGroup.GET("/attachments/:uid", s.serveAttachmentFile)
 	fileGroup.GET("/attachments/:uid/:filename", s.serveAttachmentFile)
 	fileGroup.GET("/users/:identifier/avatar", s.serveUserAvatar)
@@ -685,6 +698,17 @@ func (s *FileServerService) checkAttachmentPermission(ctx context.Context, c *ec
 		return access.MemoReadClassPrivate, echo.NewHTTPError(http.StatusInternalServerError, "failed to inspect record lifecycle")
 	}
 	if trash != nil {
+		// Recovery is explicit and owner-only. Ordinary and shared URLs stay
+		// revoked, even while the owner is signed in on this browser.
+		if c.QueryParam("trash") == "true" && c.QueryParam("share_token") == "" {
+			user, authErr := s.getCurrentUser(ctx, c)
+			if authErr != nil {
+				return access.MemoReadClassPrivate, echo.NewHTTPError(http.StatusUnauthorized, "authentication required")
+			}
+			if user != nil && user.ID == memo.CreatorID && user.RowStatus == store.Normal {
+				return access.MemoReadClassPrivate, nil
+			}
+		}
 		return access.MemoReadClassPrivate, echo.NewHTTPError(http.StatusNotFound, "memo not found")
 	}
 	allowAnonymous, err := s.Store.AllowsAnonymousAccess(ctx)

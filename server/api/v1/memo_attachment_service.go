@@ -50,7 +50,7 @@ func (s *APIV1Service) SetMemoAttachments(ctx context.Context, request *v1pb.Set
 		return nil, err
 	}
 	updatedTsSec := time.Now().Unix()
-	if err := s.applyMemoMutation(ctx, memo, prepared, &store.UpdateMemo{ID: memo.ID, UpdatedTs: &updatedTsSec}, requiredAttachmentIDs, nil); err != nil {
+	if err := s.applyMemoMutation(ctx, memo, prepared, &store.UpdateMemo{ID: memo.ID, UpdatedTs: &updatedTsSec}, requiredAttachmentIDs, nil, false); err != nil {
 		return nil, err
 	}
 	_, _, memoMessage, err := s.buildUpdatedMemoState(ctx, memo.ID)
@@ -162,6 +162,7 @@ func (s *APIV1Service) createMemoWithMutation(
 	prepared *preparedMemoAttachments,
 	requiredAttachmentIDs []int32,
 	referenceRelations []*store.MemoRelation,
+	journalDocuments ...*store.JournalDocumentMutation,
 ) error {
 	if user == nil || create == nil || create.CreatorID != user.ID {
 		return store.ErrMemoPermissionDenied
@@ -178,14 +179,16 @@ func (s *APIV1Service) createMemoWithMutation(
 		})
 	}
 	return s.Store.ApplyMemoMutation(ctx, &store.MemoMutation{
-		MemoCreate:                create,
-		CommentContextMemoID:      commentContextMemoID,
-		MemoCreatorID:             create.CreatorID,
-		ExpectedMemoContent:       create.Content,
-		Bindings:                  bindings,
-		RequiredAttachmentIDs:     requiredAttachmentIDs,
-		ReplaceReferenceRelations: len(relations) > 0,
-		ReferenceRelations:        relations,
+		MemoCreate:                        create,
+		JournalDocuments:                  journalDocuments,
+		CommentContextMemoID:              commentContextMemoID,
+		MemoCreatorID:                     create.CreatorID,
+		ExpectedMemoContent:               create.Content,
+		Bindings:                          bindings,
+		RequiredAttachmentIDs:             requiredAttachmentIDs,
+		ReplaceReferenceRelations:         len(relations) > 0,
+		ReferenceRelations:                relations,
+		SkipUnavailableReferenceRelations: true,
 	})
 }
 
@@ -196,6 +199,8 @@ func (s *APIV1Service) applyMemoMutation(
 	memoUpdate *store.UpdateMemo,
 	requiredAttachmentIDs []int32,
 	referenceRelations *[]*store.MemoRelation,
+	skipUnavailableReferences bool,
+	journalDocuments ...*store.JournalDocumentMutation,
 ) error {
 	user, err := s.fetchCurrentUser(ctx)
 	if err != nil {
@@ -234,15 +239,17 @@ func (s *APIV1Service) applyMemoMutation(
 		referenceRelations = &relations
 	}
 	mutation := &store.MemoMutation{
-		MemoID:                    memo.ID,
-		MemoCreatorID:             memo.CreatorID,
-		ExpectedMemoContent:       memo.Content,
-		MemoUpdate:                memoUpdate,
-		Bindings:                  bindings,
-		RemovedAttachmentIDs:      removedAttachmentIDs,
-		RequiredAttachmentIDs:     requiredAttachmentIDs,
-		ReplaceReferenceRelations: referenceRelations != nil,
-		Policy:                    policy,
+		MemoID:                            memo.ID,
+		JournalDocuments:                  journalDocuments,
+		MemoCreatorID:                     memo.CreatorID,
+		ExpectedMemoContent:               memo.Content,
+		MemoUpdate:                        memoUpdate,
+		Bindings:                          bindings,
+		RemovedAttachmentIDs:              removedAttachmentIDs,
+		RequiredAttachmentIDs:             requiredAttachmentIDs,
+		ReplaceReferenceRelations:         referenceRelations != nil,
+		SkipUnavailableReferenceRelations: skipUnavailableReferences,
+		Policy:                            policy,
 	}
 	if memoUpdate != nil {
 		mutation.ExpectedRecordHash = memoUpdate.ExpectedRecordHash
@@ -251,7 +258,7 @@ func (s *APIV1Service) applyMemoMutation(
 		mutation.ReferenceRelations = *referenceRelations
 	}
 	if err := s.Store.ApplyMemoMutation(ctx, mutation); err != nil {
-		if mutation.ExpectedRecordHash != "" && errors.Is(err, store.ErrMemoMutationConflict) {
+		if errors.Is(err, store.ErrMemoMutationConflict) {
 			return status.Error(codes.Aborted, "record changed while saving; local content was preserved")
 		}
 		return mapMemoWriteError(err, "failed to apply memo mutation")

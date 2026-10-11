@@ -22,7 +22,20 @@ const AttachmentMediaCard = ({ item, creator, onPreview }: { item: AttachmentLib
 
   return (
     <article className="overflow-hidden rounded-[20px] border border-border/60 bg-background/90 shadow-sm shadow-black/[0.03]">
-      <div className="relative block w-full cursor-pointer text-left" onClick={onPreview}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`${t("common.open")} ${item.filename}`}
+        className="relative block w-full cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        onClick={onPreview}
+        onKeyDown={(event) => {
+          // A live-photo badge inside this surface has its own playback keys.
+          if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            onPreview();
+          }
+        }}
+      >
         <div className="relative aspect-[5/4] overflow-hidden bg-muted/40">
           {item.kind === "video" ? (
             <>
@@ -54,7 +67,16 @@ const AttachmentMediaCard = ({ item, creator, onPreview }: { item: AttachmentLib
               badgeClassName="left-3 top-3"
             />
           ) : (
-            <img src={item.posterUrl} alt={item.filename} className="h-full w-full object-cover" loading="lazy" decoding="async" />
+            <img
+              src={item.posterUrl}
+              alt={`${item.filename}（无法显示时可打开或下载原件）`}
+              className="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+              onError={(event) => {
+                if (event.currentTarget.src !== item.sourceUrl) event.currentTarget.src = item.sourceUrl;
+              }}
+            />
           )}
         </div>
       </div>
@@ -78,7 +100,7 @@ const AttachmentMediaCard = ({ item, creator, onPreview }: { item: AttachmentLib
         />
         <AttachmentCreator creatorName={item.primaryAttachment.creator} user={creator} />
         <div className="flex items-center justify-between gap-2">
-          <AttachmentSourceChip memoName={item.memoName} />
+          <AttachmentSourceChip memoName={item.memoName} trashed={Boolean(item.primaryAttachment.deleteTime)} />
           <AttachmentOpenButton href={item.sourceUrl} />
         </div>
       </div>

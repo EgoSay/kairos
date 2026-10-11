@@ -1,9 +1,9 @@
 import type { FC } from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import MetadataSection, { METADATA_ROW_BOX_CLASSES, MetadataRowRemoveControl } from "@/components/MemoMetadata/MetadataSection";
 import type { MemoRelation } from "@/types/proto/api/v1/memo_service_pb";
 import { useTranslate } from "@/utils/i18n";
-import RelationRow from "./RelationRow";
+import RelatedRecordPreview from "./RelatedRecordPreview";
 import { getEditorReferenceRelations } from "./relationHelpers";
 import { useResolvedRelationMemos } from "./useResolvedRelationMemos";
 
@@ -14,7 +14,8 @@ interface RelationListEditorProps {
   memoName?: string;
 }
 
-const RelationListEditor: FC<RelationListEditorProps> = ({ relations, onRelationsChange, parentPage, memoName }) => {
+const RelationListEditor: FC<RelationListEditorProps> = ({ relations, onRelationsChange, memoName }) => {
+  const [previewName, setPreviewName] = useState<string>();
   const t = useTranslate();
   const referenceRelations = useMemo(() => getEditorReferenceRelations(relations, memoName), [relations, memoName]);
   const relatedMemoNames = useMemo(
@@ -37,16 +38,27 @@ const RelationListEditor: FC<RelationListEditorProps> = ({ relations, onRelation
     <MetadataSection title={t("common.relations")}>
       {referenceRelations.map((relation) => {
         const relatedMemo = relation.relatedMemo!;
-        if (resolvedMemos[relatedMemo.name] === null) return null;
-        const memo = relatedMemo.snippet ? relatedMemo : resolvedMemos[relatedMemo.name] || relatedMemo;
+        const unavailable = resolvedMemos[relatedMemo.name] === null;
+        const memo = resolvedMemos[relatedMemo.name] || {
+          ...relatedMemo,
+          snippet: unavailable ? "记录已删除或不可访问；保存时将忽略此关联。" : "正在读取关联记录…",
+        };
         // A split row: the link is the focusable body, and the remove control overlays the trailing end once the row is engaged.
         return (
           <div key={memo.name} className={METADATA_ROW_BOX_CLASSES}>
-            <RelationRow memo={memo} parentPage={parentPage} variant="label" />
-            <MetadataRowRemoveControl label="Remove relation" onClick={() => handleDeleteRelation(memo.name)} />
+            <button
+              type="button"
+              className="w-full min-w-0 truncate py-2 pl-3 pr-10 text-left text-sm"
+              disabled={unavailable}
+              onClick={() => setPreviewName(memo.name)}
+            >
+              {memo.snippet || "附件记录"}
+            </button>
+            <MetadataRowRemoveControl label="解除关联" onClick={() => handleDeleteRelation(memo.name)} />
           </div>
         );
       })}
+      <RelatedRecordPreview name={previewName} onClose={() => setPreviewName(undefined)} />
     </MetadataSection>
   );
 };

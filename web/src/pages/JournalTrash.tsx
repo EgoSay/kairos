@@ -21,10 +21,11 @@ export default function JournalTrash() {
       journalRequest(`/trash/${encodeURIComponent(name.replace(/^memos\//, ""))}${permanent ? "" : "/restore"}`, {
         method: permanent ? "DELETE" : "POST",
       }),
-    onSuccess: async () => {
-      setPurge(undefined);
+    onSuccess: () => setPurge(undefined),
+    onSettled: async () => {
       await client.invalidateQueries({ queryKey: ["journal"] });
       await client.invalidateQueries({ queryKey: ["memos"] });
+      await client.invalidateQueries({ queryKey: ["attachments"] });
     },
   });
   return (

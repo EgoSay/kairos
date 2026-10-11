@@ -159,4 +159,14 @@ func (s *MCPService) RegisterRoutes(echoServer *echo.Echo) {
 		s.handler.ServeHTTP(c.Response(), request)
 		return nil
 	}, middleware.BodyLimit(maxMCPRequestBytes))
+	journalHandler := newJournalMCPHandler(s.profile, echoServer)
+	echoServer.Any("/mcp/journal", func(c *echo.Context) error {
+		request := c.Request()
+		if !isAllowedMCPOrigin(request.Host, request.Header.Get("Origin"), s.profile) {
+			return c.NoContent(http.StatusForbidden)
+		}
+		c.Response().Header().Set("Cache-Control", "no-store")
+		journalHandler.ServeHTTP(c.Response(), request)
+		return nil
+	}, middleware.BodyLimit(1<<20))
 }

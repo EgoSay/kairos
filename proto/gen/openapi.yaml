@@ -77,6 +77,11 @@ paths:
                      Example: "create_time desc" or "filename asc"
                   schema:
                     type: string
+                - name: onlyTrash
+                  in: query
+                  description: Optional. List only the caller's trashed record attachments. The default excludes trash.
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -717,6 +722,13 @@ paths:
                   description: Optional. If true, show deleted memos in the response.
                   schema:
                     type: boolean
+                - name: includeArchived
+                  in: query
+                  description: |-
+                    Optional. Include normal and archived records owned by the current caller.
+                     Trash remains excluded. Overrides state without widening read permissions.
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -746,6 +758,16 @@ paths:
                     Optional. The memo ID to use for this memo.
                      If empty, a unique ID will be generated.
                      Format: ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,34}[a-zA-Z0-9])?$
+                  schema:
+                    type: string
+                - name: journalPartition.partitionId
+                  in: query
+                  description: Empty removes the record from its partition.
+                  schema:
+                    type: string
+                - name: journalPartition.expectedVersion
+                  in: query
+                  description: Mapping version observed by the editor; zero means no mapping yet.
                   schema:
                     type: string
             requestBody:
@@ -886,10 +908,20 @@ paths:
                     type: string
                 - name: updateMask
                   in: query
-                  description: Required. The list of fields to update.
+                  description: Required. The list of fields to update. May be empty for a partition-only save.
                   schema:
                     type: string
                     format: field-mask
+                - name: journalPartition.partitionId
+                  in: query
+                  description: Empty removes the record from its partition.
+                  schema:
+                    type: string
+                - name: journalPartition.expectedVersion
+                  in: query
+                  description: Mapping version observed by the editor; zero means no mapping yet.
+                  schema:
+                    type: string
             requestBody:
                 content:
                     application/json:
@@ -2998,6 +3030,11 @@ paths:
                      Uses the same filter syntax as ListMemos.
                   schema:
                     type: string
+                - name: includeArchived
+                  in: query
+                  description: Optional. Count the current caller's normal and archived records, excluding trash.
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -3074,6 +3111,11 @@ components:
                     description: |-
                         Output only. The user who uploaded this attachment, which may differ from
                          the creator of the linked memo. Format: users/{user}.
+                deleteTime:
+                    readOnly: true
+                    type: string
+                    description: Output only. The linked record deletion timestamp, only in the owner trash list.
+                    format: date-time
         BatchDeleteAttachmentsRequest:
             required:
                 - names
@@ -3336,6 +3378,9 @@ components:
                     type: integer
                     description: Optional. Expiration duration in days (0 = never expires).
                     format: int32
+                readOnly:
+                    type: boolean
+                    description: Creates an Agent credential restricted to journal reads, with a finite expiration.
         CreatePersonalAccessTokenResponse:
             type: object
             properties:
@@ -4489,6 +4534,10 @@ components:
                     type: string
                     description: Output only. The last used timestamp.
                     format: date-time
+                readOnly:
+                    readOnly: true
+                    type: boolean
+                    description: True limits this credential to owner-only journal reads; false preserves legacy access.
             description: |-
                 PersonalAccessToken represents a long-lived token for API/script access.
                  PATs are distinct from short-lived JWT access tokens used for session authentication.

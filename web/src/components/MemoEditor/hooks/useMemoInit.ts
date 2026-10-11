@@ -43,10 +43,15 @@ export const useMemoInit = ({
       dispatch(actions.initMemo(initialState));
       void getMemoPartition(memo.name)
         .then((mapping) => {
-          if (getState().metadata.journalPartitionId === undefined)
-            dispatch(
-              actions.setMetadata({ journalPartitionId: mapping.partitionId, journalPartitionSuspended: mapping.suspended ?? false }),
-            );
+          const metadata = getState().metadata;
+          dispatch(
+            actions.setMetadata({
+              ...(metadata.journalPartitionVersion === undefined ? { journalPartitionVersion: mapping.version } : {}),
+              ...(metadata.journalPartitionId === undefined
+                ? { journalPartitionId: mapping.partitionId, journalPartitionSuspended: mapping.suspended ?? false }
+                : {}),
+            }),
+          );
         })
         .catch(() => undefined);
     } else {

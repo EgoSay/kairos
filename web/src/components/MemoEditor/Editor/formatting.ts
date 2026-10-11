@@ -339,6 +339,27 @@ function unwrapLink(view: EditorView): boolean {
 
 /** Apply one formatting verb to a CodeMirror view. Shared by the toolbar controller and keymap. */
 export function runFormattingCommand(view: EditorView, command: EditorCommandId, ctx?: EditorCommandContext): void {
+  if (view.compositionStarted) return;
+  if (command === "quote") {
+    const numbers = selectedLineNumbers(view);
+    const lines = numbers.map((number) => view.state.doc.line(number));
+    const remove = lines.every((line) => /^> ?/.test(line.text));
+    const changes = view.state.changes(
+      lines.map((line) => ({
+        from: line.from,
+        to: line.from + (remove ? (/^> ?/.exec(line.text)?.[0].length ?? 0) : 0),
+        insert: remove ? "" : "> ",
+      })),
+    );
+    view.dispatch({ changes, selection: view.state.selection.map(changes, 1), userEvent: "input" });
+    return;
+  }
+  if (command === "horizontalRule") {
+    const from = view.state.selection.main.head;
+    const insert = "\n\n---\n\n";
+    view.dispatch({ changes: { from, insert }, selection: { anchor: from + insert.length }, userEvent: "input" });
+    return;
+  }
   if (isMarkCommand(command)) return toggleMark(view, command);
   if (command === "codeBlock") return toggleCodeBlock(view);
   if (command === "bulletList" || command === "orderedList" || command === "taskList") {
@@ -350,9 +371,42 @@ export function runFormattingCommand(view: EditorView, command: EditorCommandId,
   if (command === "paragraph") return setHeading(view, 0);
   if (command === "link") {
     // Toggle: inside an existing link, unwrap it to its label.
-    if (unwrapLink(view)) return;
+    if (ctx?.url === undefined && unwrapLink(view)) return;
+    if (ctx?.url && !/^(https?:|mailto:|\/|#)/i.test(ctx.url)) return;
+    if (ctx?.url !== undefined) {
+      for (const node of ancestors(syntaxTree(view.state), view.state.selection.main.head, -1)) {
+        if (node.name !== "Link") continue;
+        if (!ctx.url) {
+          unwrapLink(view);
+          return;
+        }
+        const urlNode = node.getChild("URL");
+        if (urlNode) {
+          view.dispatch({
+            changes: {
+              from: urlNode.from,
+              to: urlNode.to,
+              insert: ctx.url.replaceAll(" ", "%20").replaceAll("(", "%28").replaceAll(")", "%29"),
+            },
+            userEvent: "input",
+          });
+          return;
+        }
+        const marks = childRanges(node, "LinkMark");
+        if (marks.length >= 2) {
+          const label = view.state.sliceDoc(marks[0].to, marks[1].from);
+          const insert = `[${label}](${ctx.url.replaceAll(" ", "%20").replaceAll("(", "%28").replaceAll(")", "%29")})`;
+          view.dispatch({
+            changes: { from: node.from, to: node.to, insert },
+            selection: { anchor: node.from + 1 + label.length },
+            userEvent: "input",
+          });
+          return;
+        }
+      }
+    }
     const { from, to } = view.state.selection.main;
-    const url = ctx?.url ?? "";
+    const url = (ctx?.url ?? "").replaceAll(" ", "%20").replaceAll("(", "%28").replaceAll(")", "%29");
     // Empty selection: the URL doubles as the label.
     const label = view.state.sliceDoc(from, to) || url;
     const insert = `[${label}](${url})`;
@@ -364,6 +418,13 @@ export function createFormattingController(view: EditorView, listeners: Set<() =
   return {
     run(command: EditorCommandId, ctx?: EditorCommandContext) {
       runFormattingCommand(view, command, ctx);
+    },
+    getLink() {
+      for (const node of ancestors(syntaxTree(view.state), view.state.selection.main.head, -1)) {
+        if (node.name !== "Link") continue;
+        const url = node.getChild("URL");
+        return url ? view.state.sliceDoc(url.from, url.to) : undefined;
+      }
     },
     getActiveFormats(): ActiveFormatState {
       const pos = view.state.selection.main.head;
@@ -377,8 +438,9 @@ export function createFormattingController(view: EditorView, listeners: Set<() =
         // The isEmptyMarkPair guard: a fresh empty strikethrough pair
         // (`~~|~~`) parses as a bare tilde code fence — don't light the
         // code-block button while the cursor sits in one.
-        else if (n.name === "FencedCode" && !isEmptyMarkPair(view.state, n.from, n.to)) active.codeBlock = true;
+        else if ((n.name === "FencedCode" || n.name === "CodeBlock") && !isEmptyMarkPair(view.state, n.from, n.to)) active.codeBlock = true;
       }
+      if (active.codeBlock) return active;
       // Line modes (lists, headings) come from the same line inspection the
       // toggles use, keeping highlight and toggle behavior in lockstep.
       const line = view.state.doc.lineAt(pos).text;

@@ -1,10 +1,12 @@
 import { useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMemoFilterContext } from "@/contexts/MemoFilterContext";
 import { useSpaceContext } from "@/contexts/SpaceContext";
 import { useView } from "@/contexts/ViewContext";
 import { useMemoFilters } from "@/hooks/useMemoFilters";
 import { useInfiniteMemos } from "@/hooks/useMemoQueries";
 import { combineCELFilters } from "@/lib/cel-filter";
+import { searchIncludesArchived } from "@/lib/memo-search";
 import { State } from "@/types/proto/api/v1/common_pb";
 import { mapMemos } from "./model";
 
@@ -15,10 +17,17 @@ export function useMapMemos() {
   const { isUserSettingsInitialized } = useAuth();
   const { memoFilter } = useSpaceContext();
   const { timeBasis } = useView();
-  const viewFilter = useMemoFilters({ includeMemoViews: true, includePinned: false });
+  const { filters } = useMemoFilterContext();
+  const viewFilter = useMemoFilters({ includeMemoViews: true, includePinned: true });
   const filter = combineCELFilters(memoFilter, viewFilter, MAP_MEMO_FILTER);
   const query = useInfiniteMemos(
-    { filter, state: State.NORMAL, pageSize: 500, orderBy: `${timeBasis} desc, name desc` },
+    {
+      filter,
+      state: State.NORMAL,
+      includeArchived: searchIncludesArchived(filters),
+      pageSize: 500,
+      orderBy: `${timeBasis} desc, name desc`,
+    },
     { enabled: isUserSettingsInitialized },
   );
   const { hasNextPage, isFetching, isError, fetchNextPage } = query;

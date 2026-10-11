@@ -180,6 +180,9 @@
       "transcribing": "Transcrevendo..."
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Bloco de código",
       "link": "Link",
       "heading": "Título",
@@ -339,6 +342,7 @@
     "back-to-top": "Voltar ao Topo"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "member": {
       "admin": "Admin",
       "archive-member": "Arquivar membro",

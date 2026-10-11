@@ -193,6 +193,13 @@ func NewSchema() Schema {
 			Column:   Column{Table: "memo", Name: "payload"},
 			JSONPath: []string{"tags"},
 		},
+		"explicit_tags": {
+			Name:     "explicit_tags",
+			Kind:     FieldKindJSONList,
+			Type:     FieldTypeString,
+			Column:   Column{Table: "memo", Name: "payload"},
+			JSONPath: []string{"explicitTags"},
+		},
 		"tag": {
 			Name:     "tag",
 			Kind:     FieldKindVirtualAlias,
@@ -256,7 +263,12 @@ func NewSchema() Schema {
 		},
 	}
 
+	addMemoFacetFields(fields)
 	envOptions := []cel.EnvOption{
+		cel.Variable("has_attachment", cel.BoolType),
+		cel.Variable("has_image", cel.BoolType),
+		cel.Variable("has_audio", cel.BoolType),
+		cel.Variable("journal_partition", cel.StringType),
 		cel.Variable("content", cel.StringType),
 		cel.Variable("creator", cel.StringType),
 		cel.Variable("creator_id", cel.IntType),
@@ -265,6 +277,7 @@ func NewSchema() Schema {
 		cel.Variable("pinned", cel.BoolType),
 		cel.Variable("tag", cel.StringType),
 		cel.Variable("tags", cel.ListType(cel.StringType)),
+		cel.Variable("explicit_tags", cel.ListType(cel.StringType)),
 		cel.Variable("visibility", cel.StringType),
 		// Dyn permits the explicit null comparison used for memos without a space.
 		cel.Variable("space", cel.DynType),

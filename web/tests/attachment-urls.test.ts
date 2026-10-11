@@ -1,3 +1,4 @@
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { describe, expect, it } from "vitest";
 import type { Attachment } from "@/types/proto/api/v1/attachment_service_pb";
 import { getAttachmentMotionClipUrl, getAttachmentThumbnailUrl, getAttachmentUrl } from "@/utils/attachment";
@@ -118,5 +119,18 @@ describe("attachment URL builders in share mode", () => {
     } as Attachment;
 
     expect(getAttachmentUrl(attachment)).toBe(attachment.externalLink);
+  });
+});
+
+describe("attachment owner recovery URLs", () => {
+  it("preserves filename encoding and explicit trash scope for originals, thumbnails and motion", () => {
+    const attachment = { ...baseAttachment, filename: "回忆 #?.heic", deleteTime: timestampFromDate(new Date()) };
+    for (const build of [getAttachmentUrl, getAttachmentThumbnailUrl, getAttachmentMotionClipUrl]) {
+      const url = new URL(build(attachment));
+      expect(url.searchParams.get("trash")).toBe("true");
+      expect(url.searchParams.has("share_token")).toBe(false);
+      expect(decodeURIComponent(url.pathname.split("/").at(-1)!)).toBe(attachment.filename);
+      expect(url.hash).toBe("");
+    }
   });
 });

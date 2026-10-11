@@ -13,10 +13,12 @@ import {
   MoreVerticalIcon,
   TrashIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import JournalOriginalsDialog from "@/components/JournalOriginalsDialog";
 import JournalRecordActions from "@/components/JournalRecordActions";
+import JournalRecordHistoryDialog from "@/components/JournalRecordHistoryDialog";
 import JournalReviewActions from "@/components/JournalReviewActions";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,6 +50,8 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
 
   // Dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [recordDialog, setRecordDialog] = useState<"history" | "originals" | null>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
 
   // Derived state
   const isComment = Boolean(memo.parent);
@@ -59,6 +63,7 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
   const {
     isInMemoDetailPage,
     handleTogglePinMemoBtnClick,
+    pinPending,
     handleEditMemoClick,
     handleToggleMemoStatusClick,
     handleCopyLink,
@@ -130,7 +135,12 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
             <ArchiveRestoreIcon />
             {t("common.restore")}
           </DropdownMenuItem>
-          <JournalRecordActions name={memo.name} includeDelete={false} />
+          <JournalRecordActions
+            name={memo.name}
+            includeDelete={false}
+            onOpenHistory={() => setRecordDialog("history")}
+            onOpenOriginals={() => setRecordDialog("originals")}
+          />
           <JournalReviewActions name={memo.name} />
           <DropdownMenuSeparator />
           {deleteItem}
@@ -146,7 +156,7 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
           {t("common.edit")}
         </DropdownMenuItem>
         {!isComment && (
-          <DropdownMenuItem onClick={handleTogglePinMemoBtnClick}>
+          <DropdownMenuItem onClick={handleTogglePinMemoBtnClick} disabled={pinPending}>
             {memo.pinned ? <BookmarkMinusIcon /> : <BookmarkPlusIcon />}
             {memo.pinned ? t("common.unpin") : t("common.pin")}
           </DropdownMenuItem>
@@ -176,7 +186,12 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
 
         {!isComment && (
           <>
-            <JournalRecordActions name={memo.name} includeDelete={false} />
+            <JournalRecordActions
+              name={memo.name}
+              includeDelete={false}
+              onOpenHistory={() => setRecordDialog("history")}
+              onOpenOriginals={() => setRecordDialog("originals")}
+            />
             <JournalReviewActions name={memo.name} />
           </>
         )}
@@ -187,26 +202,34 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="quiet" size="icon-sm" aria-label={t("common.more")} />}>
-        <MoreVerticalIcon className="size-4" strokeWidth={1.8} />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={2} size="sm">
-        {renderItems()}
-      </DropdownMenuContent>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger ref={menuTriggerRef} render={<Button variant="quiet" size="icon-sm" aria-label={t("common.more")} />}>
+          <MoreVerticalIcon className="size-4" strokeWidth={1.8} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" sideOffset={2} size="sm" finalFocus={recordDialog ? false : undefined}>
+          {renderItems()}
+        </DropdownMenuContent>
 
-      {/* Delete confirmation dialog */}
-      <ConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        title={t("memo.delete-confirm")}
-        confirmLabel={t("common.delete")}
-        description={t("memo.delete-confirm-description")}
-        cancelLabel={t("common.cancel")}
-        onConfirm={confirmDeleteMemo}
-        confirmVariant="destructive"
-      />
-    </DropdownMenu>
+        {/* Delete confirmation dialog */}
+        <ConfirmDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          title={t("memo.delete-confirm")}
+          confirmLabel={t("common.delete")}
+          description={t("memo.delete-confirm-description")}
+          cancelLabel={t("common.cancel")}
+          onConfirm={confirmDeleteMemo}
+          confirmVariant="destructive"
+        />
+      </DropdownMenu>
+      {recordDialog === "history" && (
+        <JournalRecordHistoryDialog name={memo.name} open onOpenChange={() => setRecordDialog(null)} finalFocus={menuTriggerRef} />
+      )}
+      {recordDialog === "originals" && (
+        <JournalOriginalsDialog name={memo.name} open onOpenChange={() => setRecordDialog(null)} finalFocus={menuTriggerRef} />
+      )}
+    </>
   );
 };
 

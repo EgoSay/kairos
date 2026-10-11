@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useLocation } from "react-router-dom";
 import { useInstance } from "@/contexts/InstanceContext";
 import { journalRequest } from "@/hooks/useJournalQueries";
+import { useMemoPin } from "@/hooks/useMemoPin";
 import { memoKeys, useDeleteMemo, useUpdateMemo } from "@/hooks/useMemoQueries";
 import useNavigateTo from "@/hooks/useNavigateTo";
 import { userKeys } from "@/hooks/useUserQueries";
@@ -32,6 +33,7 @@ export const useMemoActionHandlers = ({ memo, parentPage, onEdit, setDeleteDialo
   const { profile } = useInstance();
   const { mutateAsync: updateMemo } = useUpdateMemo();
   const { mutateAsync: deleteMemo } = useDeleteMemo();
+  const pin = useMemoPin(memo);
   const isInMemoDetailPage = isMemoDetailPath(location.pathname, memo.name);
 
   const memoUpdatedCallback = useCallback(() => {
@@ -64,19 +66,7 @@ export const useMemoActionHandlers = ({ memo, parentPage, onEdit, setDeleteDialo
     [memo.content, memo.name, t, updateMemo],
   );
 
-  const handleTogglePinMemoBtnClick = useCallback(async () => {
-    try {
-      await updateMemo({
-        update: {
-          name: memo.name,
-          pinned: !memo.pinned,
-        },
-        updateMask: ["pinned"],
-      });
-    } catch {
-      // do nothing
-    }
-  }, [memo.name, memo.pinned, updateMemo]);
+  const handleTogglePinMemoBtnClick = pin.toggle;
 
   const handleEditMemoClick = useCallback(() => {
     onEdit?.();
@@ -165,6 +155,7 @@ export const useMemoActionHandlers = ({ memo, parentPage, onEdit, setDeleteDialo
   return {
     isInMemoDetailPage,
     handleTogglePinMemoBtnClick,
+    pinPending: pin.pending,
     handleEditMemoClick,
     handleToggleMemoStatusClick,
     handleCopyLink,

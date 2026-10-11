@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, InfoIcon, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, DownloadIcon, InfoIcon, LoaderCircleIcon, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import MediaMetadataDetails from "@/components/MediaMetadataDetails";
 import MotionPhotoPreview from "@/components/MotionPhotoPreview";
@@ -31,6 +31,8 @@ function PreviewImageDialog({ open, onOpenChange, imgUrls = [], items, initialIn
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [zoomScale, setZoomScale] = useState(MIN_ZOOM);
   const [showDetails, setShowDetails] = useState(false);
+  const [mediaState, setMediaState] = useState<"loading" | "ready" | "error">("loading");
+  const [retry, setRetry] = useState(0);
   const previewItems = useMemo(
     () => items ?? imgUrls.map((url) => ({ id: url, kind: "image" as const, sourceUrl: url, posterUrl: url, filename: "Image" })),
     [imgUrls, items],
@@ -75,7 +77,10 @@ function PreviewImageDialog({ open, onOpenChange, imgUrls = [], items, initialIn
 
   useEffect(() => {
     setZoomScale(MIN_ZOOM);
+    setMediaState("loading");
   }, [currentItem?.id, open]);
+
+  const downloadUrl = currentItem?.kind === "motion" ? currentItem.posterUrl : currentItem?.sourceUrl;
 
   const handleClose = () => onOpenChange(false);
   const handlePrevious = () => {
@@ -145,6 +150,15 @@ function PreviewImageDialog({ open, onOpenChange, imgUrls = [], items, initialIn
 
             <div className="flex shrink-0 items-center gap-1.5">
               <Button
+                render={<a href={downloadUrl} download target="_blank" rel="noreferrer" />}
+                variant="ghost"
+                size="icon"
+                className="rounded-full bg-white/10 text-white hover:bg-white/16"
+                aria-label="下载原件"
+              >
+                <DownloadIcon className="h-4 w-4" />
+              </Button>
+              <Button
                 type="button"
                 onClick={() => setShowDetails((visible) => !visible)}
                 variant="ghost"
@@ -189,22 +203,41 @@ function PreviewImageDialog({ open, onOpenChange, imgUrls = [], items, initialIn
           }}
         >
           <div className="flex max-h-full max-w-full items-center justify-center" onClick={(event) => event.stopPropagation()}>
+            {mediaState === "loading" && currentItem.kind !== "motion" && (
+              <LoaderCircleIcon role="status" aria-label="正在加载预览" className="absolute h-8 w-8 animate-spin text-white" />
+            )}
+            {mediaState === "error" && (
+              <div role="alert" className="absolute z-10 max-w-sm space-y-3 rounded-xl bg-black/80 p-5 text-center text-white">
+                <p>暂时无法预览，可能是网络错误或浏览器不支持此格式。原件仍可下载。</p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMediaState("loading");
+                    setRetry((value) => value + 1);
+                  }}
+                >
+                  重试预览
+                </Button>
+              </div>
+            )}
             {currentItem.kind === "video" ? (
               <video
-                key={currentItem.id}
+                key={`${currentItem.id}-${retry}`}
                 src={currentItem.sourceUrl}
                 poster={currentItem.posterUrl}
                 className={cn(
                   "max-h-[calc(100dvh-8rem)] max-w-[calc(100vw-1.5rem)] rounded-md object-contain sm:max-h-[calc(100dvh-7rem)] sm:max-w-[calc(100vw-8rem)]",
                   showDetails && "lg:max-w-[calc(100vw-30rem)]",
                 )}
+                onLoadedData={() => setMediaState("ready")}
+                onError={() => setMediaState("error")}
                 controls
                 autoPlay
                 playsInline
               />
             ) : currentItem.kind === "motion" ? (
               <MotionPhotoPreview
-                key={currentItem.id}
+                key={`${currentItem.id}-${retry}`}
                 posterUrl={currentItem.posterUrl}
                 motionUrl={currentItem.motionUrl}
                 alt={`Preview live photo ${safeIndex + 1} of ${itemCount}`}
@@ -217,6 +250,9 @@ function PreviewImageDialog({ open, onOpenChange, imgUrls = [], items, initialIn
               />
             ) : (
               <img
+                key={`${currentItem.id}-${retry}`}
+                onLoad={() => setMediaState("ready")}
+                onError={() => setMediaState("error")}
                 src={currentItem.sourceUrl}
                 alt={`Preview image ${safeIndex + 1} of ${itemCount}`}
                 className={cn(

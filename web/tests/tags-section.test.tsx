@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SIDEBAR_ROW_BOX_CLASSES, SIDEBAR_ROW_COUNT_RAIL_CLASSES, SIDEBAR_ROW_SLOT_CLASSES } from "@/components/AppSidebar/SidebarRow";
 import { SIDEBAR_SECTION_ACTION_ICON_CLASSES } from "@/components/AppSidebar/SidebarSection";
 import TagsSection from "@/components/AppSidebar/TagsSection";
-import { MemoFilterProvider, parseFilterQuery } from "@/contexts/MemoFilterContext";
+import { MemoFilterProvider, parseFilterQuery, useMemoFilterContext } from "@/contexts/MemoFilterContext";
 
 vi.mock("@/utils/i18n", () => ({ useTranslate: () => (key: string) => key }));
 
@@ -22,8 +22,7 @@ describe("TagsSection", () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole("heading", { name: "common.tags" })).toBeInTheDocument();
-    expect(screen.getByText("common.empty-placeholder")).toBeInTheDocument();
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "未添加标签" })).toBeInTheDocument();
   });
 
   it.each(["/", "/calendar/2026/10", "/map"])("applies and clears a tag filter on %s without losing other filters", async (path) => {
@@ -40,6 +39,7 @@ describe("TagsSection", () => {
         </MemoFilterProvider>
       </MemoryRouter>,
     );
+    fireEvent.click(screen.getByRole("button", { name: "common.expand #life" }));
     const tag = screen.getByRole("button", { name: "#life/walks, setting.tags.used-count" });
     expect(within(tag).getByText("3")).toBeInTheDocument();
     fireEvent.click(tag);
@@ -78,6 +78,7 @@ describe("TagsSection", () => {
   });
 
   it("switches layouts from the menu, closes it, and persists the preference", async () => {
+    localStorage.setItem("tag-view-as-tree-v2", "false");
     const onSelect = vi.fn();
     render(
       <MemoryRouter>
@@ -94,7 +95,7 @@ describe("TagsSection", () => {
     fireEvent.click(treeMode);
 
     expect(screen.getByRole("tree")).toBeInTheDocument();
-    expect(localStorage.getItem("tag-view-as-tree")).toBe("true");
+    expect(localStorage.getItem("tag-view-as-tree-v2")).toBe("true");
     await waitFor(() => expect(screen.queryByRole("menuitemcheckbox")).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());
 
@@ -105,12 +106,12 @@ describe("TagsSection", () => {
 
     expect(screen.queryByRole("tree")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "#a/b, setting.tags.used-count" })).toBeInTheDocument();
-    expect(localStorage.getItem("tag-view-as-tree")).toBe("false");
+    expect(localStorage.getItem("tag-view-as-tree-v2")).toBe("false");
     expect(onSelect).not.toHaveBeenCalled();
   });
 
   it("reflects an existing tree preference when opening the menu", async () => {
-    localStorage.setItem("tag-view-as-tree", "true");
+    localStorage.setItem("tag-view-as-tree-v2", "true");
     render(
       <MemoryRouter>
         <MemoFilterProvider>
@@ -125,6 +126,7 @@ describe("TagsSection", () => {
   });
 
   it("keeps flat rows on the shared row grammar with a trailing count rail", () => {
+    localStorage.setItem("tag-view-as-tree-v2", "false");
     render(
       <MemoryRouter>
         <MemoFilterProvider>
@@ -144,5 +146,40 @@ describe("TagsSection", () => {
     expect(path).toHaveClass("truncate", "text-start");
     expect(path).not.toContainElement(count);
     expect(count).toHaveClass(...SIDEBAR_ROW_COUNT_RAIL_CLASSES.split(" "));
+  });
+});
+
+describe("tag statistics failure", () => {
+  it("shows an explicit retry without clearing active criteria or auto-retrying", () => {
+    const retry = vi.fn();
+    const FilterProbe = () => <output data-testid="active-filters">{JSON.stringify(useMemoFilterContext().filters)}</output>;
+    render(
+      <MemoryRouter initialEntries={["/?filter=tagSearch%3Aexisting%2CcontentSearch%3Awords"]}>
+        <MemoFilterProvider>
+          <TagsSection tagCount={{}} scope="home" error={new Error("unavailable")} onRetry={retry} />
+          <FilterProbe />
+        </MemoFilterProvider>
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("标签统计读取失败");
+    expect(retry).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "重试读取标签" }));
+    expect(retry).toHaveBeenCalledOnce();
+    expect(JSON.parse(screen.getByTestId("active-filters").textContent!)).toEqual([
+      { factor: "tagSearch", value: "existing" },
+      { factor: "contentSearch", value: "words" },
+    ]);
+  });
+
+  it("labels stale counts when a refresh failed", () => {
+    render(
+      <MemoryRouter>
+        <MemoFilterProvider>
+          <TagsSection tagCount={{ existing: 2 }} scope="home" error={new Error("offline")} onRetry={vi.fn()} />
+        </MemoFilterProvider>
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("以下是上次读取的结果");
+    expect(screen.getByText("2")).toBeVisible();
   });
 });

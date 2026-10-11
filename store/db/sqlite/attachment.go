@@ -110,6 +110,12 @@ func (d *DB) ListAttachments(ctx context.Context, find *store.FindAttachment) ([
 	if find.HasRelatedMemo {
 		where = append(where, "`attachment`.`memo_id` IS NOT NULL")
 	}
+	if find.OnlyTrashed {
+		where = append(where, "EXISTS (SELECT 1 FROM journal_document AS attachment_trash WHERE attachment_trash.owner_id = memo.creator_id AND attachment_trash.kind = 'trash' AND attachment_trash.document_key = memo.uid)")
+	} else if find.ExcludeTrashed {
+		where = append(where, "NOT EXISTS (SELECT 1 FROM journal_document AS attachment_trash WHERE attachment_trash.owner_id = memo.creator_id AND attachment_trash.kind = 'trash' AND attachment_trash.document_key = memo.uid)")
+	}
+
 	if len(find.Filters) > 0 {
 		engine, err := filter.DefaultAttachmentEngine()
 		if err != nil {
@@ -158,7 +164,7 @@ func (d *DB) ListAttachments(ctx context.Context, find *store.FindAttachment) ([
 		"LEFT JOIN `user` AS `attachment_creator` ON `attachment`.`creator_id` = `attachment_creator`.`id`" + " " +
 		"LEFT JOIN `space` AS `attachment_space` ON `memo`.`space_id` = `attachment_space`.`id`" + " " +
 		"WHERE " + strings.Join(where, " AND ") + " " +
-		"ORDER BY `attachment`.`updated_ts` DESC"
+		"ORDER BY `attachment`.`updated_ts` DESC, `attachment`.`id` DESC"
 	if find.Limit != nil {
 		query = fmt.Sprintf("%s LIMIT %d", query, *find.Limit)
 		if find.Offset != nil {

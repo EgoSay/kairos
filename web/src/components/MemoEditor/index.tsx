@@ -1,5 +1,7 @@
+import { Maximize2Icon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInstance } from "@/contexts/InstanceContext";
 import { useLocalStorage } from "@/hooks";
@@ -37,11 +39,16 @@ import type { EditorController } from "./types/editorController";
 
 // A host that presents the editor full-screen supplies `onFocusModeExit`; its
 // presence is what makes an instance hosted, so focus mode starts on and stays on.
-const MemoEditor = (props: MemoEditorProps) => (
-  <EditorProvider initialFocusMode={Boolean(props.onFocusModeExit)}>
-    <MemoEditorImpl {...props} />
-  </EditorProvider>
-);
+const MemoEditor = (props: MemoEditorProps) => {
+  const owner = useCurrentUser()?.name ?? "anonymous";
+  // A new identity gets a fresh store; the old instance persists only to its
+  // original owner key and cancels its remaining uploads during unmount.
+  return (
+    <EditorProvider key={owner} initialFocusMode={Boolean(props.onFocusModeExit)}>
+      <MemoEditorImpl {...props} />
+    </EditorProvider>
+  );
+};
 
 const MemoEditorImpl: React.FC<MemoEditorProps> = ({
   className,
@@ -85,8 +92,17 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
   const inlineImageUpload = useInlineImageUpload(editorRef);
   // Persisted preference: also show the formatting toolbar in normal mode. Focus
   // mode always shows it regardless; this only governs the non-focus layout.
-  const [isFormattingToolbarVisible, setFormattingToolbarVisible] = useLocalStorage(FORMATTING_TOOLBAR_STORAGE_KEY, false);
+  const [isFormattingToolbarVisible, setFormattingToolbarVisible] = useLocalStorage(FORMATTING_TOOLBAR_STORAGE_KEY, true);
 
+  const [sourceMode, setSourceMode] = useState(false);
+  const [plainPasteArmed, setPlainPasteArmed] = useState(false);
+  const plainPasteRef = useRef(false);
+  const consumePlainPaste = useCallback(() => {
+    const armed = plainPasteRef.current;
+    plainPasteRef.current = false;
+    if (armed) setPlainPasteArmed(false);
+    return armed;
+  }, []);
   const memoName = memo?.name;
   // Replies are never placed independently: a comment's Space is its parent's.
   // An edited top-level memo can change its Space; a new one can unless its
@@ -132,7 +148,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
     durable.discard();
   };
 
-  const { containerRef: editorContainerRef, placeholderHeight } = useFocusMode(isFocusMode);
+  const { containerRef: editorContainerRef, placeholderHeight, captureScroll } = useFocusMode(isFocusMode);
 
   // Live-sync the draft's createTime/updateTime to the calendar-derived prop.
   // Only applies in create mode; edit mode owns its own timestamps. Runs after
@@ -255,14 +271,29 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
 
   // Hosted: focus mode is the host's frame, so leaving it dismisses the host.
   // Inline: focus mode is a view this editor owns and toggles in place.
-  const handleToggleFocusMode = () => {
+  const handleToggleFocusMode = useCallback(() => {
     if (onFocusModeExit) {
       rememberCursor();
       onFocusModeExit();
       return;
     }
+    captureScroll();
     dispatch(actions.toggleFocusMode());
-  };
+    editorRef.current?.focus();
+  }, [actions, dispatch, onFocusModeExit, rememberCursor, captureScroll]);
+
+  useEffect(() => {
+    if (!isFocusMode || onFocusModeExit) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented || event.isComposing) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"], .cm-tooltip-autocomplete')) return;
+      event.preventDefault();
+      handleToggleFocusMode();
+      editorRef.current?.focus();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isFocusMode, onFocusModeExit, handleToggleFocusMode]);
 
   const handleCancel = useCallback(() => {
     rememberCursor();
@@ -295,8 +326,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
     (files: File[], placement: { inline: false } | { inline: true; position?: number }) => {
       if (getState().ui.isLoading.saving) return;
       const localFiles = toLocalFiles(files, { createBlobUrl, saveMediaMetadata });
-      const { inline, attachments } =
-        placement.inline && navigator.onLine ? splitInlineLocalFiles(localFiles) : { inline: [], attachments: localFiles };
+      const { inline, attachments } = placement.inline ? splitInlineLocalFiles(localFiles) : { inline: [], attachments: localFiles };
       attachments.forEach((file) => dispatch(actions.addLocalFile(file)));
       if (placement.inline) inlineImageUpload.insertLocalImages(inline, placement.position);
     },
@@ -307,13 +337,11 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
   const handleInsertImages = useCallback((files: File[]) => handleFiles(files, { inline: true }), [handleFiles]);
 
   /**
-   * A drop inlines images where they landed. A paste carries no placement
-   * gesture, so it attaches like the ＋ menu's upload; the attachment list's
-   * own Insert action is how a pasted image becomes inline.
+   * Images pasted or dropped into the editor share the same durable inline
+   * upload path. Other files remain in the attachment list.
    */
   const handleEditorFiles = useCallback(
-    (files: File[], origin: EditorFileOrigin) =>
-      handleFiles(files, origin.source === "drop" ? { inline: true, position: origin.position } : { inline: false }),
+    (files: File[], origin: EditorFileOrigin) => handleFiles(files, { inline: true, position: origin.position }),
     [handleFiles],
   );
 
@@ -383,6 +411,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
 
       <div
         ref={editorContainerRef}
+        data-focus-frame={isFocusMode || undefined}
         className={cn(
           "group relative w-full flex flex-col justify-between items-start bg-card px-4 pt-4 pb-3 rounded-xl border border-border/70 focus-within:border-primary/35 gap-3 sm:px-5 sm:pt-5",
           FOCUS_MODE_STYLES.transition,
@@ -390,25 +419,67 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
           !isFocusMode && className,
         )}
       >
-        {/* Formatting toolbar. Always shown in focus mode (trailing the button
-            that leaves the current frame — minimize inline, close when hosted);
-            in normal mode it appears only when the user toggled it on via the
-            insert menu. */}
+        {/* The default visual editor exposes formatting and focus directly. */}
+        <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-pressed={sourceMode}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => setSourceMode((value) => !value)}
+          >
+            {sourceMode ? "切换可视化编辑" : "Markdown 源码"}
+          </Button>
+          <Button
+            size="sm"
+            variant={plainPasteArmed ? "secondary" : "ghost"}
+            aria-pressed={plainPasteArmed}
+            title="开启后按 Cmd / Ctrl + V，下次粘贴仅保留文字"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              plainPasteRef.current = !plainPasteRef.current;
+              setPlainPasteArmed(plainPasteRef.current);
+              editorRef.current?.focus();
+            }}
+          >
+            纯文本粘贴
+          </Button>
+          {!isFocusMode && (
+            <Button size="sm" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={handleToggleFocusMode}>
+              <Maximize2Icon className="size-4" />
+              聚焦
+            </Button>
+          )}
+        </div>
+        {plainPasteArmed && (
+          <p className="shrink-0 text-xs text-muted-foreground" role="status">
+            现在按 Cmd / Ctrl + V，下次粘贴仅保留文字。再次点击可取消。
+          </p>
+        )}
         {(isFocusMode || isFormattingToolbarVisible) && (
           <FormattingToolbar
+            className="shrink-0"
             controllerRef={editorRef}
+            onInsertImages={handleInsertImages}
             exit={isFocusMode ? { action: onFocusModeExit ? "close" : "minimize", onExit: handleToggleFocusMode } : undefined}
           />
         )}
 
         {(memoName || (!memo && hasTimestamp)) && (
-          <div className="flex h-6 w-full items-center">
+          <div className="flex h-6 w-full shrink-0 items-center">
             <TimestampPopover />
           </div>
         )}
 
         {/* Editor content grows to fill available space in focus mode */}
-        <EditorContent ref={editorRef} placeholder={placeholder} onSubmit={handleSave} onFiles={handleEditorFiles} />
+        <EditorContent
+          ref={editorRef}
+          placeholder={placeholder}
+          onSubmit={handleSave}
+          onFiles={handleEditorFiles}
+          sourceMode={sourceMode}
+          consumePlainPaste={consumePlainPaste}
+        />
 
         {isAudioRecorderOpen && (audioRecorder.isBusy || isTranscribingAudio) && (
           <AudioRecorderPanel
@@ -450,7 +521,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
           </div>
         )}
         {durable.status !== "idle" && (
-          <div role="status" className="text-xs leading-4 text-muted-foreground/70">
+          <div role="status" className="shrink-0 text-xs leading-4 text-muted-foreground/70">
             {durable.status === "saving"
               ? "正在保存草稿…"
               : durable.status === "saved"
@@ -462,20 +533,30 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
         )}
         {!memoName && !parentMemoName && <PendingRecords owner={currentUser?.name ?? ""} draftKey={editorCacheKey} />}
         {/* Metadata and toolbar grouped together at bottom */}
-        <div className="w-full flex flex-col gap-2">
-          <EditorMetadata
-            memoName={memoName}
-            uploadingLocalFileURLs={inlineImageUpload.uploadingLocalFileURLs}
-            onInsertAttachments={inlineImageUpload.insertRemoteImages}
-            onInsertLocalFiles={inlineImageUpload.insertLocalImages}
-            onTranscribeAttachment={canTranscribe ? transcribeAttachment : undefined}
-            transcribingAttachment={transcribingAttachment}
-            transcriptionDisabled={isSaving || audioRecorder.isBusy || isTranscribingAudio}
-          />
-          {!memo && !parentMemoName && isInitialized && suggestions.length > 0 && (
-            <EditorSuggestions suggestions={suggestions} controllerRef={editorRef} space={editorSpace} />
-          )}
+        <div className={cn("w-full shrink-0 flex flex-col gap-2", isFocusMode && "bg-card pt-2")}>
+          {/* Long metadata must not displace the writing viewport or save actions. */}
+          <div
+            className={cn("w-full flex flex-col gap-2", isFocusMode && "overflow-y-auto")}
+            style={isFocusMode ? { maxHeight: "min(8rem, calc(var(--kairos-focus-height, 100dvh) * 0.2))" } : undefined}
+            role="region"
+            aria-label="附件、关联与位置信息"
+            tabIndex={isFocusMode ? 0 : undefined}
+          >
+            <EditorMetadata
+              memoName={memoName}
+              uploadingLocalFileURLs={inlineImageUpload.uploadingLocalFileURLs}
+              onInsertAttachments={inlineImageUpload.insertRemoteImages}
+              onInsertLocalFiles={inlineImageUpload.insertLocalImages}
+              onTranscribeAttachment={canTranscribe ? transcribeAttachment : undefined}
+              transcribingAttachment={transcribingAttachment}
+              transcriptionDisabled={isSaving || audioRecorder.isBusy || isTranscribingAudio}
+            />
+            {!memo && !parentMemoName && isInitialized && suggestions.length > 0 && (
+              <EditorSuggestions suggestions={suggestions} controllerRef={editorRef} space={editorSpace} />
+            )}
+          </div>
           <EditorToolbar
+            onReturnToEditor={() => editorRef.current?.focus()}
             onSave={handleSave}
             onCancel={onCancel ? handleCancel : undefined}
             memoName={memoName}

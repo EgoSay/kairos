@@ -14,6 +14,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -50,6 +51,9 @@ const (
 
 	// PersonalAccessTokenPrefix is the prefix for PAT tokens.
 	PersonalAccessTokenPrefix = "memos_pat_"
+
+	// AgentAccessTokenPrefix keeps restricted tokens invalid on older servers.
+	AgentAccessTokenPrefix = "kairos_agent_"
 )
 
 // ClaimsMessage represents the claims structure in a JWT token.
@@ -190,6 +194,15 @@ func GeneratePersonalAccessToken() string {
 		return PersonalAccessTokenPrefix + random.UUID()
 	}
 	return PersonalAccessTokenPrefix + randomStr
+}
+
+// GenerateAgentAccessToken generates a distinct, downgrade-safe credential.
+func GenerateAgentAccessToken() string {
+	return AgentAccessTokenPrefix + strings.TrimPrefix(GeneratePersonalAccessToken(), PersonalAccessTokenPrefix)
+}
+
+func isPersonalAccessToken(token string) bool {
+	return strings.HasPrefix(token, PersonalAccessTokenPrefix) || strings.HasPrefix(token, AgentAccessTokenPrefix)
 }
 
 // HashPersonalAccessToken returns SHA-256 hash of a PAT.

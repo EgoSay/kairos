@@ -37,6 +37,7 @@ const JournalTrash = lazyWithReload(() => import("@/pages/JournalTrash"));
 const JournalShares = lazyWithReload(() => import("@/pages/JournalShares"));
 const JournalShared = lazyWithReload(() => import("@/pages/JournalShared"));
 const JournalBackup = lazyWithReload(() => import("@/pages/JournalBackup"));
+const JournalBackupStatus = lazyWithReload(() => import("@/pages/JournalBackupStatus"));
 
 const HomeRoute = () => {
   const { isIdentityInitialized } = useAuth();
@@ -122,6 +123,7 @@ export const routeConfig: RouteObject[] = [
                   { path: Routes.JOURNAL_TRASH, element: <JournalTrash /> },
                   { path: Routes.JOURNAL_SHARES, element: <JournalShares /> },
                   { path: Routes.JOURNAL_BACKUP, element: <JournalBackup /> },
+                  { path: Routes.JOURNAL_BACKUP_STATUS, element: <JournalBackupStatus /> },
                   { path: `${Routes.JOURNAL}/day/:date`, element: <JournalDay /> },
                   { path: Routes.ARCHIVED, element: <Archived /> },
                   {

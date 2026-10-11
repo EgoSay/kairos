@@ -190,6 +190,9 @@
       "bold": "粗体",
       "italic": "斜体",
       "strikethrough": "删除线",
+      "inline-code": "行内代码",
+      "quote": "引用",
+      "horizontal-rule": "分隔线",
       "code-block": "代码块",
       "bullet-list": "无序列表",
       "ordered-list": "有序列表",
@@ -370,6 +373,7 @@
     "back-to-top": "回到顶部"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "member": {
       "active": "启用中",
       "admin": "管理员",

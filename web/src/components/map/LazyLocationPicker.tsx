@@ -7,6 +7,7 @@ interface LazyLocationPickerProps {
   readonly?: boolean;
   latlng?: MapPoint;
   onChange?: (position: MapPoint) => void;
+  onError?: () => void;
   className?: string;
 }
 

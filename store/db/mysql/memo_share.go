@@ -8,20 +8,40 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/EgoSay/kairos/store"
+	"github.com/EgoSay/kairos/store/db/journalsql"
 )
 
 func (d *DB) CreateMemoShare(ctx context.Context, create *store.MemoShare) (*store.MemoShare, error) {
 	if create.Policy == nil {
 		return createMySQLMemoShare(ctx, d.db, create)
 	}
-	tx, err := d.db.BeginTx(ctx, nil)
+	tx, err := d.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	if _, err := validateMySQLMemoWritePolicy(ctx, tx, create.MemoID, create.Policy, nil); err != nil {
+	current, err := validateMySQLMemoWritePolicy(ctx, tx, create.MemoID, create.Policy, nil)
+	if err != nil {
 		return nil, err
 	}
+	for _, mutation := range create.JournalDocuments {
+		if mutation.Document.OwnerID != current.CreatorID {
+			return nil, store.ErrMemoPermissionDenied
+		}
+	}
+	if create.ExpectedRecordHash != "" {
+		snapshot, err := readMySQLMemoRecordSnapshot(ctx, tx, create.MemoID)
+		if err != nil {
+			return nil, err
+		}
+		if snapshot.Hash() != create.ExpectedRecordHash {
+			return nil, store.ErrMemoMutationConflict
+		}
+	}
+	if err := (journalsql.Repository{DB: tx}).ApplyMutations(ctx, create.JournalDocuments); err != nil {
+		return nil, err
+	}
+
 	result, err := createMySQLMemoShare(ctx, tx, create)
 	if err != nil {
 		return nil, err

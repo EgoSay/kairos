@@ -84,7 +84,7 @@ func (s *APIV1Service) prepareMemoCreate(ctx context.Context, user *store.User, 
 	if err != nil {
 		return nil, err
 	}
-	relations, err := s.prepareMemoRelations(ctx, memo, input.Relations)
+	relations, err := s.prepareMemoRelationsForSave(ctx, memo, input.Relations)
 	if err != nil {
 		return nil, err
 	}

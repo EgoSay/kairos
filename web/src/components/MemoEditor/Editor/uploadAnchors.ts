@@ -9,6 +9,7 @@ export interface UploadAnchorDescriptor {
   completed: number;
   total: number;
   message: string;
+  previewUrl?: string;
   retryLabel: string;
   keepLabel: string;
   onRetry?: () => void;
@@ -36,6 +37,7 @@ class UploadAnchorWidget extends WidgetType {
       a.completed === b.completed &&
       a.total === b.total &&
       a.message === b.message &&
+      a.previewUrl === b.previewUrl &&
       a.retryLabel === b.retryLabel &&
       a.keepLabel === b.keepLabel &&
       a.onRetry === b.onRetry &&
@@ -66,6 +68,13 @@ class UploadAnchorWidget extends WidgetType {
       badge.append(this.descriptor.message);
     }
     root.appendChild(badge);
+    if (this.descriptor.previewUrl) {
+      const image = document.createElement("img");
+      image.src = this.descriptor.previewUrl;
+      image.alt = "待上传图片";
+      image.className = "cm-upload-preview";
+      root.appendChild(image);
+    }
 
     if (this.descriptor.status === "failed") {
       const actions = document.createElement("span");
@@ -113,12 +122,39 @@ const findAnchorPosition = (decorations: DecorationSet, id: string): number | un
 export const uploadAnchorField = StateField.define<DecorationSet>({
   create: () => Decoration.none,
   update: (anchors, transaction) => {
-    let next = anchors.map(transaction.changes);
+    let next = anchors;
+    if (transaction.docChanged) {
+      const mapped: ReturnType<Decoration["range"]>[] = [];
+      anchors.between(0, transaction.startState.doc.length, (from, _to, decoration) => {
+        mapped.push(decoration.range(transaction.changes.mapPos(from, -1)));
+      });
+      next = Decoration.set(mapped, true);
+    }
+    // Typing at an upload location belongs after its widget. Conversely, a
+    // resolved upload must advance the other queued images at that location so
+    // consecutive pastes keep their original order.
+    const resolution = transaction.effects.find((effect) => effect.is(removeUploadAnchor));
+    if (resolution && transaction.docChanged) {
+      const position = findAnchorPosition(anchors, resolution.value);
+      if (position !== undefined) {
+        const ids = new Set<string>();
+        const moved: ReturnType<Decoration["range"]>[] = [];
+        anchors.between(position, position, (from, _to, decoration) => {
+          const id = anchorIdOf(decoration);
+          if (from === position && id && id !== resolution.value) {
+            ids.add(id);
+            moved.push(decoration.range(transaction.changes.mapPos(from, 1)));
+          }
+        });
+        next = next.update({ filter: (_from, _to, decoration) => !ids.has(anchorIdOf(decoration) ?? ""), add: moved, sort: true });
+      }
+    }
     for (const effect of transaction.effects) {
       if (effect.is(addUploadAnchor)) {
         const position = Math.min(Math.max(effect.value.position, 0), transaction.state.doc.length);
         next = next.update({
-          add: [Decoration.widget({ widget: new UploadAnchorWidget(effect.value.descriptor), side: 1, block: true }).range(position)],
+          filter: (_from, _to, value) => anchorIdOf(value) !== effect.value.descriptor.id,
+          add: [Decoration.widget({ widget: new UploadAnchorWidget(effect.value.descriptor), side: -1, block: true }).range(position)],
           sort: true,
         });
       } else if (effect.is(updateUploadAnchor)) {
@@ -126,7 +162,7 @@ export const uploadAnchorField = StateField.define<DecorationSet>({
         if (position === undefined) continue;
         next = next.update({
           filter: (_from, _to, value) => anchorIdOf(value) !== effect.value.id,
-          add: [Decoration.widget({ widget: new UploadAnchorWidget(effect.value), side: 1, block: true }).range(position)],
+          add: [Decoration.widget({ widget: new UploadAnchorWidget(effect.value), side: -1, block: true }).range(position)],
           sort: true,
         });
       } else if (effect.is(removeUploadAnchor)) {

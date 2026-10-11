@@ -218,6 +218,9 @@
       "trigger": "Įrašyti garsą"
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Kodo blokas",
       "link": "Nuoroda",
       "heading": "Antraštė",
@@ -382,6 +385,7 @@
     "back-to-top": "Atgal į viršų"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "Prieigos prieigos raktas nukopijuotas į mainų sritį",
       "access-token-deleted": "Prieigos prieigos raktas `{{description}}` ištrintas",

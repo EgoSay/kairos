@@ -42,6 +42,7 @@ func (s *APIV1Service) ListPersonalAccessTokens(ctx context.Context, request *v1
 			ExpiresAt:   token.ExpiresAt,
 			CreatedAt:   token.CreatedAt,
 			LastUsedAt:  token.LastUsedAt,
+			ReadOnly:    token.ReadOnly,
 		}
 	}
 
@@ -69,6 +70,9 @@ func (s *APIV1Service) ListPersonalAccessTokens(ctx context.Context, request *v1
 // Authentication: Required (session cookie or access token)
 // Authorization: User can only create tokens for themselves.
 func (s *APIV1Service) CreatePersonalAccessToken(ctx context.Context, request *v1pb.CreatePersonalAccessTokenRequest) (*v1pb.CreatePersonalAccessTokenResponse, error) {
+	if request.ReadOnly && (request.ExpiresInDays < 1 || request.ExpiresInDays > 365 || strings.TrimSpace(request.Description) == "") {
+		return nil, status.Error(codes.InvalidArgument, "Agent credentials require a name and an expiry from 1 to 365 days")
+	}
 	user, err := s.resolveUserFromName(ctx, request.Parent)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user name: %v", err)
@@ -83,6 +87,9 @@ func (s *APIV1Service) CreatePersonalAccessToken(ctx context.Context, request *v
 	// Generate PAT
 	tokenID := random.UUID()
 	token := auth.GeneratePersonalAccessToken()
+	if request.ReadOnly {
+		token = auth.GenerateAgentAccessToken()
+	}
 	tokenHash := auth.HashPersonalAccessToken(token)
 
 	var expiresAt *timestamppb.Timestamp
@@ -96,6 +103,7 @@ func (s *APIV1Service) CreatePersonalAccessToken(ctx context.Context, request *v
 		Description: request.Description,
 		ExpiresAt:   expiresAt,
 		CreatedAt:   timestamppb.Now(),
+		ReadOnly:    request.ReadOnly,
 	}
 
 	if err := s.Store.AddUserPersonalAccessToken(ctx, userID, patRecord); err != nil {
@@ -108,6 +116,7 @@ func (s *APIV1Service) CreatePersonalAccessToken(ctx context.Context, request *v
 			Description: request.Description,
 			ExpiresAt:   expiresAt,
 			CreatedAt:   patRecord.CreatedAt,
+			ReadOnly:    patRecord.ReadOnly,
 		},
 		Token: token, // Only returned on creation
 	}, nil

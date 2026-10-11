@@ -176,7 +176,7 @@ export function useMemos(request: Partial<ListMemosRequest> = {}) {
   });
 }
 
-export function useInfiniteMemos(request: Partial<ListMemosRequest> = {}, options?: { enabled?: boolean }) {
+export function useInfiniteMemos(request: Partial<ListMemosRequest> = {}, options?: { enabled?: boolean; staleTime?: number }) {
   return useInfiniteQuery({
     queryKey: memoKeys.list(request),
     queryFn: async ({ pageParam, signal }) => {
@@ -191,15 +191,16 @@ export function useInfiniteMemos(request: Partial<ListMemosRequest> = {}, option
     },
     initialPageParam: "",
     getNextPageParam: (lastPage) => lastPage.nextPageToken || undefined,
-    staleTime: 1000 * 60,
+    staleTime: options?.staleTime ?? 1000 * 60,
     gcTime: 1000 * 60 * 5,
     enabled: options?.enabled ?? true,
   });
 }
 
-export function useMemo(name: string, options?: { enabled?: boolean }) {
+export function useMemo(name: string, options?: { enabled?: boolean; revalidate?: boolean }) {
   const query = useQuery({
     ...memoDetailQueryOptions(name),
+    ...(options?.revalidate ? { staleTime: 0, refetchOnMount: "always" as const } : {}),
     enabled: options?.enabled ?? true,
   });
   return { ...query, data: query.data ?? undefined, isUnavailable: query.data === null };

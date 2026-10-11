@@ -23,6 +23,13 @@ type MemoAttachmentBinding struct {
 	WasBoundToMemo bool
 }
 
+// MemoRecordCheck binds an authorization transaction to an owner's exact record.
+type MemoRecordCheck struct {
+	MemoID    int32
+	CreatorID int32
+	Hash      string
+}
+
 // MemoMutation atomically updates a memo, its attachment bindings, and its
 // reference relations. Removed attachment rows are deleted in the same
 // transaction; callers may clean up external objects after the commit.
@@ -42,7 +49,13 @@ type MemoMutation struct {
 	RequiredAttachmentIDs     []int32
 	ReplaceReferenceRelations bool
 	ReferenceRelations        []*MemoRelation
-	Policy                    *MemoWritePolicy
+	// SkipUnavailableReferenceRelations preserves a body save if an optional target disappears.
+	SkipUnavailableReferenceRelations bool
+	Policy                            *MemoWritePolicy
+	// JournalDocuments share the memo transaction, including version checks.
+	JournalDocuments []*JournalDocumentMutation
+	// RecordChecks are read-only CAS conditions, acquired in ascending memo ID order.
+	RecordChecks []MemoRecordCheck
 }
 
 // MemoAttachmentBindingOwnerAllowed reports whether an unbound attachment may
@@ -114,6 +127,21 @@ func (s *Store) ApplyMemoMutation(ctx context.Context, mutation *MemoMutation) e
 	if err := validateMemoWritePolicy(policy); err != nil {
 		return err
 	}
+	mutation.RecordChecks = slices.Clone(mutation.RecordChecks)
+	slices.SortFunc(mutation.RecordChecks, func(a, b MemoRecordCheck) int { return int(a.MemoID - b.MemoID) })
+	for _, check := range mutation.RecordChecks {
+		if check.MemoID <= 0 || check.CreatorID != mutation.MemoCreatorID || len(check.Hash) != 64 {
+			return ErrMemoPermissionDenied
+		}
+	}
+	for _, document := range mutation.JournalDocuments {
+		if document == nil || document.Document == nil || document.Document.OwnerID != mutation.MemoCreatorID || mutation.ActorUserID() != mutation.MemoCreatorID {
+			return ErrMemoPermissionDenied
+		}
+		if err := validateJournalDocument(document.Document, document.ExpectedVersion); err != nil {
+			return err
+		}
+	}
 	mutation.RemovedAttachmentIDs = slices.Clone(mutation.RemovedAttachmentIDs)
 	slices.Sort(mutation.RemovedAttachmentIDs)
 	removedAttachmentIDs := make(map[int32]struct{}, len(mutation.RemovedAttachmentIDs))
@@ -167,7 +195,7 @@ func (s *Store) ApplyMemoMutation(ctx context.Context, mutation *MemoMutation) e
 	err := s.driver.ApplyMemoMutation(ctx, mutation)
 	// Serializable databases may reject a racing transaction before our tuple
 	// comparison runs. Preserve the same retry/compare contract for that case.
-	if mutation.ExpectedRecordHash != "" && s.driver.IsRetryableAuthenticationMutationError(err) {
+	if (mutation.ExpectedRecordHash != "" || len(mutation.JournalDocuments) > 0 || mutation.SkipUnavailableReferenceRelations) && s.driver.IsRetryableAuthenticationMutationError(err) {
 		return errors.Wrapf(ErrMemoMutationConflict, "concurrent record transaction: %v", err)
 	}
 	return err

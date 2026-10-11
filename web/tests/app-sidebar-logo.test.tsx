@@ -27,6 +27,7 @@ const spaceState = vi.hoisted(() => ({
   selectSpace: vi.fn(),
 }));
 const filteredStatsHook = vi.hoisted(() => vi.fn());
+const attachmentStatsHook = vi.hoisted(() => vi.fn());
 const filterState = vi.hoisted(() => ({ filters: [] as MemoFilter[] }));
 const tagsSectionHook = vi.hoisted(() => vi.fn());
 
@@ -99,6 +100,12 @@ vi.mock("@/contexts/MemoFilterContext", async (importOriginal) => ({
   }),
 }));
 
+vi.mock("@/contexts/ViewContext", async (original) => ({
+  ...(await original<typeof import("@/contexts/ViewContext")>()),
+  useView: () => ({ timeBasis: "create_time" }),
+}));
+vi.mock("@/hooks/useJournalQueries", () => ({ useJournalPreferences: () => ({ data: { timezone: "Asia/Shanghai" } }) }));
+
 vi.mock("@/contexts/SpaceContext", () => ({
   useSpaceContext: () => {
     const location = useLocation();
@@ -133,7 +140,7 @@ vi.mock("@/hooks/useFilteredMemoStats", () => ({
 }));
 
 vi.mock("@/hooks/useAttachmentLibrary", () => ({
-  useAttachmentLibraryStats: () => ({ stats: { media: 0, documents: 0, audio: 0, unused: 0 } }),
+  useAttachmentLibraryStats: (filter?: string, onlyTrash?: boolean) => attachmentStatsHook(filter, onlyTrash),
 }));
 
 vi.mock("@/hooks/useMediaQuery", () => ({
@@ -206,6 +213,7 @@ describe("App sidebar logo", () => {
     spaceState.selectedSpace = undefined;
     spaceState.selectSpace.mockClear();
     filteredStatsHook.mockClear();
+    attachmentStatsHook.mockReset().mockReturnValue({ stats: { media: 0, documents: 0, audio: 0, unused: 0 } });
     filterState.filters = [];
     tagsSectionHook.mockClear();
   });
@@ -352,7 +360,9 @@ describe("App sidebar logo", () => {
       </MemoryRouter>,
     );
 
-    expect(filteredStatsHook).toHaveBeenCalledWith(expect.objectContaining({ context: "collection", filter: 'space == "spaces/product"' }));
+    expect(filteredStatsHook).toHaveBeenCalledWith(
+      expect.objectContaining({ context: "collection", filter: '(space == "spaces/product")' }),
+    );
   });
 
   it("includes authorized Space memos in All Explore statistics", () => {
@@ -407,6 +417,24 @@ describe("App sidebar logo", () => {
 
     expect(screen.queryByRole("button", { name: "attachment-library.labels.unused" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "attachment-library.tabs.media" })).toBeInTheDocument();
+  });
+
+  it("shows only trash counts and hides unused uploads when the attachment library is in trash", () => {
+    attachmentStatsHook.mockImplementation((_filter, onlyTrash) => ({
+      isComplete: true,
+      stats: onlyTrash ? { media: 1, audio: 1, documents: 0, unused: 0 } : { media: 8, audio: 3, documents: 2, unused: 4 },
+    }));
+    render(
+      <MemoryRouter initialEntries={["/attachments?lifecycle=trash"]}>
+        <AppSidebar />
+      </MemoryRouter>,
+    );
+
+    expect(attachmentStatsHook).toHaveBeenCalledWith(undefined, true);
+    expect(screen.getByRole("button", { name: /^common\.all\s*2$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^attachment-library\.tabs\.media\s*1$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^attachment-library\.tabs\.audio\s*1$/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /attachment-library.labels.unused/ })).not.toBeInTheDocument();
   });
 
   it("hides Compose when the composer reports it is not available", () => {

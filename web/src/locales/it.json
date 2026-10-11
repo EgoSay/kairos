@@ -180,6 +180,9 @@
       "transcribing": "Trascrizione..."
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Blocco di codice",
       "link": "Link",
       "heading": "Intestazione",
@@ -344,6 +347,7 @@
     "back-to-top": "Torna su"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "Token di accesso copiato negli appunti",
       "access-token-deleted": "Token di accesso `{{description}}` eliminato",

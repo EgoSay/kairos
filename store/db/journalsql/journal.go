@@ -15,8 +15,43 @@ import (
 
 // Repository binds portable queries to a driver's placeholder convention.
 type Repository struct {
-	DB       *sql.DB
+	DB       Executor
 	Postgres bool
+}
+
+// Executor permits the same journal queries inside a memo transaction.
+type Executor interface {
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+// ApplyMutations rechecks prepared document versions in the caller's transaction.
+func (r Repository) ApplyMutations(ctx context.Context, mutations []*store.JournalDocumentMutation) error {
+	for _, mutation := range mutations {
+		doc := mutation.Document
+		current, err := r.Get(ctx, doc.OwnerID, doc.Kind, doc.Key)
+		if err != nil {
+			return err
+		}
+		version := int64(0)
+		if current != nil {
+			version = current.Version
+		}
+		if version != mutation.ExpectedVersion {
+			return store.ErrMemoMutationConflict
+		}
+		if mutation.CheckOnly {
+			continue
+		}
+		if _, err := r.Put(ctx, doc, mutation.ExpectedVersion); err != nil {
+			if errors.Is(err, store.ErrJournalConflict) {
+				return store.ErrMemoMutationConflict
+			}
+			return err
+		}
+	}
+	return nil
 }
 
 func (r Repository) bind(query string) string {

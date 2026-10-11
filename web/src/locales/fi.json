@@ -218,6 +218,9 @@
       "trigger": "Äänitä ääntä"
     },
     "format": {
+      "inline-code": "Inline code",
+      "quote": "Quote",
+      "horizontal-rule": "Horizontal rule",
       "code-block": "Koodilohko",
       "link": "Linkki",
       "heading": "Otsikko",
@@ -382,6 +385,7 @@
     "back-to-top": "Takaisin alkuun"
   },
   "setting": {
+    "agent": { "label": "Agent / MCP" },
     "access-token": {
       "access-token-copied-to-clipboard": "Käyttöoikeustunnus kopioitiin leikepöydälle",
       "access-token-deleted": "Käyttöoikeustunnus `{{description}}` poistettu",

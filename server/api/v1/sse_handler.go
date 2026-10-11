@@ -40,6 +40,9 @@ func handleSSE(c *echo.Context, hub *SSEHub, authenticator *auth.Authenticator) 
 	if result == nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "authentication required"})
 	}
+	if result.ReadOnly {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": ErrReadOnlyCredential.Error()})
+	}
 	userID := getSSEClientUserID(result)
 	if userID == 0 {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "authentication required"})

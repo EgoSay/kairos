@@ -35,6 +35,17 @@ interface FilterConfig {
 }
 
 const FILTER_CONFIGS: Record<FilterFactor, FilterConfig> = {
+  untagged: { icon: HashIcon, getLabel: () => "未添加标签" },
+  tagExclude: { icon: HashIcon, getLabel: (value) => `排除：${value}` },
+  tagMatch: { icon: HashIcon, getLabel: (value) => (value === "any" ? "任一标签" : "全部标签") },
+  tagExact: { icon: HashIcon, getLabel: () => "仅标签本身" },
+  dateStart: { icon: CalendarIcon, getLabel: (value) => `从 ${value}` },
+  dateEnd: { icon: CalendarIcon, getLabel: (value) => `至 ${value}` },
+  partition: { icon: BookmarkIcon, getLabel: (value) => (value ? "指定分区" : "未分区") },
+  includeArchived: { icon: BookmarkIcon, getLabel: () => "包含归档" },
+  "property.hasImage": { icon: BookmarkIcon, getLabel: () => "有图片" },
+  "property.hasAudio": { icon: BookmarkIcon, getLabel: () => "有音频" },
+  "property.hasAttachment": { icon: BookmarkIcon, getLabel: () => "有附件" },
   tagSearch: {
     icon: HashIcon,
     getLabel: (value) => value,
@@ -131,7 +142,7 @@ const MemoFilters = ({ className }: { className?: string }) => {
   const t = useTranslate();
   const location = useLocation();
   const currentUser = useCurrentUser();
-  const { filters, memoView, removeFilter, setMemoView } = useMemoFilterContext();
+  const { filters, memoView, removeFilter, setMemoView, setFilters } = useMemoFilterContext();
   const { setQuickFindOpen } = useAppSidebar();
   // A remembered view only narrows the collection routes; elsewhere it is dormant and must not be echoed.
   const viewApplies = memoView !== undefined && isMemoCollectionRoute(location.pathname);
@@ -180,6 +191,16 @@ const MemoFilters = ({ className }: { className?: string }) => {
           }
         />
       ))}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          setFilters([]);
+          setMemoView(undefined);
+        }}
+      >
+        清空全部条件
+      </Button>
     </div>
   );
 };

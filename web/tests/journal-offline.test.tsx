@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cacheService } from "@/components/MemoEditor/services/cacheService";
 import { createInitialState } from "@/components/MemoEditor/state";
 import OfflineJournal from "@/components/OfflineJournal";
 import { forgetJournalOwner, readJournalOwner, rememberJournalOwner } from "@/lib/journal-device";
@@ -44,6 +45,28 @@ describe("cold offline device drafts", () => {
     );
   });
 
+  it("maps a restored inline image through edits before saving it for later sync", async () => {
+    const state = createInitialState();
+    state.content = "前后";
+    state.localFiles = [
+      {
+        file: new File(["photo"], "photo.png", { type: "image/png" }),
+        previewUrl: "blob:photo",
+        inlineUpload: { id: "job", position: 1, representative: true },
+      },
+    ];
+    drafts.list.mockResolvedValue([{ key: "offline:users/one", kind: "draft", state }]);
+    render(<OfflineJournal owner={owner} />);
+    const editor = screen.getByRole("textbox");
+    await waitFor(() => expect(editor).toHaveValue("前后"));
+    fireEvent.change(editor, { target: { value: "新增前后" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存到此设备" }));
+    await waitFor(() => expect(drafts.save.mock.calls.some((args) => args[4] === "pending")).toBe(true));
+    const saved = drafts.save.mock.calls.find((args) => args[4] === "pending");
+    expect(saved?.[2].localFiles[0].inlineUpload.position).toBe(3);
+    expect(saved?.[2].content).toBe("新增前后");
+  });
+
   it("keeps the exact input and draft on a failed pending save", async () => {
     drafts.save.mockImplementation(async (_key: string, _owner: string, _state: unknown, _options: unknown, kind?: string) => {
       if (kind === "pending") throw new Error("storage full");
@@ -70,6 +93,20 @@ describe("cold offline device drafts", () => {
     expect(saved?.[1]).toBe(owner.name);
     expect(saved?.[2].content).toBe("这条已经保存在设备");
     expect(drafts.remove).toHaveBeenCalledExactlyOnceWith("offline:users/one");
+  });
+
+  it("clears the legacy editor cache only after its durable offline pending save succeeds", async () => {
+    const key = "users/one-home";
+    cacheService.saveNow(key, { content: "saved once", attachments: [] });
+    drafts.list.mockResolvedValue([{ key, kind: "draft", state: { ...createInitialState(), content: "saved once" } }]);
+    render(<OfflineJournal owner={owner} />);
+    await waitFor(() => expect(screen.getByRole("textbox")).toBeEnabled());
+    fireEvent.click(screen.getByText("本地草稿与待同步记录"));
+    fireEvent.click(screen.getByRole("button", { name: "继续写" }));
+    await waitFor(() => expect(screen.getByRole("textbox")).toHaveValue("saved once"));
+    fireEvent.click(screen.getByRole("button", { name: "保存到此设备" }));
+    await waitFor(() => expect(screen.getByRole("textbox")).toHaveValue(""));
+    expect(cacheService.loadDraft(key).content).toBe("");
   });
 
   it("retains current input and shows the failure when switching drafts cannot save", async () => {
