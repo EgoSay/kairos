@@ -25,6 +25,13 @@ describe("LocationDisplayView", () => {
     expect(screen.getByRole("button", { name: "0.0000°, 0.0000°" })).toHaveTextContent(/^0.0000°, 0.0000°$/);
   });
 
+  it("shows a personal label without a fictitious map or coordinates", async () => {
+    render(<LocationDisplayView location={{ latitude: 0, longitude: 0, placeholder: "家", nameOnly: true } as Location} />);
+    fireEvent.click(screen.getByRole("button", { name: "家" }));
+    expect(await screen.findByText("只记地点名")).toBeVisible();
+    expect(screen.queryByTestId("location-picker")).not.toBeInTheDocument();
+    expect(screen.queryByText(/0\.0000/)).not.toBeInTheDocument();
+  });
   it("renders nothing without a location", () => {
     const { container } = render(<LocationDisplayView />);
     expect(container).toBeEmptyDOMElement();

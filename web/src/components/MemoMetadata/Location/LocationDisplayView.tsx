@@ -27,7 +27,7 @@ const LocationDisplayView = ({ location }: LocationDisplayViewProps) => {
         <span className={METADATA_ROW_TEXT_CLASSES}>{displayText}</span>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl p-0">
-        {popoverOpen && (
+        {popoverOpen && !location.nameOnly && (
           <LazyLocationPicker
             latlng={{ lat: location.latitude, lng: location.longitude }}
             readonly

@@ -148,10 +148,7 @@
     "add-your-comment-here": "Додайте свій коментар тут...",
     "any-thoughts": "Якісь думки...",
     "exit-focus-mode": "Вийти з режиму фокусування",
-    "focus-mode": "Режим фокусування",
     "insert-menu": {
-      "add-location": "Додайте місцезнаходження",
-      "link-memo": "Пам'ятка про посилання",
       "retry-image-upload": "Повторіть спробу",
       "add-attachment": "Додати вкладення",
       "image-upload-failed": "Не вдалося завантажити деякі зображення. Повторіть спробу або збережіть завантажені файли як вкладення.",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "Вміст успішно скопійовано.",
     "succeed-copy-link": "Посилання успішно скопійовано.",
     "update-succeed": "Оновлення успішне"
-  },
-  "reference": {
-    "no-memos-found": "Немає знайдених нотаток",
-    "search-placeholder": "Пошук контенту"
   },
   "resource": {
     "delete-all-unused": "Видалити всі невикористані",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Посилання на нотатку",
     "select-location": "Місцезнаходження"
   },
   "demo": {
@@ -941,13 +933,10 @@
     "clear-query": "Очистити запит",
     "edit-query": "Редагувати запит",
     "expression": "Пошуковий вираз",
-    "expression-mode": "Вираз",
     "invalid-expression": "Пошуковий вираз не вдалося застосувати",
     "keyboard-hint": "Enter для пошуку · Shift+Enter для нового рядка",
     "load-error": "Не вдалося завантажити нотатки",
-    "mode": "Режим пошуку",
-    "syntax-help": "Синтаксис пошуку",
-    "text": "Текст"
+    "syntax-help": "Синтаксис пошуку"
   },
   "map": {
     "selection": "Вибрані нотатки",

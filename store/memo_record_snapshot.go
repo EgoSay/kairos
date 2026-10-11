@@ -18,6 +18,7 @@ import (
 // version, content, created seconds, updated seconds, visibility, space UID,
 // row state, location presence, placeholder, latitude IEEE754 big-endian hex,
 // longitude hex, attachment count, then lexicographically sorted attachment UIDs.
+// Only name-only places append "location-name-only"; all legacy hashes stay exact.
 // Float bits avoid language-specific decimal serialization differences.
 // Keep web/src/lib/journal-record-version.ts and the shared vector in sync.
 type MemoRecordSnapshot struct {
@@ -42,6 +43,10 @@ func (s MemoRecordSnapshot) Hash() string {
 	slices.Sort(attachments)
 	fields = append(fields, strconv.Itoa(len(attachments)))
 	fields = append(fields, attachments...)
+	// Preserve every legacy token while distinguishing a label from a real (0, 0) point.
+	if s.Location.GetNameOnly() {
+		fields = append(fields, "location-name-only")
+	}
 	var canonical strings.Builder
 	for _, field := range fields {
 		canonical.WriteString(strconv.Itoa(len([]byte(field))))

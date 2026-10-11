@@ -148,10 +148,7 @@
     "add-your-comment-here": "Voeg hier je opmerking toe…",
     "any-thoughts": "Enkele gedachten…",
     "exit-focus-mode": "Focusmodus afsluiten",
-    "focus-mode": "Focusmodus",
     "insert-menu": {
-      "add-location": "Locatie toevoegen",
-      "link-memo": "Link-memo",
       "retry-image-upload": "Opnieuw proberen",
       "add-attachment": "Bijlage toevoegen",
       "image-upload-failed": "Sommige afbeeldingen konden niet worden geüpload. Probeer het opnieuw of bewaar de geüploade bestanden als bijlagen.",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "Inhoud succesvol gekopieerd.",
     "succeed-copy-link": "Link gekopieerd naar klembord.",
     "update-succeed": "Update voltooid"
-  },
-  "reference": {
-    "no-memos-found": "Geen memos gevonden",
-    "search-placeholder": "Inhoud zoeken"
   },
   "resource": {
     "delete-all-unused": "Alle ongebruikte verwijderen",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Memo linken",
     "select-location": "Locatie"
   },
   "demo": {
@@ -941,13 +933,10 @@
     "clear-query": "Zoekopdracht wissen",
     "edit-query": "Zoekopdracht bewerken",
     "expression": "Zoekuitdrukking",
-    "expression-mode": "Uitdrukking",
     "invalid-expression": "Zoekuitdrukking kon niet worden toegepast",
     "keyboard-hint": "Druk op Enter om te zoeken · Shift+Enter voor een nieuwe regel",
     "load-error": "Memo's konden niet worden geladen",
-    "mode": "Zoekmodus",
-    "syntax-help": "Zoeksyntaxis",
-    "text": "Tekst"
+    "syntax-help": "Zoeksyntaxis"
   },
   "map": {
     "selection": "Geselecteerde memo's",

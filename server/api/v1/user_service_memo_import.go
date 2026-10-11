@@ -395,6 +395,7 @@ func (i *memoImporter) buildMemo(record *memoexport.Memo, uid string, content []
 			Placeholder: record.Location.Placeholder,
 			Latitude:    record.Location.Latitude,
 			Longitude:   record.Location.Longitude,
+			NameOnly:    record.Location.NameOnly,
 		}
 	}
 	return memo, nil

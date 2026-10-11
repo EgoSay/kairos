@@ -505,6 +505,17 @@ func (s *APIV1Service) applyMemoUpdate(ctx context.Context, request *v1pb.Update
 		} else if path == "display_time" {
 			return nil, status.Errorf(codes.InvalidArgument, "display_time is not supported")
 		} else if path == "location" {
+			if err := validateMemoLocation(request.Memo.Location); err != nil {
+				return nil, err
+			}
+			// Older clients discard the new flag and send a name with zero
+			// coordinates. Require a current snapshot before treating that as an
+			// intentional move to the origin; a stale client must not invent a pin.
+			if memo.Payload.GetLocation().GetNameOnly() && request.Memo.Location != nil &&
+				!request.Memo.Location.NameOnly && request.Memo.Location.Latitude == 0 && request.Memo.Location.Longitude == 0 &&
+				update.ExpectedRecordHash == "" {
+				return nil, status.Errorf(codes.FailedPrecondition, "refresh this record in a current client before replacing a place name with coordinates")
+			}
 			if nextMemo.Payload == nil {
 				nextMemo.Payload = &storepb.MemoPayload{}
 			}

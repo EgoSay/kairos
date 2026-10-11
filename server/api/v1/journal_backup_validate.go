@@ -35,6 +35,8 @@ func validateBackupDocuments(documents []journalbackup.Document, memos, attachme
 		seen[d.Kind+"\x00"+d.Key] = true
 		var dest any
 		switch d.Kind {
+		case "named-locations":
+			dest = &journal.NamedPlaces{}
 		case "preferences":
 			dest = &journal.Preferences{}
 		case partition.PartitionKind:
@@ -62,6 +64,13 @@ func validateBackupDocuments(documents []journalbackup.Document, memos, attachme
 			return err
 		}
 		switch value := dest.(type) {
+		case *journal.NamedPlaces:
+			if d.Key != "main" {
+				return errors.New("invalid named locations collection")
+			}
+			if err := value.Validate(); err != nil {
+				return err
+			}
 		case *journal.Preferences:
 			if _, err := time.LoadLocation(value.Timezone); err != nil {
 				return err
@@ -120,6 +129,9 @@ func validateBackupDocuments(documents []journalbackup.Document, memos, attachme
 			}
 			var memo v1pb.Memo
 			if err := protojson.Unmarshal(value.Memo, &memo); err != nil {
+				return err
+			}
+			if err := validateMemoLocation(memo.Location); err != nil {
 				return err
 			}
 			if !containsMemo(memo.Name) {

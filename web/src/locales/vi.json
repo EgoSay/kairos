@@ -148,12 +148,9 @@
     "add-your-comment-here": "Thêm bình luận của bạn tại đây...",
     "any-thoughts": "Có suy nghĩ gì...",
     "exit-focus-mode": "Thoát chế độ tập trung",
-    "focus-mode": "Chế độ tập trung",
     "no-changes-detected": "Không phát hiện thay đổi",
     "save": "Lưu",
     "insert-menu": {
-      "add-location": "Thêm vị trí",
-      "link-memo": "Liên kết bản ghi nhớ",
       "add-attachment": "Thêm tệp đính kèm",
       "image-upload-failed": "Một số hình ảnh không thể tải lên. Hãy thử lại hoặc giữ các tệp đã tải lên dưới dạng tệp đính kèm.",
       "image-upload-stopped": "Quá trình tải ảnh dừng lại {{completed}}/{{total}}",
@@ -326,10 +323,6 @@
     "succeed-copy-content": "Đã sao chép nội dung thành công.",
     "succeed-copy-link": "Sao chép liên kết thành công.",
     "update-succeed": "Cập nhật thành công"
-  },
-  "reference": {
-    "no-memos-found": "Không tìm thấy ghi chú",
-    "search-placeholder": "Tìm kiếm nội dung"
   },
   "resource": {
     "delete-all-unused": "Xóa tất cả không sử dụng",
@@ -856,7 +849,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Liên kết ghi chú",
     "select-location": "Chọn vị trí"
   },
   "live-update": {
@@ -966,14 +958,11 @@
     "clear-query": "Xóa truy vấn",
     "edit-query": "Chỉnh sửa truy vấn",
     "expression": "Biểu thức tìm kiếm",
-    "expression-mode": "Biểu thức",
     "invalid-expression": "Không thể áp dụng biểu thức tìm kiếm",
     "keyboard-hint": "Nhấn Enter để tìm kiếm · Shift+Enter để xuống dòng mới",
     "load-error": "Không thể tải ghi nhớ",
-    "mode": "Chế độ tìm kiếm",
     "retry": "Thử lại",
-    "syntax-help": "Cú pháp tìm kiếm",
-    "text": "Văn bản"
+    "syntax-help": "Cú pháp tìm kiếm"
   },
   "space": {
     "all-spaces": "Tất cả không gian",

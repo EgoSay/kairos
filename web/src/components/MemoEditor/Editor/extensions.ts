@@ -1,7 +1,7 @@
-import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, indentWithTab, isolateHistory } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
 import { indentUnit } from "@codemirror/language";
-import { Compartment, type Extension } from "@codemirror/state";
+import { Compartment, EditorState, type Extension } from "@codemirror/state";
 import { placeholder as cmPlaceholder, dropCursor, EditorView, type KeyBinding, keymap } from "@codemirror/view";
 import { runFormattingCommand } from "@/components/MemoEditor/Editor/formatting";
 import type { EditorCommandId } from "@/components/MemoEditor/formatting/commands";
@@ -10,6 +10,7 @@ import { htmlClipboardMarkdown } from "./clipboard";
 import { headingDecorations } from "./headingDecorations";
 import { liftListItem, sinkListItem } from "./listIndent";
 import { livePreview, previewCompartment } from "./livePreview";
+import { createMemoLinkIntent, type MemoLinkRequest } from "./memoLinkIntent";
 import { tagAutocomplete } from "./tagAutocomplete";
 import { tagMentionDecorations } from "./tagMentionDecorations";
 import { memoEditorTheme } from "./theme";
@@ -71,6 +72,10 @@ export interface EditorExtensionsOptions {
   getTags: () => string[];
   /** Consume the explicit one-shot plain-paste choice, independently of native shortcuts. */
   consumePlainPaste?: () => boolean;
+  /** Ephemeral action for a semantic paste, invalidated by the next document edit. */
+  onPasteAlternative?: (applyPlain: (() => void) | undefined) => void;
+  onLinkRequest?: (request: Omit<MemoLinkRequest, "id">) => void;
+  onPastedMemo?: (name?: string) => void;
 }
 
 export const placeholderCompartment = new Compartment();
@@ -95,6 +100,9 @@ export function buildEditorExtensions({
   onSubmit,
   getTags,
   consumePlainPaste,
+  onPasteAlternative,
+  onLinkRequest,
+  onPastedMemo,
 }: EditorExtensionsOptions): Extension[] {
   // Submitting must outrank defaultKeymap's own Mod-Enter (insertBlankLine): the save
   // shortcut ends the memo, it must not also edit the document. Meta and Ctrl are bound
@@ -116,10 +124,20 @@ export function buildEditorExtensions({
     // Core editing behavior. These are the pieces from CM6 setup that this memo
     // editor uses, without enabling multi-cursor selection.
     history(),
+    // A paste is one reversible action; immediate typing or Backspace must
+    // not merge into it. This also covers CodeMirror's native plain-text path.
+    EditorState.transactionExtender.of((transaction) =>
+      transaction.isUserEvent("input.paste") ? { annotations: isolateHistory.of("full") } : null,
+    ),
     dropCursor(),
     // Indent with spaces (markdown), matching the 2-space bullet nesting.
     indentUnit.of("  "),
     markdown({ extensions: memoMarkdownExtensions }),
+    createMemoLinkIntent({
+      onLinkRequest: (request) => onLinkRequest?.(request),
+      onPastedMemo: (name) => onPastedMemo?.(name),
+      origin: window.location.origin,
+    }),
     ...memoEditorTheme,
     EditorView.lineWrapping,
     // CodeMirror disables native text assistance because it is primarily a code
@@ -165,6 +183,9 @@ export function buildEditorExtensions({
               return token;
             })
           : plain;
+        // Some applications provide an empty/unsupported HTML fragment beside
+        // a valid plain representation. Never swallow that text.
+        if (!text && plain) text = plain;
         for (const placement of placements) {
           placement.offset = text.indexOf(placement.token);
           text = text.replace(placement.token, "");
@@ -174,6 +195,19 @@ export function buildEditorExtensions({
         for (const placement of placements) onFiles([placement.file], { source: "paste", position: start + placement.offset });
         const remaining = files.filter((file) => !placements.some((placement) => placement.file === file));
         if (remaining.length) onFiles(remaining, { source: "paste", position: view.state.selection.main.head });
+        if (html && plain && text !== plain && files.length === 0) {
+          const pastedDocument = view.state.doc;
+          onPasteAlternative?.(() => {
+            if (view.state.doc !== pastedDocument || view.compositionStarted) return;
+            view.dispatch({
+              changes: { from: start, to: start + text.length, insert: plain },
+              selection: { anchor: start + plain.length },
+              userEvent: "input.paste",
+              scrollIntoView: true,
+            });
+            view.focus();
+          });
+        }
         return true;
       },
       keydown: (event) => {
@@ -198,7 +232,10 @@ export function buildEditorExtensions({
     // shortcut wins over CodeMirror's generic selectParentSyntax binding.
     keymap.of([...submitKeys, ...editorKeys, ...formattingKeys, indentWithTab, ...defaultKeymap, ...historyKeymap]),
     EditorView.updateListener.of((u) => {
-      if (u.docChanged) onChange(u.state.doc.toString());
+      if (u.docChanged) {
+        onPasteAlternative?.(undefined);
+        onChange(u.state.doc.toString());
+      }
       // Toolbar active-state depends only on the doc and selection; skip the
       // getActiveFormats tree walk on focus/viewport/measure-only updates.
       if (u.docChanged || u.selectionSet) onUpdate();

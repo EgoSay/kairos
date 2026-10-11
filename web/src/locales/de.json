@@ -148,10 +148,7 @@
     "add-your-comment-here": "Füge deinen Kommentar hinzu...",
     "any-thoughts": "Ein Gedanke...",
     "exit-focus-mode": "Fokus Modus verlassen",
-    "focus-mode": "Fokus Modus",
     "insert-menu": {
-      "add-location": "Standort hinzufügen",
-      "link-memo": "Link-Memo",
       "retry-image-upload": "Wiederholen",
       "add-attachment": "Anhang hinzufügen",
       "image-upload-failed": "Einige Bilder konnten nicht hochgeladen werden. Bitte versuchen Sie es erneut oder behalten Sie die hochgeladenen Dateien als Anhänge bei.",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "Inhalt erfolgreich kopiert.",
     "succeed-copy-link": "Link erfolgreich kopiert",
     "update-succeed": "Update erfolgreich"
-  },
-  "reference": {
-    "no-memos-found": "Keine Notizen gefunden",
-    "search-placeholder": "Suche Notizen"
   },
   "resource": {
     "delete-all-unused": "Alle ungenutzten löschen",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Link Memo",
     "select-location": "Ort"
   },
   "demo": {
@@ -941,13 +933,10 @@
     "clear-query": "Suchanfrage löschen",
     "edit-query": "Suchanfrage bearbeiten",
     "expression": "Suchausdruck",
-    "expression-mode": "Ausdruck",
     "invalid-expression": "Suchausdruck konnte nicht angewendet werden",
     "keyboard-hint": "Eingabetaste zum Suchen · Umschalt+Eingabetaste für eine neue Zeile",
     "load-error": "Kairos konnten nicht geladen werden",
-    "mode": "Suchmodus",
-    "syntax-help": "Suchsyntax",
-    "text": "Text"
+    "syntax-help": "Suchsyntax"
   },
   "map": {
     "selection": "Ausgewählte Notizen",

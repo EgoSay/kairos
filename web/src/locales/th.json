@@ -148,12 +148,9 @@
     "add-your-comment-here": "เพิ่มความคิดเห็นของคุณที่นี่...",
     "any-thoughts": "ความคิดใดๆ...",
     "exit-focus-mode": "ออกจากโหมดโฟกัส",
-    "focus-mode": "โหมดโฟกัส",
     "no-changes-detected": "ไม่มีการเปลี่ยนแปลง",
     "save": "บันทึก",
     "insert-menu": {
-      "add-location": "เพิ่มสถานที่",
-      "link-memo": "บันทึกการเชื่อมโยง",
       "add-attachment": "เพิ่มไฟล์แนบ",
       "image-upload-failed": "ไม่สามารถอัปโหลดรูปภาพบางรูปได้ ลองใหม่อีกครั้งหรือเก็บไฟล์ที่อัปโหลดไว้เป็นไฟล์แนบ",
       "image-upload-stopped": "การอัปโหลดรูปภาพหยุดลง {{completed}}/{{total}}",
@@ -326,10 +323,6 @@
     "succeed-copy-content": "คัดลอกเนื้อหาเรียบร้อยแล้ว",
     "succeed-copy-link": "คัดลอกลิงก์เรียบร้อยแล้ว",
     "update-succeed": "อัปเดตเรียบร้อยแล้ว"
-  },
-  "reference": {
-    "no-memos-found": "ไม่พบบันทึกช่วยจำ",
-    "search-placeholder": "ค้นหาเนื้อหา"
   },
   "resource": {
     "delete-all-unused": "ลบทรัพยากรที่ไม่ได้ใช้ทั้งหมด",
@@ -856,7 +849,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "ลิงก์บันทึกช่วยจำ",
     "select-location": "เลือกตำแหน่ง"
   },
   "live-update": {
@@ -966,14 +958,11 @@
     "clear-query": "ล้างคำค้นหา",
     "edit-query": "แก้ไขคำค้นหา",
     "expression": "นิพจน์การค้นหา",
-    "expression-mode": "นิพจน์",
     "invalid-expression": "ไม่สามารถใช้นิพจน์การค้นหาได้",
     "keyboard-hint": "กด Enter เพื่อค้นหา · กด Shift+Enter เพื่อขึ้นบรรทัดใหม่",
     "load-error": "ไม่สามารถโหลดบันทึกช่วยจำ",
-    "mode": "โหมดการค้นหา",
     "retry": "ลองใหม่",
-    "syntax-help": "ไวยากรณ์การค้นหา",
-    "text": "ข้อความ"
+    "syntax-help": "ไวยากรณ์การค้นหา"
   },
   "space": {
     "all-spaces": "พื้นที่ทั้งหมด",

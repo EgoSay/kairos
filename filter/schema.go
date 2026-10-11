@@ -261,6 +261,17 @@ func NewSchema() Schema {
 				CompareNeq: true,
 			},
 		},
+		"location_name_only": {
+			Name:     "location_name_only",
+			Kind:     FieldKindJSONBool,
+			Type:     FieldTypeBool,
+			Column:   Column{Table: "memo", Name: "payload"},
+			JSONPath: []string{"location", "nameOnly"},
+			AllowedComparisonOps: map[ComparisonOperator]bool{
+				CompareEq:  true,
+				CompareNeq: true,
+			},
+		},
 	}
 
 	addMemoFacetFields(fields)
@@ -286,6 +297,7 @@ func NewSchema() Schema {
 		cel.Variable("has_code", cel.BoolType),
 		cel.Variable("has_incomplete_tasks", cel.BoolType),
 		cel.Variable("has_location", cel.BoolType),
+		cel.Variable("location_name_only", cel.BoolType),
 		cel.Variable("now", cel.TimestampType),
 		ext.Sets(),
 		cel.ASTValidators(cel.ValidateRegexLiterals()),

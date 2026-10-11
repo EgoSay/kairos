@@ -78,7 +78,10 @@ stmt, _ := engine.CompileToStatement(ctx, `has_task_list && visibility == "PUBLI
   `memo.payload` (`$.location`). A missing key and an explicit JSON null both
   count as absent on every dialect; any other value — including an empty object —
   counts as present. Only `==`/`!=` against a boolean literal (or bare/negated
-  use) is allowed.
+  use) is allowed. `location_name_only` reads the optional boolean
+  `location.nameOnly`, defaulting to false for legacy payloads. Maps and their
+  sidebar counts use `has_location && !location_name_only`; a normal location
+  filter still includes personal place names without coordinates.
 - **String Matching** — `content.contains(x)`, `content.startsWith(x)`, and
   `content.endsWith(x)` render as case-insensitive `LIKE`/`ILIKE` with LIKE
   metacharacters (`%`, `_`, `\`) escaped. Available on scalar string fields whose

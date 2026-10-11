@@ -186,10 +186,7 @@
     "add-your-comment-here": "Pridėkite savo komentarą čia...",
     "any-thoughts": "Bet kokios mintys...",
     "exit-focus-mode": "Išeikite iš fokusavimo režimo",
-    "focus-mode": "Fokusavimo režimas",
     "insert-menu": {
-      "add-location": "Pridėti vietą",
-      "link-memo": "Nuorodos atmintinė",
       "retry-image-upload": "Bandykite dar kartą",
       "add-attachment": "Pridėti priedą",
       "image-upload-failed": "Kai kurių vaizdų nepavyko įkelti. Bandykite dar kartą arba išsaugokite įkeltus failus kaip priedus.",
@@ -369,10 +366,6 @@
     "succeed-copy-content": "Turinys sėkmingai nukopijuotas.",
     "succeed-copy-link": "Nuoroda sėkmingai nukopijuota.",
     "update-succeed": "Atnaujinimas pavyko"
-  },
-  "reference": {
-    "no-memos-found": "Nerasta jokių atmintinių",
-    "search-placeholder": "Ieškoti turinio"
   },
   "resource": {
     "delete-all-unused": "Ištrinkite visus nenaudojamus",
@@ -899,7 +892,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Nuorodos atmintinė",
     "select-location": "Vieta"
   },
   "attachment-details": {
@@ -941,13 +933,10 @@
     "clear-query": "Išvalyti užklausą",
     "edit-query": "Redaguoti užklausą",
     "expression": "Paieškos išraiška",
-    "expression-mode": "Išraiška",
     "invalid-expression": "Paieškos išraiškos pritaikyti nepavyko",
     "keyboard-hint": "Paspauskite „Enter“, kad ieškotumėte · Paspauskite „Shift“ + „Enter“, kad pereitumėte į naują eilutę",
     "load-error": "Nepavyko įkelti atmintinių",
-    "mode": "Paieškos režimas",
-    "syntax-help": "Paieškos sintaksė",
-    "text": "Tekstas"
+    "syntax-help": "Paieškos sintaksė"
   },
   "map": {
     "selection": "Pasirinkti priminimai",

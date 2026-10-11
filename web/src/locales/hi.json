@@ -148,12 +148,9 @@
     "add-your-comment-here": "अपनी टिप्पणी यहाँ जोड़ें...",
     "any-thoughts": "कोई विचार...",
     "exit-focus-mode": "फोकस मोड से बाहर निकलें",
-    "focus-mode": "फोकस मोड",
     "no-changes-detected": "कोई बदलाव नहीं पाया गया",
     "save": "सहेजें",
     "insert-menu": {
-      "add-location": "स्थान जोड़ें",
-      "link-memo": "लिंक मेमो",
       "add-attachment": "अटैचमेंट जोड़ें",
       "image-upload-failed": "कुछ इमेज अपलोड नहीं हो सकीं. दोबारा कोशिश करें या अपलोड की गई फ़ाइलों को अटैचमेंट के तौर पर रखें.",
       "image-upload-stopped": "इमेज अपलोड रुक गया {{completed}}/{{total}}",
@@ -326,10 +323,6 @@
     "succeed-copy-content": "सामग्री सफलतापूर्वक कॉपी की गई।",
     "succeed-copy-link": "लिंक सफलतापूर्वक कॉपी किया गया।",
     "update-succeed": "अपडेट सफल हुआ"
-  },
-  "reference": {
-    "no-memos-found": "कोई मेमो नहीं मिला",
-    "search-placeholder": "सामग्री खोजें"
   },
   "resource": {
     "delete-all-unused": "सभी अप्रयुक्त हटाएं",
@@ -856,7 +849,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "मेमो लिंक करें",
     "select-location": "स्थान चुनें"
   },
   "live-update": {
@@ -966,14 +958,11 @@
     "clear-query": "क्वेरी क्लियर करें",
     "edit-query": "क्वेरी एडिट करें",
     "expression": "सर्च एक्सप्रेशन",
-    "expression-mode": "एक्सप्रेशन",
     "invalid-expression": "सर्च एक्सप्रेशन अप्लाई नहीं किया जा सका",
     "keyboard-hint": "सर्च करने के लिए एंटर करें · नई लाइन के लिए Shift+Enter दबाएं",
     "load-error": "मेमो लोड नहीं हो सके",
-    "mode": "सर्च मोड",
     "retry": "रिट्री करें",
-    "syntax-help": "सर्च सिंटैक्स",
-    "text": "टेक्स्ट"
+    "syntax-help": "सर्च सिंटैक्स"
   },
   "space": {
     "all-spaces": "सभी स्पेस",

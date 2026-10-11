@@ -7,6 +7,7 @@ import type { LocationState } from "../types/insertMenu";
 
 interface DraftLocation extends LocationState {
   accuracyMeters?: number;
+  deviceCandidate: boolean;
   locating: boolean;
   locationError: string;
   resolving: boolean;
@@ -16,12 +17,13 @@ interface DraftLocation extends LocationState {
 const validPoint = (point?: MapPoint): point is MapPoint =>
   Boolean(point && Number.isFinite(point.lat) && Number.isFinite(point.lng) && Math.abs(point.lat) <= 90 && Math.abs(point.lng) <= 180);
 const initialState = (location?: Location): DraftLocation => {
-  const point = location && { lat: location.latitude, lng: location.longitude };
+  const point = location && !location.nameOnly ? { lat: location.latitude, lng: location.longitude } : undefined;
   return {
     placeholder: location?.placeholder ?? "",
     position: validPoint(point) ? point : undefined,
     latInput: validPoint(point) ? String(point.lat) : "",
     lngInput: validPoint(point) ? String(point.lng) : "",
+    deviceCandidate: false,
     locating: false,
     locationError: "",
     resolving: false,
@@ -79,6 +81,7 @@ export const useLocation = (initialLocation?: Location) => {
         locationError: "",
         nameError: "",
         accuracyMeters: undefined,
+        deviceCandidate: false,
       };
       const point = { lat: Number(next.latInput), lng: Number(next.lngInput) };
       next.position = next.latInput.trim() && next.lngInput.trim() && validPoint(point) ? point : undefined;
@@ -96,7 +99,7 @@ export const useLocation = (initialLocation?: Location) => {
   const locate = useCallback(() => {
     const request = invalidate();
     if (!navigator.geolocation || !window.isSecureContext) {
-      commit({ ...current.current, locating: false, locationError: "当前环境无法使用设备定位，请使用 HTTPS，或搜索地点、手动选点。" });
+      commit({ ...current.current, locating: false, locationError: "暂时无法获取位置，可以选常用地点或输入名字。设备定位需要 HTTPS。" });
       return;
     }
     commit({ ...current.current, locating: true, resolving: false, locationError: "", nameError: "" });
@@ -106,10 +109,10 @@ export const useLocation = (initialLocation?: Location) => {
       clearTimeout(timeout.current);
       const message =
         code === 1
-          ? "定位权限被拒绝，可在浏览器设置中允许后重试，或手动选点。"
+          ? "定位权限被拒绝，可以选常用地点或输入名字，也可在浏览器设置中允许后重试。"
           : code === 3
-            ? "定位超时，请重试或手动选点。原位置未改变。"
-            : "设备暂时无法确定位置，请重试或手动选点。";
+            ? "定位超时，可以选常用地点或输入名字。原位置未改变。"
+            : "设备暂时无法确定位置，可以选常用地点或输入名字。";
       commit({ ...current.current, locating: false, locationError: message });
     };
     timeout.current = setTimeout(() => fail(3), 12_000);
@@ -129,6 +132,7 @@ export const useLocation = (initialLocation?: Location) => {
           latInput: String(point.lat),
           lngInput: String(point.lng),
           accuracyMeters: Number.isFinite(accuracy) && accuracy >= 0 ? accuracy : undefined,
+          deviceCandidate: true,
         });
       },
       (error) => fail(error.code),
@@ -157,7 +161,11 @@ export const useLocation = (initialLocation?: Location) => {
   }, [commit, invalidate]);
   const getLocation = useCallback((): Location | undefined => {
     const { position, placeholder } = current.current;
-    if (!validPoint(position)) return undefined;
+    if (!validPoint(position)) {
+      // An incomplete manual coordinate edit must not silently become a name.
+      if (current.current.latInput.trim() || current.current.lngInput.trim() || !placeholder.trim()) return undefined;
+      return create(LocationSchema, { placeholder: placeholder.trim(), nameOnly: true });
+    }
     return create(LocationSchema, { latitude: position.lat, longitude: position.lng, placeholder: placeholder.trim() });
   }, []);
   return { state, handlePositionChange, updateCoordinate, setPlaceholder, reset, getLocation, locate, resolveName };

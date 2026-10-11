@@ -1,4 +1,4 @@
-import { Maximize2Icon } from "lucide-react";
+import { Maximize2Icon, Minimize2Icon, TypeIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { PendingRecords } from "./components/PendingRecords";
 import { RecordConflict } from "./components/RecordConflict";
 import { FOCUS_MODE_STYLES, FORMATTING_TOOLBAR_STORAGE_KEY } from "./constants";
 import type { EditorFileOrigin } from "./Editor/extensions";
+import type { MemoLinkRequest } from "./Editor/memoLinkIntent";
 import {
   splitInlineLocalFiles,
   toLocalFiles,
@@ -33,6 +34,7 @@ import { useDurableDraft } from "./hooks/useDurableDraft";
 import { cacheService, errorService, transcriptionService } from "./services";
 import { EditorProvider, useEditorContext, useEditorSelector } from "./state";
 import { EditorToolbar, FormattingToolbar } from "./Toolbar";
+import { SelectionFormattingToolbar } from "./Toolbar/SelectionFormattingToolbar";
 import type { EditorViewToggles, MemoEditorProps } from "./types";
 import type { LocalFile } from "./types/attachment";
 import type { EditorController } from "./types/editorController";
@@ -90,11 +92,15 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
   const { createBlobUrl } = useBlobUrls();
   const saveMediaMetadata = userGeneralSetting?.saveMediaMetadata ?? false;
   const inlineImageUpload = useInlineImageUpload(editorRef);
-  // Persisted preference: also show the formatting toolbar in normal mode. Focus
-  // mode always shows it regardless; this only governs the non-focus layout.
-  const [isFormattingToolbarVisible, setFormattingToolbarVisible] = useLocalStorage(FORMATTING_TOOLBAR_STORAGE_KEY, true);
+  const [isFormattingToolbarVisible, setFormattingToolbarVisible] = useLocalStorage(FORMATTING_TOOLBAR_STORAGE_KEY, false);
 
   const [sourceMode, setSourceMode] = useState(false);
+  const intentId = useRef(0);
+  const [linkRequest, setLinkRequest] = useState<MemoLinkRequest>();
+  const [locationRequest, setLocationRequest] = useState(0);
+  const requestLink = useCallback((request: Omit<MemoLinkRequest, "id">) => {
+    setLinkRequest({ ...request, id: ++intentId.current });
+  }, []);
   const [plainPasteArmed, setPlainPasteArmed] = useState(false);
   const plainPasteRef = useRef(false);
   const consumePlainPaste = useCallback(() => {
@@ -363,16 +369,21 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
     }
   };
 
-  // The ＋ menu's view toggles only describe how an inline editor presents
-  // itself, so a hosted editor offers neither: its host owns the frame, and
-  // focus mode already forces the formatting toolbar on.
-  const viewToggles: EditorViewToggles | undefined = onFocusModeExit
-    ? undefined
-    : {
-        onToggleFocusMode: handleToggleFocusMode,
-        isFormattingToolbarVisible,
-        onToggleFormattingToolbar: handleToggleFormattingToolbar,
-      };
+  const viewToggles: EditorViewToggles = {
+    isFormattingToolbarVisible,
+    onToggleFormattingToolbar: handleToggleFormattingToolbar,
+    sourceMode,
+    onToggleSourceMode: () => {
+      setSourceMode((value) => !value);
+      editorRef.current?.focus();
+    },
+    plainPasteArmed,
+    onTogglePlainPaste: () => {
+      plainPasteRef.current = !plainPasteRef.current;
+      setPlainPasteArmed(plainPasteRef.current);
+      editorRef.current?.focus();
+    },
+  };
 
   const handleSave = useMemoSave({
     owner: currentUser?.name,
@@ -419,50 +430,55 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
           !isFocusMode && className,
         )}
       >
-        {/* The default visual editor exposes formatting and focus directly. */}
+        {/* Content is primary; advanced representation choices stay in More. */}
         <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            aria-pressed={sourceMode}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => setSourceMode((value) => !value)}
-          >
-            {sourceMode ? "切换可视化编辑" : "Markdown 源码"}
-          </Button>
-          <Button
-            size="sm"
-            variant={plainPasteArmed ? "secondary" : "ghost"}
-            aria-pressed={plainPasteArmed}
-            title="开启后按 Cmd / Ctrl + V，下次粘贴仅保留文字"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              plainPasteRef.current = !plainPasteRef.current;
-              setPlainPasteArmed(plainPasteRef.current);
-              editorRef.current?.focus();
-            }}
-          >
-            纯文本粘贴
-          </Button>
-          {!isFocusMode && (
-            <Button size="sm" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={handleToggleFocusMode}>
-              <Maximize2Icon className="size-4" />
-              聚焦
+          <span className="text-sm text-muted-foreground">{memoName ? "编辑记录" : "记录此刻"}</span>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="quiet"
+              className="min-h-11 gap-1.5"
+              aria-pressed={isFormattingToolbarVisible}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={handleToggleFormattingToolbar}
+            >
+              <TypeIcon className="size-4" />
+              格式
             </Button>
-          )}
+            <Button
+              type="button"
+              size="sm"
+              variant="quiet"
+              className="min-h-11 gap-1.5"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={handleToggleFocusMode}
+            >
+              {isFocusMode ? (
+                onFocusModeExit ? (
+                  <XIcon className="size-4" />
+                ) : (
+                  <Minimize2Icon className="size-4" />
+                )
+              ) : (
+                <Maximize2Icon className="size-4" />
+              )}
+              {isFocusMode ? (onFocusModeExit ? t("common.close") : t("editor.exit-focus-mode")) : "聚焦"}
+            </Button>
+          </div>
         </div>
+        {sourceMode && (
+          <Button type="button" size="sm" variant="secondary" onClick={viewToggles.onToggleSourceMode}>
+            正在编辑源码 · 返回可视化编辑
+          </Button>
+        )}
         {plainPasteArmed && (
           <p className="shrink-0 text-xs text-muted-foreground" role="status">
             现在按 Cmd / Ctrl + V，下次粘贴仅保留文字。再次点击可取消。
           </p>
         )}
-        {(isFocusMode || isFormattingToolbarVisible) && (
-          <FormattingToolbar
-            className="shrink-0"
-            controllerRef={editorRef}
-            onInsertImages={handleInsertImages}
-            exit={isFocusMode ? { action: onFocusModeExit ? "close" : "minimize", onExit: handleToggleFocusMode } : undefined}
-          />
+        {isFormattingToolbarVisible && (
+          <FormattingToolbar className="shrink-0" controllerRef={editorRef} onInsertImages={handleInsertImages} />
         )}
 
         {(memoName || (!memo && hasTimestamp)) && (
@@ -479,7 +495,9 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
           onFiles={handleEditorFiles}
           sourceMode={sourceMode}
           consumePlainPaste={consumePlainPaste}
+          onLinkRequest={requestLink}
         />
+        {!sourceMode && !isFormattingToolbarVisible && <SelectionFormattingToolbar controllerRef={editorRef} />}
 
         {isAudioRecorderOpen && (audioRecorder.isBusy || isTranscribingAudio) && (
           <AudioRecorderPanel
@@ -543,6 +561,9 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
             tabIndex={isFocusMode ? 0 : undefined}
           >
             <EditorMetadata
+              onEditLocation={() => {
+                if (!isSaving) setLocationRequest((value) => value + 1);
+              }}
               memoName={memoName}
               uploadingLocalFileURLs={inlineImageUpload.uploadingLocalFileURLs}
               onInsertAttachments={inlineImageUpload.insertRemoteImages}
@@ -556,6 +577,8 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
             )}
           </div>
           <EditorToolbar
+            linkRequest={linkRequest}
+            locationRequest={locationRequest}
             onReturnToEditor={() => editorRef.current?.focus()}
             onSave={handleSave}
             onCancel={onCancel ? handleCancel : undefined}

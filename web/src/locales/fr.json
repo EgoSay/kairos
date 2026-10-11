@@ -148,10 +148,7 @@
     "add-your-comment-here": "Ajoutez votre commentaire ici...",
     "any-thoughts": "Des idées...",
     "exit-focus-mode": "Quitter le mode concentration",
-    "focus-mode": "Mode concentration",
     "insert-menu": {
-      "add-location": "Ajouter un emplacement",
-      "link-memo": "Lien vers un mémo",
       "retry-image-upload": "Réessayer",
       "add-attachment": "Ajouter une pièce jointe",
       "image-upload-failed": "Certaines images n'ont pas pu être chargées. Veuillez réessayer ou conserver les fichiers chargés en pièces jointes.",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "Contenu copié avec succès.",
     "succeed-copy-link": "Lien copié avec succès.",
     "update-succeed": "Mise à jour réussie"
-  },
-  "reference": {
-    "no-memos-found": "Aucune note trouvée",
-    "search-placeholder": "Rechercher du contenu"
   },
   "resource": {
     "delete-all-unused": "Supprimer toutes les ressources inutilisées",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Lier une note",
     "select-location": "Localisation"
   },
   "demo": {
@@ -941,13 +933,10 @@
     "clear-query": "Effacer la requête",
     "edit-query": "Modifier la requête",
     "expression": "Expression de recherche",
-    "expression-mode": "Expression",
     "invalid-expression": "L'expression de recherche n'a pas pu être appliquée",
     "keyboard-hint": "Appuyez sur Entrée pour lancer la recherche · Maj+Entrée pour un saut de ligne",
     "load-error": "Impossible de charger les notes",
-    "mode": "Mode de recherche",
-    "syntax-help": "Syntaxe de recherche",
-    "text": "Texte"
+    "syntax-help": "Syntaxe de recherche"
   },
   "map": {
     "selection": "Mémos sélectionnés",

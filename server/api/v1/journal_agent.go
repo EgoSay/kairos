@@ -158,5 +158,13 @@ func (s *APIV1Service) agentMemo(memo *v1pb.Memo, zone string) map[string]any {
 	if s.Profile != nil {
 		base = strings.TrimRight(s.Profile.InstanceURL, "/")
 	}
-	return map[string]any{"name": memo.Name, "content": memo.Content, "recordTime": memo.CreateTime.AsTime().Format(time.RFC3339), "updatedTime": memo.UpdateTime.AsTime().Format(time.RFC3339), "tags": memo.Tags, "pinned": memo.Pinned, "state": memo.State.String(), "timezone": zone, "sourceUrl": base + "/" + memo.Name, "contentTruncated": false}
+	result := map[string]any{"name": memo.Name, "content": memo.Content, "recordTime": memo.CreateTime.AsTime().Format(time.RFC3339), "updatedTime": memo.UpdateTime.AsTime().Format(time.RFC3339), "tags": memo.Tags, "pinned": memo.Pinned, "state": memo.State.String(), "timezone": zone, "sourceUrl": base + "/" + memo.Name, "contentTruncated": false}
+	if location := memo.Location; location != nil {
+		place := map[string]any{"name": location.Placeholder, "nameOnly": location.NameOnly}
+		if !location.NameOnly {
+			place["latitude"], place["longitude"] = location.Latitude, location.Longitude
+		}
+		result["location"] = place
+	}
+	return result
 }

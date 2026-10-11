@@ -15,6 +15,13 @@ const state = vi.hoisted(() => ({
   removeFilter: vi.fn(),
 }));
 
+vi.mock("@/components/MemoContent", () => ({ default: () => null }));
+vi.mock("@/contexts/ViewContext", () => ({ useView: () => ({ timeBasis: "create_time" }) }));
+vi.mock("@/hooks/useJournalQueries", () => ({ useJournalPreferences: () => ({ data: { timezone: "Asia/Shanghai" } }) }));
+vi.mock("@/hooks/useMemoCandidateSearch", () => ({
+  useMemoCandidateSearch: () => ({ memos: [], isFetching: false, isError: false, retry: vi.fn() }),
+}));
+
 vi.mock("@/contexts/MemoFilterContext", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/contexts/MemoFilterContext")>();
   return {
@@ -100,13 +107,21 @@ describe("Quick Find navigation", () => {
     return router;
   };
   const openQuickFind = () => fireEvent.click(screen.getByRole("button", { name: "Open Quick Find" }));
+  const findSearchField = async () =>
+    screen.queryByRole("textbox", { name: "search.expression" }) ?? (await screen.findByRole("combobox", { name: /^搜索 / }));
+  const searchField = () =>
+    screen.queryByRole("textbox", { name: "search.expression" }) ?? screen.getByRole("combobox", { name: /^搜索 / });
+  const openAdvanced = () => {
+    fireEvent.click(screen.getByRole("button", { name: "更多筛选" }));
+    fireEvent.click(screen.getByRole("button", { name: "高级表达式" }));
+  };
 
   it("preserves the draft when changing modes and submits CEL with Enter", async () => {
-    renderSearch();
+    renderSearch("/spaces/product");
     openQuickFind();
-    fireEvent.change(await screen.findByRole("textbox"), { target: { value: "pinned || has_link" } });
-    fireEvent.click(screen.getByRole("tab", { name: "高级搜索" }));
-    const expression = screen.getByRole("textbox");
+    fireEvent.change(await findSearchField(), { target: { value: "pinned || has_link" } });
+    openAdvanced();
+    const expression = searchField();
     expect(expression.tagName).toBe("TEXTAREA");
     expect(expression).toHaveValue("pinned || has_link");
     expect(expression).toHaveFocus();
@@ -124,26 +139,26 @@ describe("Quick Find navigation", () => {
     ];
     renderSearch();
     openQuickFind();
-    const expression = await screen.findByRole("textbox");
+    const expression = await findSearchField();
     expect(expression).toHaveValue("pinned\n || has_code");
-    expect(screen.getByRole("tab", { name: "高级搜索" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("button", { name: "高级表达式 · 切回关键词" })).toBeInTheDocument();
     fireEvent.change(expression, { target: { value: "has_link" } });
     fireEvent.keyDown(expression, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(state.setFilters).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "search.edit-query" }));
-    expect(await screen.findByRole("textbox")).toHaveValue("pinned\n || has_code");
-    fireEvent.click(screen.getByRole("tab", { name: "search.text" }));
-    expect(screen.getByRole("textbox")).toHaveValue("pinned || has_code");
-    fireEvent.click(screen.getByRole("tab", { name: "高级搜索" }));
-    expect(screen.getByRole("textbox")).toHaveValue("pinned\n || has_code");
+    expect(await findSearchField()).toHaveValue("pinned\n || has_code");
+    fireEvent.click(screen.getByRole("button", { name: "高级表达式 · 切回关键词" }));
+    expect(searchField()).toHaveValue("pinned || has_code");
+    openAdvanced();
+    expect(searchField()).toHaveValue("pinned\n || has_code");
   });
 
   it.each(["text", "cel"])("ignores Enter during IME composition in %s mode", async (mode) => {
     renderSearch();
     openQuickFind();
-    if (mode === "cel") fireEvent.click(screen.getByRole("tab", { name: "高级搜索" }));
-    const input = await screen.findByRole("textbox");
+    if (mode === "cel") openAdvanced();
+    const input = await findSearchField();
     fireEvent.change(input, { target: { value: "pinned" } });
     const composingEnter = createEvent.keyDown(input, { key: "Enter", isComposing: true });
     const legacyComposingEnter = createEvent.keyDown(input, { key: "Enter", keyCode: 229 });
@@ -162,7 +177,7 @@ describe("Quick Find navigation", () => {
     ];
     renderSearch();
     openQuickFind();
-    fireEvent.keyDown(await screen.findByRole("textbox"), { key: "Escape" });
+    fireEvent.keyDown(await findSearchField(), { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     const [removeCel] = screen.getAllByRole("button", { name: "Remove filter" });
     fireEvent.click(removeCel);
@@ -170,16 +185,16 @@ describe("Quick Find navigation", () => {
     expect(state.filters.filter((filter) => !predicate(filter))).toEqual([{ factor: "tagSearch", value: "work" }]);
   });
 
-  it("searches from Inbox into global Explore in one history step", async () => {
+  it("defaults to own records from Inbox and preserves one-step history", async () => {
     const router = renderSearch("/inbox");
 
     expect(screen.getByTestId("scope")).toHaveTextContent("all");
     openQuickFind();
-    const input = await screen.findByRole("textbox");
+    const input = await findSearchField();
     fireEvent.change(input, { target: { value: "roadmap" } });
     fireEvent.submit(input.closest("form")!);
 
-    await waitFor(() => expect(screen.getByTestId("path")).toHaveTextContent("/explore?filter=contentSearch%3Aroadmap"));
+    await waitFor(() => expect(screen.getByTestId("path")).toHaveTextContent("/?filter=contentSearch%3Aroadmap"));
     expect(state.setFilters).not.toHaveBeenCalled();
     expect(screen.getByTestId("scope")).toHaveTextContent("all");
 
@@ -193,14 +208,14 @@ describe("Quick Find navigation", () => {
   it("combines visual facets and switches a Space search to all own records", async () => {
     renderSearch("/spaces/product");
     openQuickFind();
-    fireEvent.change(await screen.findByRole("textbox"), { target: { value: "去年" } });
-    fireEvent.click(screen.getByRole("button", { name: "筛选" }));
+    fireEvent.change(await findSearchField(), { target: { value: "去年" } });
+    fireEvent.click(screen.getByRole("button", { name: "更多筛选" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "未添加标签" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "有图片" }));
     fireEvent.change(screen.getByLabelText("开始日期"), { target: { value: "2025-01-01" } });
     fireEvent.change(screen.getByLabelText("结束日期"), { target: { value: "2025-12-31" } });
     fireEvent.change(screen.getByRole("combobox", { name: "搜索范围" }), { target: { value: "own" } });
-    fireEvent.click(screen.getByRole("button", { name: "应用筛选" }));
+    fireEvent.click(screen.getByRole("button", { name: "查看全部匹配记录" }));
     await waitFor(() => expect(screen.getByTestId("path").textContent).toMatch(/^\/\?filter=/));
     const params = new URLSearchParams(screen.getByTestId("path").textContent!.split("?")[1]);
     expect(params.get("filter")).toContain("untagged:true");
@@ -213,13 +228,13 @@ describe("Quick Find navigation", () => {
     state.filters = [{ factor: "tagSearch", value: "人生/阅读" }];
     renderSearch("/");
     openQuickFind();
-    fireEvent.click(screen.getByRole("button", { name: "筛选 (1)" }));
+    fireEvent.click(screen.getByRole("button", { name: "更多筛选" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "未添加标签" }));
     expect(screen.queryByRole("button", { name: "移除包含标签 人生/阅读" })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("开始日期"), { target: { value: "2026-12-31" } });
     fireEvent.change(screen.getByLabelText("结束日期"), { target: { value: "2026-01-01" } });
     expect(screen.getByRole("alert")).toHaveTextContent("开始日期不能晚于结束日期");
-    expect(screen.getByRole("button", { name: "应用筛选" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "查看全部匹配记录" })).toBeDisabled();
     fireEvent.submit(screen.getByRole("dialog").querySelector("form")!);
     expect(state.setFilters).not.toHaveBeenCalled();
   });
@@ -228,9 +243,10 @@ describe("Quick Find navigation", () => {
     renderSearch("/spaces/product");
 
     openQuickFind();
-    const input = await screen.findByRole("textbox");
-    expect(input).toHaveAttribute("placeholder", "common.search Product · common.memos");
-    expect(input).toHaveAttribute("aria-label", "common.search Product · common.memos");
+    const input = await findSearchField();
+    expect(input).toHaveAttribute("placeholder", "找回一句话、一个片段……");
+    expect(screen.getByText("Product · common.memos")).toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-label", "搜索 Product · common.memos");
   });
 
   it("shows a UID for matching titles and compacts its UUID only in the placeholder", async () => {
@@ -242,9 +258,10 @@ describe("Quick Find navigation", () => {
     renderSearch(`/spaces/${uuid}`);
 
     openQuickFind();
-    const input = await screen.findByRole("textbox");
-    expect(input).toHaveAttribute("placeholder", "common.search Product (123e4567…) · common.memos");
-    expect(input).toHaveAttribute("aria-label", `common.search Product (${uuid}) · common.memos`);
+    const input = await findSearchField();
+    expect(input).toHaveAttribute("placeholder", "找回一句话、一个片段……");
+    expect(screen.getByText("Product (123e4567…) · common.memos")).toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-label", `搜索 Product (${uuid}) · common.memos`);
   });
 
   it("preserves an anonymous global page in history", async () => {
@@ -253,7 +270,7 @@ describe("Quick Find navigation", () => {
     const router = renderSearch("/about");
 
     openQuickFind();
-    const input = await screen.findByRole("textbox");
+    const input = await findSearchField();
     fireEvent.change(input, { target: { value: "roadmap" } });
     fireEvent.submit(input.closest("form")!);
 

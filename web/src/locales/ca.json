@@ -148,10 +148,7 @@
     "add-your-comment-here": "Afegeix el teu comentari aquí...",
     "any-thoughts": "Alguna idea...",
     "exit-focus-mode": "Surt del mode focus",
-    "focus-mode": "Mode focus",
     "insert-menu": {
-      "add-location": "Afegeix la ubicació",
-      "link-memo": "Nota d'enllaç",
       "retry-image-upload": "Torna-ho a provar",
       "add-attachment": "Afegeix un fitxer adjunt",
       "image-upload-failed": "No s'han pogut carregar algunes imatges. Torneu-ho a intentar o conserveu els fitxers carregats com a fitxers adjunts.",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "Contingut copiat correctament.",
     "succeed-copy-link": "Enllaç copiat correctament.",
     "update-succeed": "Actualització correcta"
-  },
-  "reference": {
-    "no-memos-found": "No s'han trobat notes",
-    "search-placeholder": "Cerca contingut"
   },
   "resource": {
     "delete-all-unused": "Elimina tots els sense ús",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Enllaça nota",
     "select-location": "Ubicació"
   },
   "demo": {
@@ -941,13 +933,10 @@
     "clear-query": "Esborra la consulta",
     "edit-query": "Edita la consulta",
     "expression": "Expressió de cerca",
-    "expression-mode": "Expressió",
     "invalid-expression": "No s'ha pogut aplicar l'expressió de cerca",
     "keyboard-hint": "Introduïu per cercar · Majúscules+Introduïu per a una nova línia",
     "load-error": "No s'han pogut carregar els memoràndums",
-    "mode": "Mode de cerca",
-    "syntax-help": "Sintaxi de cerca",
-    "text": "Text"
+    "syntax-help": "Sintaxi de cerca"
   },
   "map": {
     "selection": "Notes seleccionades",

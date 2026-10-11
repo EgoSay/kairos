@@ -15,7 +15,7 @@ import type { EditorController } from "../types/editorController";
  * formatting capability for the focus-mode toolbar.
  */
 export const EditorContent = forwardRef<EditorController, EditorContentProps>(
-  ({ placeholder, onSubmit, onFiles, sourceMode, consumePlainPaste }, ref) => {
+  ({ placeholder, onSubmit, onFiles, sourceMode, consumePlainPaste, onLinkRequest }, ref) => {
     const { actions, dispatch } = useEditorContext();
     const content = useEditorSelector((s) => s.content);
     const contentSource = useEditorSelector((s) => s.contentSource);
@@ -40,6 +40,7 @@ export const EditorContent = forwardRef<EditorController, EditorContentProps>(
           isFocusMode={isFocusMode}
           sourceMode={sourceMode}
           consumePlainPaste={consumePlainPaste}
+          onLinkRequest={onLinkRequest}
           onContentChange={handleContentChange}
           onExternalContentApplied={handleExternalContentApplied}
           onFiles={onFiles}

@@ -240,7 +240,6 @@
     },
     "comment": "Kommenter",
     "exit-focus-mode": "Gå ut av fokusmodus",
-    "focus-mode": "Fokusmodus",
     "format": {
       "bold": "Feit skrift",
       "bullet-list": "Punktliste",
@@ -263,12 +262,10 @@
     "formatting-toolbar": "Verktyline for formatering",
     "insert-menu": {
       "add-attachment": "Legg til vedlegg",
-      "add-location": "Legg til stad",
       "image-upload-failed": "Somme bilete kunne diverre ikkje lastast opp. Prøv att, eller hald på dei opplasta filene som vedlegg.",
       "image-upload-stopped": "Biletopplastinga stogga {{completed}}/{{total}}",
       "insert-image": "Set inn bilete",
       "keep-as-attachments": "Hald på som vedlegg",
-      "link-memo": "Knyt til notat",
       "retry-image-upload": "Prøv att",
       "uploading-images": "Lastar opp bilete {{completed}}/{{total}}",
       "uploading-inline-image": "Lastar opp til innhaldet"
@@ -429,10 +426,6 @@
     "succeed-copy-link": "Lenkja er kopiert.",
     "update-succeed": "Oppdateringa lukkast"
   },
-  "reference": {
-    "no-memos-found": "Ingen notat funne",
-    "search-placeholder": "Søk i innhald"
-  },
   "resource": {
     "delete-all-unused": "Slett alle ubrukte",
     "delete-all-unused-confirm": "Er du viss på at du vil slette alle ubrukte ressursar? DENNE HANDLINGA KAN IKKJE GJERAST OM",
@@ -448,14 +441,11 @@
     "clear-query": "Tøm søket",
     "edit-query": "Rediger søket",
     "expression": "Søkjeuttrykk",
-    "expression-mode": "Uttrykk",
     "invalid-expression": "Søkjeuttrykket kunne diverre ikkje nyttast",
     "keyboard-hint": "Enter for å søkje · Shift+Enter for ei ny line",
     "load-error": "Klarte diverre ikkje å laste notata",
-    "mode": "Søkjemodus",
     "retry": "Prøv att",
-    "syntax-help": "Søkjesyntaks",
-    "text": "Tekst"
+    "syntax-help": "Søkjesyntaks"
   },
   "setting": {
     "agent": { "label": "Agent / MCP" },
@@ -1007,7 +997,6 @@
     "unavailable": "Dette rommet finst ikkje, eller du har ikkje åtgang til det."
   },
   "tooltip": {
-    "link-memo": "Knyt til notat",
     "select-location": "Stad"
   }
 }

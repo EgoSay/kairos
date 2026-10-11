@@ -42,3 +42,11 @@ AI job or create prompts, streaks, goals or notification tasks.
 - Named locations are owner-scoped CAS documents. Updating a reusable name never
   changes historical memo locations. Recent suggestions come only from readable
   originals outside the archive and trash; they carry no new sharing permission.
+  A `nameOnly` place is a personal label without coordinates. Its wire JSON and
+  export omit latitude/longitude; older places default to coordinate locations,
+  including a real `(0, 0)` point. Both kinds live in the existing JSON payloads
+  and require no database schema migration. Recent labels deduplicate by name,
+  separately from geographic points.
+  Replacing a name-only memo location with `(0, 0)` requires the current record
+  snapshot token: this rejects older clients that silently discard `nameOnly`.
+  Body-only edits that leave the location out of the update mask preserve it.

@@ -44,3 +44,18 @@ Validation is in `archive_test.go` and `server/api/v1/journal_backup_test.go`:
 malicious ZIPs, fresh SQLite restore with exact bodies/dates/media originals and
 relations, source owner isolation, paused publication/mappings, API preview/digest
 isolation, existing-instance collisions, and idempotent retries.
+
+Personal place names retain `nameOnly` in memo payloads and optional revisions.
+Owner-scoped favorite places are included as a typed `named-locations:main`
+document: source collection versions and unknown fields are not exported. Restore
+creates a private collection for the authenticated destination owner only when
+that owner has no collection. As with preferences, an existing collection is
+preserved without merging or overwriting, including an intentionally empty list.
+The preview explains this rule; the restore report warns with the number of
+backup places whose ID and complete value do not already match the destination.
+Matching repeated restores add no warning and never advance the collection's
+version. A concurrent collection creation follows the same preservation rule.
+`complete` means the restore policy finished; warnings still describe excluded
+data, so it is not a claim that every source configuration replaced the target.
+Invalid coordinates, duplicate place IDs, empty names, or name-only places with
+numeric coordinates are rejected before records or sharing state can change.

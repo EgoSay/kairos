@@ -1,6 +1,6 @@
 import { EditorState } from "@codemirror/state";
 import { placeholder as cmPlaceholder, EditorView } from "@codemirror/view";
-import { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useMemo, useRef } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTagCounts } from "@/hooks/useUserQueries";
 import { cn } from "@/lib/utils";
 import type { EditorController } from "../types/editorController";
@@ -9,6 +9,7 @@ import "./editor.css";
 import { buildEditorExtensions, type EditorFileOrigin, placeholderCompartment } from "./extensions";
 import { createFormattingController } from "./formatting";
 import { livePreview, previewCompartment } from "./livePreview";
+import type { MemoLinkRequest } from "./memoLinkIntent";
 
 interface EditorProps {
   className: string;
@@ -23,6 +24,7 @@ interface EditorProps {
   isFocusMode?: boolean;
   sourceMode?: boolean;
   consumePlainPaste?: () => boolean;
+  onLinkRequest?: (request: Omit<MemoLinkRequest, "id">) => void;
 }
 
 const Editor = forwardRef(function Editor(props: EditorProps, ref: React.ForwardedRef<EditorController>) {
@@ -38,6 +40,7 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
     isFocusMode,
     sourceMode = false,
     consumePlainPaste,
+    onLinkRequest,
   } = props;
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -57,6 +60,10 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
   consumePlainPasteRef.current = consumePlainPaste;
   const placeholderRef = useRef(placeholder);
   const listenersRef = useRef(new Set<() => void>());
+  const [pasteAlternative, setPasteAlternative] = useState<(() => void) | undefined>();
+  const [pastedMemo, setPastedMemo] = useState<string>();
+  const onLinkRequestRef = useRef(onLinkRequest);
+  onLinkRequestRef.current = onLinkRequest;
   // A user can only author their own memos. Reuse the current-user stats query
   // instead of fetching and aggregating every user's tags for autocomplete.
   const { data: tagData } = useTagCounts(true);
@@ -95,6 +102,9 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
           onSubmit: () => onSubmitRef.current(),
           getTags: () => tagsRef.current,
           consumePlainPaste: () => consumePlainPasteRef.current?.() ?? false,
+          onPasteAlternative: (action) => setPasteAlternative(() => action),
+          onLinkRequest: (request) => onLinkRequestRef.current?.(request),
+          onPastedMemo: setPastedMemo,
         }),
       }),
       parent: hostRef.current,
@@ -169,6 +179,32 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
       data-source-mode={sourceMode || undefined}
     >
       <div ref={hostRef} className={cn("w-full text-base", isFocusMode && "min-h-0 flex flex-col flex-1")} />
+      {pasteAlternative && (
+        <div className="mt-2 flex shrink-0 items-center gap-2 text-xs text-muted-foreground" role="status">
+          <span>已保留内容格式</span>
+          <button
+            type="button"
+            className="min-h-11 rounded px-2 underline underline-offset-4 hover:bg-accent"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={pasteAlternative}
+          >
+            保留纯文本
+          </button>
+        </div>
+      )}
+      {pastedMemo && onLinkRequest && (
+        <div className="mt-2 flex shrink-0 items-center gap-2 text-xs text-muted-foreground" role="status">
+          <span>这是 Kairos 中的一条记录</span>
+          <button
+            type="button"
+            className="min-h-11 rounded px-2 underline underline-offset-4 hover:bg-accent"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => onLinkRequest({ memoName: pastedMemo, onLinked: () => setPastedMemo(undefined) })}
+          >
+            关联此记录
+          </button>
+        </div>
+      )}
     </div>
   );
 });

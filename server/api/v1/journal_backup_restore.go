@@ -346,7 +346,7 @@ func (s *APIV1Service) restoreJournalBackup(ctx context.Context, owner *store.Us
 		}
 	}
 	for _, document := range a.Manifest.Documents {
-		restored, err := s.restoreBackupDocument(ctx, owner, a, digest, document, memoUIDs, attachmentUIDs)
+		restored, err := s.restoreBackupDocument(ctx, owner, a, digest, document, memoUIDs, attachmentUIDs, report)
 		if err != nil {
 			return report, err
 		}
@@ -436,7 +436,56 @@ func backupRestoredID(digest, kind, source string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func (s *APIV1Service) restoreBackupDocument(ctx context.Context, owner *store.User, _ *journalbackup.Archive, digest string, doc journalbackup.Document, memoUIDs, attachmentUIDs map[string]string) (bool, error) {
+func (s *APIV1Service) restoreBackupNamedPlaces(ctx context.Context, owner int32, raw json.RawMessage) (bool, string, error) {
+	var incoming journal.NamedPlaces
+	if err := json.Unmarshal(raw, &incoming); err != nil {
+		return false, "", err
+	}
+	if err := incoming.Validate(); err != nil {
+		return false, "", err
+	}
+	if incoming.Places == nil {
+		incoming.Places = []journal.NamedPlace{}
+	}
+	payload, err := json.Marshal(incoming.Places)
+	if err != nil {
+		return false, "", err
+	}
+	_, err = s.Store.PutJournalDocument(ctx, &store.JournalDocument{OwnerID: owner, Kind: "named-locations", Key: "main", Payload: payload}, 0)
+	if !errors.Is(err, store.ErrJournalConflict) {
+		return err == nil, "", err
+	}
+
+	// Like preferences, an existing collection is never merged or overwritten.
+	// Read after the create conflict so a concurrent edit is also preserved and
+	// the report names omissions instead of silently treating them as restored.
+	existing, err := journal.GetNamedPlaces(ctx, s.Store, owner)
+	if err != nil {
+		return false, "", err
+	}
+	if existing.Version == 0 {
+		return false, "", errors.Wrap(store.ErrJournalConflict, "常用地点在恢复时发生变化，请重试")
+	}
+	if err := existing.Validate(); err != nil {
+		return false, "", err
+	}
+	byID := make(map[string]journal.NamedPlace, len(existing.Places))
+	for _, place := range existing.Places {
+		byID[place.ID] = place
+	}
+	omitted := 0
+	for _, place := range incoming.Places {
+		if actual, exists := byID[place.ID]; !exists || actual != place {
+			omitted++
+		}
+	}
+	if omitted > 0 {
+		return false, "保留现有常用地点，备份中的 " + strconv.Itoa(omitted) + " 个地点未恢复。", nil
+	}
+	return false, "", nil
+}
+
+func (s *APIV1Service) restoreBackupDocument(ctx context.Context, owner *store.User, _ *journalbackup.Archive, digest string, doc journalbackup.Document, memoUIDs, attachmentUIDs map[string]string, report *backupReport) (bool, error) {
 	if publication, handled, err := s.restoreBackupPublication(ctx, owner.ID, digest, doc, memoUIDs); err != nil {
 		return false, err
 	} else if handled {
@@ -452,6 +501,12 @@ func (s *APIV1Service) restoreBackupDocument(ctx context.Context, owner *store.U
 	key := doc.Key
 	var value any
 	switch doc.Kind {
+	case "named-locations":
+		restored, warning, err := s.restoreBackupNamedPlaces(ctx, owner.ID, doc.Payload)
+		if warning != "" {
+			report.Warnings = append(report.Warnings, warning)
+		}
+		return restored, err
 	case "preferences":
 		var prefs journal.Preferences
 		if err := json.Unmarshal(doc.Payload, &prefs); err != nil {

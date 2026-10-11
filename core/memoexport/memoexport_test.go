@@ -35,11 +35,12 @@ func newGoldenFixture() goldenFixture {
 	photoDigest := sha256.Sum256(photo)
 	return goldenFixture{
 		manifest: Manifest{
-			Format:     Format,
-			Generator:  Generator{Name: "memos", Version: "0.31.0"},
-			ExportTime: "2026-09-16T08:30:00Z",
-			Scope:      Scope{Kind: ScopeKindUser, User: &ScopeUser{Username: "steven", DisplayName: "Steven"}},
-			Counts:     &Counts{Memos: 3, Attachments: 1},
+			Format:        Format,
+			FormatVersion: FormatVersion,
+			Generator:     Generator{Name: "memos", Version: "0.31.0"},
+			ExportTime:    "2026-09-16T08:30:00Z",
+			Scope:         Scope{Kind: ScopeKindUser, User: &ScopeUser{Username: "steven", DisplayName: "Steven"}},
+			Counts:        &Counts{Memos: 3, Attachments: 1},
 		},
 		memos: []*Memo{
 			{
@@ -133,7 +134,7 @@ func readArchive(t *testing.T, data []byte) *File {
 func requireFixtureRoundTrip(t *testing.T, fixture goldenFixture, archive *File) {
 	t.Helper()
 	require.Equal(t, fixture.manifest.Format, archive.Manifest.Format)
-	require.Equal(t, FormatVersion, archive.Manifest.FormatVersion)
+	require.Equal(t, fixture.manifest.FormatVersion, archive.Manifest.FormatVersion)
 	require.Equal(t, fixture.manifest.Scope, archive.Manifest.Scope)
 	require.Empty(t, archive.Warnings)
 
@@ -191,7 +192,7 @@ func TestRoundTrip(t *testing.T) {
 // change that breaks an older archive fails here.
 func TestGoldenArchives(t *testing.T) {
 	fixture := newGoldenFixture()
-	goldenPath := filepath.Join("testdata", "1.0", "golden.zip")
+	goldenPath := filepath.Join("testdata", FormatVersion, "golden.zip")
 	if *updateGolden {
 		require.NoError(t, os.MkdirAll(filepath.Dir(goldenPath), 0o755))
 		require.NoError(t, os.WriteFile(goldenPath, writeFixture(t, fixture), 0o644))
@@ -204,8 +205,11 @@ func TestGoldenArchives(t *testing.T) {
 			data, err := os.ReadFile(path)
 			require.NoError(t, err)
 			archive := readArchive(t, data)
-			if filepath.Base(filepath.Dir(path)) == FormatVersion {
+			version := filepath.Base(filepath.Dir(path))
+			require.Equal(t, version, archive.Manifest.FormatVersion)
+			if version == "1.0" || version == FormatVersion {
 				fixture := newGoldenFixture()
+				fixture.manifest.FormatVersion = version
 				if filepath.Base(path) == "legacy.zip" {
 					fixture.manifest.Format = legacyFormat
 				}
@@ -346,10 +350,10 @@ func TestReaderRejectsUnsafeArchives(t *testing.T) {
 					return false
 				}
 				entry, _ := w.Create(ManifestEntry)
-				_, _ = entry.Write(bytes.ReplaceAll(content, []byte(`"formatVersion":"1.0"`), []byte(`"formatVersion":"2.0"`)))
+				_, _ = entry.Write(bytes.ReplaceAll(content, []byte(`"formatVersion":"2.0"`), []byte(`"formatVersion":"3.0"`)))
 				return true
 			},
-			want: "format version 2.0 is not supported",
+			want: "format version 3.0 is not supported",
 		},
 		"uid mismatch": {
 			mutate: func(w *zip.Writer, f *zip.File, content []byte) bool {

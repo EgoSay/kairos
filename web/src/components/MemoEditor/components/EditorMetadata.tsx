@@ -13,6 +13,7 @@ export const EditorMetadata: FC<EditorMetadataProps> = ({
   onTranscribeAttachment,
   transcribingAttachment,
   transcriptionDisabled,
+  onEditLocation,
 }) => {
   const { actions, dispatch } = useEditorContext();
   const attachments = useEditorSelector((s) => s.metadata.attachments);
@@ -55,7 +56,11 @@ export const EditorMetadata: FC<EditorMetadataProps> = ({
 
       {location && (
         <div className={METADATA_ROW_LIST_CLASSES}>
-          <LocationDisplayEditor location={location} onRemove={() => dispatch(actions.setMetadata({ location: undefined }))} />
+          <LocationDisplayEditor
+            location={location}
+            onEdit={onEditLocation}
+            onRemove={() => dispatch(actions.setMetadata({ location: undefined }))}
+          />
         </div>
       )}
     </div>

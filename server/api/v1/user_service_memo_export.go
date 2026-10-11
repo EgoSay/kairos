@@ -181,6 +181,7 @@ func (s *APIV1Service) buildMemoExportRecord(ctx context.Context, writer *memoex
 			Placeholder: location.Placeholder,
 			Latitude:    location.Latitude,
 			Longitude:   location.Longitude,
+			NameOnly:    location.NameOnly,
 		}
 	}
 	if memo.SpaceID != nil {

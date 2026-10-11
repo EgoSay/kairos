@@ -49,6 +49,7 @@ describe("map pagination", () => {
     expect(request.filter).not.toContain('creator == "users/qa"');
     expect(request.filter).toContain('space == "spaces/travel"');
     expect(request.filter).toContain("has_location");
+    expect(request.filter).toContain("!location_name_only");
   });
   it("retains partial results without claiming completion and retries the failed page", async () => {
     state.list

@@ -2,6 +2,7 @@ package memoexport
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -52,8 +53,8 @@ func validateManifest(manifest *Manifest) error {
 	if err != nil {
 		return err
 	}
-	if major != FormatMajor {
-		return errors.Errorf("format version %s is not supported by this reader (supports %d.x)", manifest.FormatVersion, FormatMajor)
+	if major != 1 && major != FormatMajor {
+		return errors.Errorf("format version %s is not supported by this reader (supports 1.x and %d.x)", manifest.FormatVersion, FormatMajor)
 	}
 	if manifest.Generator.Name == "" || manifest.Generator.Version == "" {
 		return errors.New("generator name and version are required")
@@ -111,8 +112,12 @@ func validateMemo(memo *Memo) ([]Warning, error) {
 		}
 	}
 	if memo.Location != nil {
-		if memo.Location.Latitude < -90 || memo.Location.Latitude > 90 || memo.Location.Longitude < -180 || memo.Location.Longitude > 180 {
+		if math.IsNaN(memo.Location.Latitude) || math.IsNaN(memo.Location.Longitude) ||
+			memo.Location.Latitude < -90 || memo.Location.Latitude > 90 || memo.Location.Longitude < -180 || memo.Location.Longitude > 180 {
 			return nil, fail("location is out of range")
+		}
+		if memo.Location.NameOnly && (strings.TrimSpace(memo.Location.Placeholder) == "" || len([]rune(memo.Location.Placeholder)) > 200 || memo.Location.Latitude != 0 || memo.Location.Longitude != 0) {
+			return nil, fail("name-only location requires a name and no coordinates")
 		}
 	}
 

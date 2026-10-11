@@ -27,6 +27,7 @@ export async function journalRecordVersion(memo: Memo): Promise<string> {
     String(attachments.length),
     ...attachments,
   ];
+  if (location?.nameOnly) fields.push("location-name-only");
   const tuple = fields.map((value) => `${encoder.encode(value).byteLength}:${value}`).join("");
   const digest = await crypto.subtle.digest("SHA-256", encoder.encode(tuple));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");

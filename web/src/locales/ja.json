@@ -148,13 +148,10 @@
     "add-your-comment-here": "ここにコメントを追加...",
     "any-thoughts": "今思ったことは...",
     "exit-focus-mode": "フォーカスを終了",
-    "focus-mode": "フォーカスモード",
     "formatting-toolbar": "書式ツールバー",
     "no-changes-detected": "変更はありません",
     "save": "保存",
     "insert-menu": {
-      "add-location": "場所を追加",
-      "link-memo": "リンクメモ",
       "retry-image-upload": "リトライ",
       "add-attachment": "添付ファイルを追加",
       "image-upload-failed": "一部の画像はアップロードできませんでした。再試行するか、アップロード済みのファイルを添付ファイルとして保存してください。",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "コンテンツのコピーに成功しました。",
     "succeed-copy-link": "リンクのコピーに成功しました。",
     "update-succeed": "変更は保存されました"
-  },
-  "reference": {
-    "no-memos-found": "メモが見つかりません",
-    "search-placeholder": "内容を検索"
   },
   "resource": {
     "delete-all-unused": "未使用をすべて削除",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "メモをリンク",
     "select-location": "場所"
   },
   "demo": {
@@ -941,13 +933,10 @@
     "clear-query": "クエリのクリア",
     "edit-query": "クエリの編集",
     "expression": "検索式",
-    "expression-mode": "式",
     "invalid-expression": "検索式を適用できませんでした",
     "keyboard-hint": "Enterキーを押して検索、Shift+Enterで改行",
     "load-error": "メモを読み込めませんでした",
-    "mode": "検索モード",
-    "syntax-help": "検索構文",
-    "text": "テキスト"
+    "syntax-help": "検索構文"
   },
   "map": {
     "selection": "選択されたメモ",

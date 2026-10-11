@@ -148,10 +148,7 @@
     "add-your-comment-here": "Напишите свой комментарий...",
     "any-thoughts": "Напишите что-нибудь...",
     "exit-focus-mode": "Выйти из режима фокуса",
-    "focus-mode": "Режим фокуса",
     "insert-menu": {
-      "add-location": "Добавить местоположение",
-      "link-memo": "Ссылка на заметку",
       "add-attachment": "Добавить вложение",
       "image-upload-failed": "Не удалось загрузить некоторые изображения. Повторите попытку или сохраните загруженные файлы как вложения.",
       "image-upload-stopped": "Загрузка изображений остановлена: {{completed}}/{{total}}",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "Контент успешно скопирован.",
     "succeed-copy-link": "Ссылка скопирована в буфер обмена.",
     "update-succeed": "Успешно обновлено"
-  },
-  "reference": {
-    "no-memos-found": "Ничего не найдено",
-    "search-placeholder": "Поиск по содержимому"
   },
   "resource": {
     "delete-all-unused": "Удалить все неиспользуемые",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Связать заметку",
     "select-location": "Местоположение"
   },
   "demo": {
@@ -966,14 +958,11 @@
     "clear-query": "Очистить запрос",
     "edit-query": "Редактировать запрос",
     "expression": "Выражение поиска",
-    "expression-mode": "Выражение",
     "invalid-expression": "Не удалось применить выражение поиска",
     "keyboard-hint": "Нажмите Enter для поиска · Shift+Enter для новой строки",
     "load-error": "Не удалось загрузить заметки",
-    "mode": "Режим поиска",
     "retry": "Повторить попытку",
-    "syntax-help": "Синтаксис поиска",
-    "text": "Текст"
+    "syntax-help": "Синтаксис поиска"
   },
   "space": {
     "all-spaces": "Все пространства",

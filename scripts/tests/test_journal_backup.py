@@ -66,4 +66,24 @@ class JournalBackupTest(unittest.TestCase):
         with self.assertRaises(ValueError): backup.restore(corrupt,target)
         self.assertFalse((self.root/'escape').exists())
 
+    def test_name_only_location_and_private_favorites_survive_physical_restore(self):
+        memo_payload = {"location": {"placeholder": "楼下咖啡店", "nameOnly": True}}
+        favorite_payload = [{"id": "home", "name": "家", "nameOnly": True},
+                            {"id": "origin", "name": "real origin", "latitude": 0, "longitude": 0}]
+        with closing(sqlite3.connect(self.source / "memos_prod.db")) as db, db:
+            db.execute("UPDATE memo SET payload=?", (json.dumps(memo_payload),))
+            db.execute("INSERT INTO journal_document VALUES(1,'named-locations','main',?,7,0)",
+                       (json.dumps(favorite_payload),))
+        archive = self.root / "places.zip"
+        backup.backup(self.source, archive, "memos_prod.db", True)
+        target = self.root / "restored-places"
+        backup.restore(archive, target)
+        with closing(sqlite3.connect(target / "memos_prod.db")) as db:
+            self.assertEqual(json.loads(db.execute("SELECT payload FROM memo").fetchone()[0]), memo_payload)
+            owner, raw, version = db.execute(
+                "SELECT owner_id,payload,version FROM journal_document WHERE kind='named-locations'").fetchone()
+            self.assertEqual(owner, 1)
+            self.assertEqual(json.loads(raw), favorite_payload)
+            self.assertEqual(version, 7)
+
 if __name__ == '__main__': unittest.main()

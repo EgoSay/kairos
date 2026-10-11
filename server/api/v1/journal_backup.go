@@ -158,7 +158,7 @@ func (s *APIV1Service) writeJournalBackup(ctx context.Context, owner *store.User
 	// Journal queries select exactly one kind; an empty kind is not a wildcard.
 	// Keep the archive allowlist explicit so new internal or credential-bearing
 	// document types cannot silently become portable backup content.
-	kinds := []string{"preferences", partition.PartitionKind, partition.MappingKind, "insight", "share",
+	kinds := []string{"preferences", "named-locations", partition.PartitionKind, partition.MappingKind, "insight", "share",
 		partition.TargetKind, partition.ExternalKind, partition.DeliveryKind, partition.SequenceKind}
 	if history {
 		kinds = append(kinds, "revision")
@@ -182,6 +182,25 @@ func (s *APIV1Service) writeJournalBackup(ctx context.Context, owner *store.User
 			continue
 		}
 		switch doc.Kind {
+		case "named-locations":
+			if doc.Key != "main" {
+				return errors.New("invalid named locations collection")
+			}
+			var places journal.NamedPlaces
+			if err := json.Unmarshal(doc.Payload, &places.Places); err != nil {
+				return err
+			}
+			if err := places.Validate(); err != nil {
+				return err
+			}
+			// Export only typed place fields, never an unknown field or source
+			// owner's CAS version from this private document.
+			payload, err := json.Marshal(places)
+			if err != nil {
+				return err
+			}
+			manifest.Documents = append(manifest.Documents, journalbackup.Document{Kind: doc.Kind, Key: "main", Payload: payload})
+			continue
 		case "preferences", partition.PartitionKind:
 			keep = true
 		case partition.MappingKind:
@@ -408,6 +427,12 @@ func (s *APIV1Service) journalPreviewBackup(c *echo.Context) error {
 		}
 	}
 	preview.Warnings = append(preview.Warnings, "恢复将暂停本账户现有分享与自动同步。重名记录保留为独立副本，不覆盖现有内容。")
+	for _, document := range archive.Manifest.Documents {
+		if document.Kind == "named-locations" {
+			preview.Warnings = append(preview.Warnings, "若已有常用地点，将保留现有集合，不合并或覆盖；未恢复的备份地点数量会列在恢复报告中。")
+			break
+		}
+	}
 	payload, _ := json.Marshal(preview)
 	if _, err := s.Store.PutJournalDocument(c.Request().Context(), &store.JournalDocument{OwnerID: owner.ID, Kind: "backup-preview", Key: token, Payload: payload}, 0); err != nil {
 		return journalError(c, err)
@@ -432,6 +457,9 @@ func validateJournalBackup(a *journalbackup.Archive) error {
 			if err := protojson.Unmarshal(m.Payload, payload); err != nil {
 				return err
 			}
+		}
+		if err := validateMemoLocation(convertLocationFromStore(payload.Location)); err != nil {
+			return err
 		}
 	}
 	for _, m := range a.Manifest.Memos {

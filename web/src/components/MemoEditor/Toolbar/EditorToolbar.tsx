@@ -1,4 +1,4 @@
-import { CheckIcon, LoaderIcon } from "lucide-react";
+import { CheckIcon, LoaderIcon, LockKeyholeIcon } from "lucide-react";
 import { type FC, useCallback } from "react";
 import PartitionPicker from "@/components/Journal/PartitionPicker";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,8 @@ export const EditorToolbar: FC<EditorToolbarProps> = ({
   onInsertImages,
   onInsertTag,
   onReturnToEditor,
+  linkRequest,
+  locationRequest,
 }) => {
   const t = useTranslate();
   const { actions, dispatch } = useEditorContext();
@@ -69,14 +71,14 @@ export const EditorToolbar: FC<EditorToolbarProps> = ({
   };
 
   const commitButton = justSaved ? (
-    <Button size="sm" className="h-9 px-4 pointer-coarse:h-10" disabled>
+    <Button size="sm" className="h-11 px-4" disabled>
       {t("editor.saved")}
       <CheckIcon className="size-3.5" strokeWidth={2.5} />
     </Button>
   ) : (
     <Button
       size="sm"
-      className="h-9 min-w-16 rounded-lg px-4 shadow-none pointer-coarse:h-10"
+      className="h-11 min-w-16 rounded-lg px-4 shadow-none"
       title={`${primaryModifierGlyph()} ↵ 保存`}
       onClick={onSave}
       disabled={isSaving || !valid}
@@ -91,6 +93,8 @@ export const EditorToolbar: FC<EditorToolbarProps> = ({
     <div className="flex w-full min-w-0 flex-row items-end justify-between gap-2">
       <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center justify-start gap-0.5">
         <InsertMenu
+          linkRequest={linkRequest}
+          locationRequest={locationRequest}
           onReturnToEditor={onReturnToEditor}
           isUploading={isUploading}
           isSaving={committing}
@@ -131,6 +135,12 @@ export const EditorToolbar: FC<EditorToolbarProps> = ({
       </div>
 
       <div className="flex shrink-0 flex-row items-center justify-end gap-1">
+        {!space && visibility === Visibility.PRIVATE && (
+          <span className="inline-flex items-center gap-1 px-1 text-xs text-muted-foreground">
+            <LockKeyholeIcon className="size-3" />
+            私密
+          </span>
+        )}
         {onCancel && (
           <Button variant="quiet" size="sm" onClick={onCancel} disabled={committing}>
             {t("common.cancel")}

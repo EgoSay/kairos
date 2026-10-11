@@ -178,10 +178,13 @@ func (x *MemoPayload_Property) GetTitle() string {
 }
 
 type MemoPayload_Location struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Placeholder   string                 `protobuf:"bytes,1,opt,name=placeholder,proto3" json:"placeholder,omitempty"`
-	Latitude      float64                `protobuf:"fixed64,2,opt,name=latitude,proto3" json:"latitude,omitempty"`
-	Longitude     float64                `protobuf:"fixed64,3,opt,name=longitude,proto3" json:"longitude,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Placeholder string                 `protobuf:"bytes,1,opt,name=placeholder,proto3" json:"placeholder,omitempty"`
+	Latitude    float64                `protobuf:"fixed64,2,opt,name=latitude,proto3" json:"latitude,omitempty"`
+	Longitude   float64                `protobuf:"fixed64,3,opt,name=longitude,proto3" json:"longitude,omitempty"`
+	// A personal place label without geographic coordinates. Legacy false
+	// values retain their coordinates, including a real point at zero, zero.
+	NameOnly      bool `protobuf:"varint,4,opt,name=name_only,json=nameOnly,proto3" json:"name_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -237,11 +240,18 @@ func (x *MemoPayload_Location) GetLongitude() float64 {
 	return 0
 }
 
+func (x *MemoPayload_Location) GetNameOnly() bool {
+	if x != nil {
+		return x.NameOnly
+	}
+	return false
+}
+
 var File_store_memo_proto protoreflect.FileDescriptor
 
 const file_store_memo_proto_rawDesc = "" +
 	"\n" +
-	"\x10store/memo.proto\x12\vmemos.store\"\x8f\x04\n" +
+	"\x10store/memo.proto\x12\vmemos.store\"\xad\x04\n" +
 	"\vMemoPayload\x12=\n" +
 	"\bproperty\x18\x01 \x01(\v2!.memos.store.MemoPayload.PropertyR\bproperty\x12=\n" +
 	"\blocation\x18\x02 \x01(\v2!.memos.store.MemoPayload.LocationR\blocation\x12\x12\n" +
@@ -253,11 +263,12 @@ const file_store_memo_proto_rawDesc = "" +
 	"\rhas_task_list\x18\x02 \x01(\bR\vhasTaskList\x12\x19\n" +
 	"\bhas_code\x18\x03 \x01(\bR\ahasCode\x120\n" +
 	"\x14has_incomplete_tasks\x18\x04 \x01(\bR\x12hasIncompleteTasks\x12\x14\n" +
-	"\x05title\x18\x05 \x01(\tR\x05title\x1af\n" +
+	"\x05title\x18\x05 \x01(\tR\x05title\x1a\x83\x01\n" +
 	"\bLocation\x12 \n" +
 	"\vplaceholder\x18\x01 \x01(\tR\vplaceholder\x12\x1a\n" +
 	"\blatitude\x18\x02 \x01(\x01R\blatitude\x12\x1c\n" +
-	"\tlongitude\x18\x03 \x01(\x01R\tlongitudeB\x93\x01\n" +
+	"\tlongitude\x18\x03 \x01(\x01R\tlongitude\x12\x1b\n" +
+	"\tname_only\x18\x04 \x01(\bR\bnameOnlyB\x93\x01\n" +
 	"\x0fcom.memos.storeB\tMemoProtoP\x01Z(github.com/EgoSay/kairos/proto/gen/store\xa2\x02\x03MSX\xaa\x02\vMemos.Store\xca\x02\vMemos\\Store\xe2\x02\x17Memos\\Store\\GPBMetadata\xea\x02\fMemos::Storeb\x06proto3"
 
 var (

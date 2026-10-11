@@ -426,6 +426,20 @@ export function createFormattingController(view: EditorView, listeners: Set<() =
         return url ? view.state.sliceDoc(url.from, url.to) : undefined;
       }
     },
+    getSelectionBounds() {
+      const selection = view.state.selection.main;
+      if (selection.empty || view.compositionStarted) return;
+      const start = view.coordsAtPos(selection.from);
+      const end = view.coordsAtPos(selection.to);
+      const frame = view.scrollDOM.getBoundingClientRect();
+      if (!start || !end || start.bottom < frame.top || end.top > frame.bottom) return;
+      return {
+        top: Math.max(start.top, frame.top),
+        bottom: Math.min(end.bottom, frame.bottom),
+        left: Math.max(frame.left, start.left),
+        right: Math.min(frame.right, end.right),
+      };
+    },
     getActiveFormats(): ActiveFormatState {
       const pos = view.state.selection.main.head;
       const tree = syntaxTree(view.state);

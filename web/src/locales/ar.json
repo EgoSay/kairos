@@ -148,12 +148,9 @@
     "add-your-comment-here": "أضف تعليقك هنا...",
     "any-thoughts": "أية أفكار...",
     "exit-focus-mode": "الخروج من وضع التركيز",
-    "focus-mode": "وضع التركيز",
     "no-changes-detected": "لم يتم الكشف عن تغييرات",
     "save": "حفظ",
     "insert-menu": {
-      "add-location": "أضف الموقع",
-      "link-memo": "مذكرة الارتباط",
       "image-upload-stopped": "توقف تحميل الصورة {{completed}}/{{total}}",
       "insert-image": "إدراج الصورة",
       "keep-as-attachments": "الاحتفاظ بها كمرفقات",
@@ -326,10 +323,6 @@
     "succeed-copy-content": "تم نسخ المحتوى بنجاح.",
     "succeed-copy-link": "تم نسخ الرابط بنجاح.",
     "update-succeed": "تم التحديث بنجاح"
-  },
-  "reference": {
-    "no-memos-found": "لم يتم العثور على مذكرات",
-    "search-placeholder": "ابحث في المحتوى"
   },
   "resource": {
     "delete-all-unused": "حذف جميع الموارد غير المستخدمة",
@@ -856,7 +849,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "ربط مذكرة",
     "select-location": "الموقع"
   },
   "live-update": {
@@ -966,14 +958,11 @@
     "clear-query": "مسح الاستعلام",
     "edit-query": "تعديل الاستعلام",
     "expression": "عبارة البحث",
-    "expression-mode": "العبارة",
     "invalid-expression": "تعذر تطبيق عبارة البحث",
     "keyboard-hint": "اضغط Enter للبحث، Shift+Enter لسطر جديد",
     "load-error": "تعذر تحميل المذكرات",
-    "mode": "وضع البحث",
     "retry": "إعادة المحاولة",
-    "syntax-help": "صيغة البحث",
-    "text": "نص"
+    "syntax-help": "صيغة البحث"
   },
   "space": {
     "all-spaces": "جميع المساحات",

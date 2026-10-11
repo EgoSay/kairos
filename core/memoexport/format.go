@@ -10,10 +10,12 @@ const (
 	Format = "memos-export"
 	// legacyFormat identifies exports written before the format was renamed.
 	legacyFormat = "memos-archive"
-	// FormatVersion is the newest version this package writes.
-	FormatVersion = "1.0"
-	// FormatMajor is the major version this package reads.
-	FormatMajor = 1
+	// FormatVersion is the version this package writes. Version 2 prevents old
+	// readers from interpreting a name-only place as a geographic point at 0,0.
+	FormatVersion = "2.0"
+	// FormatMajor is the newest major version this package reads. Version 1
+	// archives remain readable with their original coordinate semantics.
+	FormatMajor = 2
 	// MediaType is the HTTP Content-Type of an export. It is deliberately not
 	// stored inside the container: a leading "mimetype" entry makes macOS
 	// Archive Utility treat the file as an unknown document package and
@@ -92,6 +94,20 @@ type Location struct {
 	Placeholder string  `json:"placeholder,omitempty"`
 	Latitude    float64 `json:"latitude"`
 	Longitude   float64 `json:"longitude"`
+	NameOnly    bool    `json:"nameOnly,omitempty"`
+}
+
+// MarshalJSON records name-only places without fictitious coordinates. Legacy
+// coordinate records, including the origin, retain their existing JSON shape.
+func (l Location) MarshalJSON() ([]byte, error) {
+	if l.NameOnly {
+		return json.Marshal(struct {
+			Placeholder string `json:"placeholder"`
+			NameOnly    bool   `json:"nameOnly"`
+		}{l.Placeholder, true})
+	}
+	type location Location
+	return json.Marshal(location(l))
 }
 
 // Space names the Space a memo was placed in.

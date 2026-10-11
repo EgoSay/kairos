@@ -2,20 +2,30 @@
 
 ## Overview
 
-MemoEditor is a three-layer component around one CodeMirror 6 editor. It stores **raw Markdown, verbatim** with no parse/serialize round-trip. Visual mode is the default: headings, marks, tasks, links and managed images render in place, while the current editing line reveals de-emphasized syntax for precise cursor and IME editing. An explicit Markdown source switch changes a decoration compartment, retaining the same document, selection and undo history. Complex Markdown stays in the document even when the visual layer does not render it. Everything above the editor boundary talks Markdown through `EditorController`.
+MemoEditor is a three-layer component around one CodeMirror 6 editor. It stores **raw Markdown, verbatim** with no parse/serialize round-trip. Visual mode is the default: headings, marks, tasks, links, tables, code and managed images render in place, including on the active line. Hidden syntax has paired deletion handling so editing visible prose does not leave broken delimiters. The optional Markdown source action in More changes a decoration compartment, retaining the same document, selection and undo history. Complex Markdown stays in the document even when the visual layer does not render it. Everything above the editor boundary talks Markdown through `EditorController`.
 
 ## Architecture
 
 Tag insertion and completion serialize punctuation-bearing names as `#"books/Title:Edition"`.
 The source editor keeps the quotes; the reader displays the original tag name and filtering uses its exact value.
 
-Location selection is a separate dialog draft until explicit confirmation.
+Location selection uses an anchored picker. Favorites, recent places, name-only
+places and public search results select directly into the memo draft and return
+to the editor. Map movement and device coordinates still require an explicit choice.
 Opening/cancelling restores the memo's value; only “使用当前位置” requests device
 location. Manual selection/name changes invalidate older device and geocoding
-responses. Coordinates can be saved without a name. Reusable place names are
+responses. Coordinates can be saved without a name, and `nameOnly` explicitly
+stores a personal place label without inventing coordinates. Reusable place names are
 owner-scoped server documents and never rewrite historical records. Public-place
 search and name lookup require explicit submission through the rate-limited
 server provider; no editor-open or keystroke triggers an external lookup.
+
+Association uses the same debounced candidate query and rows as Quick Find.
+Selecting a candidate updates draft metadata only; the relation is committed
+with the memo save. The `[[` shortcut opens that picker and removes its trigger
+only after a successful selection. Pasting a same-origin memo URL offers an
+explicit association action, revalidates the target and never fetches another
+origin. Closing either picker returns to the same editor selection.
 
 ```
 ┌─────────────────────────────────────────┐
@@ -59,6 +69,7 @@ MemoEditor/
 │   ├── extensions.ts           # buildEditorExtensions(): assembles the CM extension set
 │   ├── livePreview.ts          # Direct StateField decorations; visual/source compartment
 │   ├── clipboard.ts            # HTML semantic paste; no style import or remote image fetch
+│   ├── memoLinkIntent.ts        # Optional [[ picker and explicit same-origin pasted-link action
 │   ├── theme.ts                # Syntax-highlight style + editor theme (CSS-var colors)
 │   ├── tagMentionDecorations.ts# ViewPlugin that decorates #tag / @mention spans
 │   ├── markdownTagRanges.ts    # Markdown syntax-tree adapter for the shared tag scanner
@@ -91,7 +102,7 @@ A reducer (`state/reducer.ts`) drives an **external store**, not a `useReducer` 
 
 `createUploadAnchor`/`updateUploadAnchor`/`resolveUploadAnchor`/`cancelUploadAnchor`/`getUploadAnchorPosition` drive `Editor/uploadAnchors.ts`, a `StateField` of widget decorations that hold a place in the document while an attachment uploads and carry its progress, failure message, and retry/keep affordances. `resolveUploadAnchor` replaces the anchor with the finished markdown (block-padded the same way `insertMarkdown` is); resolving with empty markdown cancels instead, as does `cancelUploadAnchor`. Anchors stay before text typed at the paste point, move through earlier edits and advance later queued images when an earlier image resolves. Completion maps the current selection rather than moving focus back to the upload location.
 
-`FormattingController` (same file in `types/`) is the rich-formatting surface the focus-mode `FormattingToolbar` drives: `run(commandId, ctx?)`, `getLink()`, `getActiveFormats()`, and `subscribe(listener)`. Link editing updates the target of an existing link; an explicit empty target removes the link and retains its label. `Editor/formatting.ts` implements it by editing the markdown source directly — toggling inline marks (`**` and `*`) and single-backtick code delimiters, line prefixes (`-`, `1.`, and `- [ ]`, each followed by a space), and ATX heading prefixes (`#`…) — and by reading active state from the Lezer syntax tree at the caret.
+`FormattingController` (same file in `types/`) is the rich-formatting surface the expanded and selection toolbars drive: `run(commandId, ctx?)`, `getLink()`, `getActiveFormats()`, and `subscribe(listener)`. Link editing updates the target of an existing link; an explicit empty target removes the link and retains its label. `Editor/formatting.ts` implements it by editing the markdown source directly — toggling inline marks (`**` and `*`) and single-backtick code delimiters, line prefixes (`-`, `1.`, and `- [ ]`, each followed by a space), and ATX heading prefixes (`#`…) — and by reading active state from the Lezer syntax tree at the caret.
 
 ### Formatting command catalog
 
@@ -99,7 +110,7 @@ A reducer (`state/reducer.ts`) drives an **external store**, not a `useReducer` 
 
 ### Editor extensions
 
-`Editor/extensions.ts` exports `buildEditorExtensions()`, which composes the CodeMirror extension set: `@codemirror/lang-markdown` (with GFM), line wrapping, a reconfigurable placeholder, the editor theme, the `#tag`/`@mention` decoration plugin, the `#tag` autocomplete, and an update listener that pushes document changes back to the reducer via `onChange`. It also binds the save shortcut: `Meta-Enter` and `Ctrl-Enter` both call `onSubmit`, bound explicitly rather than through the platform-dependent `Mod-` so either works everywhere, and ordered ahead of `defaultKeymap`'s own `Mod-Enter` (`insertBlankLine`) so saving never also edits the document. The paste handler retains mixed text and files. Actual images use inline upload anchors at the caret, or at their semantic HTML positions when the clipboard provides them; other files remain attachments. HTML paste keeps basic headings, emphasis, lists, code and links without source styles. Remote HTML images become links and are never downloaded implicitly. Clipboard files map to HTML image positions only when the complete set of local blob/data/file slots matches the actual image files; ambiguous files are inserted once at the paste caret while source links remain readable. Preformatted code preserves its internal blank lines. The visible “纯文本粘贴” button arms the next ordinary Cmd/Ctrl+V paste once; clicking it again cancels the intent. That paste inserts the clipboard text verbatim and consumes the intent. The native Shift+Cmd/Ctrl+V shortcut also remains available when the browser dispatches a paste event. Plain Markdown paste and ordinary text drops otherwise remain CodeMirror-owned.
+`Editor/extensions.ts` exports `buildEditorExtensions()`, which composes the CodeMirror extension set: `@codemirror/lang-markdown` (with GFM), line wrapping, a reconfigurable placeholder, the editor theme, the `#tag`/`@mention` decoration plugin, the `#tag` autocomplete, and an update listener that pushes document changes back to the reducer via `onChange`. It also binds the save shortcut: `Meta-Enter` and `Ctrl-Enter` both call `onSubmit`, bound explicitly rather than through the platform-dependent `Mod-` so either works everywhere, and ordered ahead of `defaultKeymap`'s own `Mod-Enter` (`insertBlankLine`) so saving never also edits the document. The paste handler retains mixed text and files. Actual images use inline upload anchors at the caret, or at their semantic HTML positions when the clipboard provides them; other files remain attachments. HTML paste keeps basic headings, emphasis, lists, code and links without source styles. Remote HTML images become links and are never downloaded implicitly. Clipboard files map to HTML image positions only when the complete set of local blob/data/file slots matches the actual image files; ambiguous files are inserted once at the paste caret while source links remain readable. Preformatted code preserves its internal blank lines. More includes an optional one-shot plain-paste action; clicking it again cancels the intent. A semantic HTML paste also offers “保留纯文本” until the next document edit, replacing only that pasted range. That paste inserts the clipboard text verbatim and consumes the intent. The native Shift+Cmd/Ctrl+V shortcut also remains available when the browser dispatches a paste event. Plain Markdown paste and ordinary text drops otherwise remain CodeMirror-owned.
 
 The app formatting keymap sits ahead of CodeMirror's generic `defaultKeymap`: `Mod-B`/`Mod-I` toggle bold/italic, `Mod-Shift-S` toggles strikethrough, `Mod-E` toggles inline code, `Mod-Alt-C` toggles a code block, `Mod-Alt-0` restores paragraph text, `Mod-Alt-1` through `Mod-Alt-3` select heading levels, and `Mod-Shift-7` through `Mod-Shift-9` toggle ordered, bullet, and task lists. CodeMirror's Markdown keymap remains enabled separately for structural `Enter` and `Backspace` behavior.
 
@@ -146,10 +157,10 @@ eligibility/application in `EditorSuggestions`.
 
 Every instance is one of two things, and `onFocusModeExit` is the switch:
 
-- **Inline** (prop omitted) — the editor sits in page flow and owns its presentation. A visible Focus button expands the same mounted editor; the formatting toolbar's visible exit returns it to page flow. Formatting starts visible in normal mode (`kairos-editor-formatting-toolbar`) and can still be hidden from the more menu. Escape closes a child dialog/menu first and otherwise exits inline focus. Mode changes do not save, cancel or reset a draft.
-- **Hosted** (prop supplied) — a host presents the editor full-screen and owns that frame; `contexts/GlobalMemoEditorContext.tsx` is the one today. The editor mounts straight into focus mode and exits by calling back to dismiss the host, so the formatting toolbar's trailing button reads as Close rather than minimize. The more menu's view toggles are absent: focus mode is not the editor's to leave, and it already forces the formatting toolbar on.
+- **Inline** (prop omitted) — the editor sits in page flow and owns its presentation. A visible Focus button expands the same mounted editor; the header's visible exit returns it to page flow. Formatting starts collapsed (`kairos-editor-formatting-toolbar-v2`), the visible Format action opens it, and a short contextual toolbar appears for a text selection. Escape closes a child dialog/menu first and otherwise exits inline focus. Mode changes do not save, cancel or reset a draft.
+- **Hosted** (prop supplied) — a host presents the editor full-screen and owns that frame; `contexts/GlobalMemoEditorContext.tsx` is the one today. The editor mounts straight into focus mode and exits by calling back to dismiss the host, so the header exit reads as Close rather than minimize. Format and More remain available; focus mode does not force the formatting toolbar open.
 
-Photos and audio recording are direct quiet toolbar actions. Less frequent actions, including starting a tag, remain in the more menu. `startTag()` inserts an inline `#` at the caret without replacing selected text and leaves the caret immediately after it; block-oriented `insertMarkdown()` retains its existing semantics. The optional personal-journal partition picker uses a compact menu and only shows a name after selection. Configured outgoing destinations remain visible beside the explicit “保存并同步” action.
+Photos, associations and locations are direct quiet toolbar actions. Less frequent actions, including audio recording, attachments, starting a tag, source mode and plain paste, remain in More. `startTag()` inserts an inline `#` at the caret without replacing selected text and leaves the caret immediately after it; block-oriented `insertMarkdown()` retains its existing semantics. The optional personal-journal partition picker uses a compact menu and only shows a name after selection. Configured outgoing destinations remain visible beside the explicit “保存并同步” action.
 
 Those toggles travel as a single optional `viewToggles` object (`types/components.ts`) down `EditorToolbar` → `InsertMenu`, so they can only appear or disappear together.
 

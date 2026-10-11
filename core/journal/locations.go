@@ -20,6 +20,21 @@ type NamedPlace struct {
 	Name      string  `json:"name"`
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
+	NameOnly  bool    `json:"nameOnly,omitempty"`
+}
+
+// MarshalJSON omits coordinates for a personal label so API consumers never
+// mistake a name-only place for the geographic point at zero, zero.
+func (p NamedPlace) MarshalJSON() ([]byte, error) {
+	if p.NameOnly {
+		return json.Marshal(struct {
+			ID       string `json:"id"`
+			Name     string `json:"name"`
+			NameOnly bool   `json:"nameOnly"`
+		}{p.ID, p.Name, true})
+	}
+	type place NamedPlace
+	return json.Marshal(place(p))
 }
 
 // NamedPlaces is one compare-and-swap collection of at most fifty private places.
@@ -42,21 +57,32 @@ func GetNamedPlaces(ctx context.Context, s *store.Store, owner int32) (NamedPlac
 	return result, nil
 }
 
-// SaveNamedPlaces validates coordinates and preserves concurrent edits through CAS.
-func SaveNamedPlaces(ctx context.Context, s *store.Store, owner int32, places NamedPlaces) (NamedPlaces, error) {
+// Validate checks portable location data without reading or writing owner state.
+func (places NamedPlaces) Validate() error {
 	if len(places.Places) > 50 || places.Version < 0 {
-		return places, errors.New("常用地点最多 50 个，请刷新后重试")
+		return errors.New("常用地点最多 50 个，请刷新后重试")
 	}
 	ids := map[string]bool{}
 	validID := regexp.MustCompile(`^[a-zA-Z0-9_-]{1,64}$`)
 	for i := range places.Places {
-		place := &places.Places[i]
-		place.Name = strings.TrimSpace(place.Name)
-		if !validID.MatchString(place.ID) || ids[place.ID] || place.Name == "" || len([]rune(place.Name)) > 200 ||
-			!geocoding.ValidCoordinates(place.Latitude, place.Longitude) {
-			return places, errors.New("地点名称、标识或坐标无效")
+		place := places.Places[i]
+		if !validID.MatchString(place.ID) || ids[place.ID] || strings.TrimSpace(place.Name) == "" || len([]rune(place.Name)) > 200 ||
+			!geocoding.ValidCoordinates(place.Latitude, place.Longitude) ||
+			(place.NameOnly && (place.Latitude != 0 || place.Longitude != 0)) {
+			return errors.New("地点名称、标识或坐标无效")
 		}
 		ids[place.ID] = true
+	}
+	return nil
+}
+
+// SaveNamedPlaces validates coordinates and preserves concurrent edits through CAS.
+func SaveNamedPlaces(ctx context.Context, s *store.Store, owner int32, places NamedPlaces) (NamedPlaces, error) {
+	for i := range places.Places {
+		places.Places[i].Name = strings.TrimSpace(places.Places[i].Name)
+	}
+	if err := places.Validate(); err != nil {
+		return places, err
 	}
 	if places.Places == nil {
 		places.Places = []NamedPlace{}
@@ -96,6 +122,12 @@ func RecentPlaces(ctx context.Context, s *store.Store, owner int32) ([]NamedPlac
 			continue
 		}
 		key := strconv.FormatFloat(location.Latitude, 'f', 5, 64) + "," + strconv.FormatFloat(location.Longitude, 'f', 5, 64)
+		if location.NameOnly {
+			if strings.TrimSpace(location.Placeholder) == "" {
+				continue
+			}
+			key = "name:" + strings.TrimSpace(location.Placeholder)
+		}
 		if seen[key] {
 			continue
 		}
@@ -104,7 +136,7 @@ func RecentPlaces(ctx context.Context, s *store.Store, owner int32) ([]NamedPlac
 		if name == "" {
 			name = key
 		}
-		result = append(result, NamedPlace{ID: memo.UID, Name: name, Latitude: location.Latitude, Longitude: location.Longitude})
+		result = append(result, NamedPlace{ID: memo.UID, Name: name, Latitude: location.Latitude, Longitude: location.Longitude, NameOnly: location.NameOnly})
 		if len(result) == 12 {
 			break
 		}

@@ -186,10 +186,7 @@
     "add-your-comment-here": "Добавете своя коментар тук...",
     "any-thoughts": "Някакви мисли...",
     "exit-focus-mode": "Излезте от режима на фокусиране",
-    "focus-mode": "Режим на фокусиране",
     "insert-menu": {
-      "add-location": "Добавете местоположение",
-      "link-memo": "Бележка за връзка",
       "retry-image-upload": "Опитайте отново",
       "add-attachment": "Добавяне на прикачен файл",
       "image-upload-failed": "Някои изображения не можаха да бъдат качени. Опитайте отново или запазете качените файлове като прикачени файлове.",
@@ -369,10 +366,6 @@
     "succeed-copy-content": "Съдържанието е копирано успешно.",
     "succeed-copy-link": "Връзката е копирана успешно.",
     "update-succeed": "Актуализацията е успешна"
-  },
-  "reference": {
-    "no-memos-found": "Няма намерени бележки",
-    "search-placeholder": "Търсете съдържание"
   },
   "resource": {
     "delete-all-unused": "Изтрийте всички неизползвани",
@@ -899,7 +892,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Бележка за връзка",
     "select-location": "Местоположение"
   },
   "attachment-details": {
@@ -941,13 +933,10 @@
     "clear-query": "Изчистване на заявката",
     "edit-query": "Редактиране на заявката",
     "expression": "Израз за търсене",
-    "expression-mode": "Израз",
     "invalid-expression": "Изразът за търсене не можа да бъде приложен",
     "keyboard-hint": "Enter за търсене · Shift+Enter за нов ред",
     "load-error": "Не можаха да се заредят бележките",
-    "mode": "Режим на търсене",
-    "syntax-help": "Синтаксис на търсенето",
-    "text": "Текст"
+    "syntax-help": "Синтаксис на търсенето"
   },
   "map": {
     "selection": "Избрани бележки",

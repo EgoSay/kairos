@@ -186,10 +186,7 @@
     "add-your-comment-here": "Додајте свој коментар овде...",
     "any-thoughts": "Било каква размишљања...",
     "exit-focus-mode": "Изађите из режима фокуса",
-    "focus-mode": "Фоцус Моде",
     "insert-menu": {
-      "add-location": "Додајте локацију",
-      "link-memo": "Меморандум о вези",
       "retry-image-upload": "Покушајте поново",
       "add-attachment": "Додај прилог",
       "image-upload-failed": "Неке слике нису могле бити отпремљене. Покушајте поново или задржите отпремљене датотеке као прилоге.",
@@ -369,10 +366,6 @@
     "succeed-copy-content": "Садржај је успешно копиран.",
     "succeed-copy-link": "Линк је успешно копиран.",
     "update-succeed": "Ажурирање је успело"
-  },
-  "reference": {
-    "no-memos-found": "Нису пронађене белешке",
-    "search-placeholder": "Претражите садржај"
   },
   "resource": {
     "delete-all-unused": "Избришите све неискоришћене",
@@ -899,7 +892,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Линк Мемо",
     "select-location": "Локација"
   },
   "attachment-details": {
@@ -941,13 +933,10 @@
     "clear-query": "Обриши упит",
     "edit-query": "Измени упит",
     "expression": "Израз за претрагу",
-    "expression-mode": "Израз",
     "invalid-expression": "Израз за претрагу није могао бити примењен",
     "keyboard-hint": "Enter за претрагу · Shift+Enter за нови ред",
     "load-error": "Није могуће учитати белешке",
-    "mode": "Режим претраге",
-    "syntax-help": "Синтакса претраге",
-    "text": "Текст"
+    "syntax-help": "Синтакса претраге"
   },
   "map": {
     "selection": "Изабране белешке",
