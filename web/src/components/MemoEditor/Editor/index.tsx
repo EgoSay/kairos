@@ -22,6 +22,7 @@ interface EditorProps {
   onSubmit: () => void;
   isFocusMode?: boolean;
   sourceMode?: boolean;
+  consumePlainPaste?: () => boolean;
 }
 
 const Editor = forwardRef(function Editor(props: EditorProps, ref: React.ForwardedRef<EditorController>) {
@@ -36,6 +37,7 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
     onSubmit,
     isFocusMode,
     sourceMode = false,
+    consumePlainPaste,
   } = props;
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -51,6 +53,8 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
   onFilesRef.current = onFiles;
   const onSubmitRef = useRef(onSubmit);
   onSubmitRef.current = onSubmit;
+  const consumePlainPasteRef = useRef(consumePlainPaste);
+  consumePlainPasteRef.current = consumePlainPaste;
   const placeholderRef = useRef(placeholder);
   const listenersRef = useRef(new Set<() => void>());
   // A user can only author their own memos. Reuse the current-user stats query
@@ -90,6 +94,7 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
           onUpdate: () => listenersRef.current.forEach((l) => l()),
           onSubmit: () => onSubmitRef.current(),
           getTags: () => tagsRef.current,
+          consumePlainPaste: () => consumePlainPasteRef.current?.() ?? false,
         }),
       }),
       parent: hostRef.current,
@@ -163,7 +168,7 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
       data-focus-mode={isFocusMode || undefined}
       data-source-mode={sourceMode || undefined}
     >
-      <div ref={hostRef} className={cn("w-full text-base", isFocusMode && "min-h-0 flex-1")} />
+      <div ref={hostRef} className={cn("w-full text-base", isFocusMode && "min-h-0 flex flex-col flex-1")} />
     </div>
   );
 });

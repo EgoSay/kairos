@@ -13,7 +13,11 @@
     max-height: 50vh;
   }
   &[data-focus-mode] .cm-editor {
-    height: 100%;
+    /* Every flex ancestor can shrink: keep scrolling in CodeMirror rather
+       than growing the full-screen frame to the document's intrinsic height. */
+    flex: 1;
+    min-height: 0;
+    width: 100%;
     max-height: none;
   }
   & .cm-editor.cm-focused {

@@ -95,6 +95,14 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
   const [isFormattingToolbarVisible, setFormattingToolbarVisible] = useLocalStorage(FORMATTING_TOOLBAR_STORAGE_KEY, true);
 
   const [sourceMode, setSourceMode] = useState(false);
+  const [plainPasteArmed, setPlainPasteArmed] = useState(false);
+  const plainPasteRef = useRef(false);
+  const consumePlainPaste = useCallback(() => {
+    const armed = plainPasteRef.current;
+    plainPasteRef.current = false;
+    if (armed) setPlainPasteArmed(false);
+    return armed;
+  }, []);
   const memoName = memo?.name;
   // Replies are never placed independently: a comment's Space is its parent's.
   // An edited top-level memo can change its Space; a new one can unless its
@@ -403,6 +411,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
 
       <div
         ref={editorContainerRef}
+        data-focus-frame={isFocusMode || undefined}
         className={cn(
           "group relative w-full flex flex-col justify-between items-start bg-card px-4 pt-4 pb-3 rounded-xl border border-border/70 focus-within:border-primary/35 gap-3 sm:px-5 sm:pt-5",
           FOCUS_MODE_STYLES.transition,
@@ -411,7 +420,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
         )}
       >
         {/* The default visual editor exposes formatting and focus directly. */}
-        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+        <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-2">
           <Button
             size="sm"
             variant="ghost"
@@ -421,6 +430,20 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
           >
             {sourceMode ? "切换可视化编辑" : "Markdown 源码"}
           </Button>
+          <Button
+            size="sm"
+            variant={plainPasteArmed ? "secondary" : "ghost"}
+            aria-pressed={plainPasteArmed}
+            title="开启后按 Cmd / Ctrl + V，下次粘贴仅保留文字"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              plainPasteRef.current = !plainPasteRef.current;
+              setPlainPasteArmed(plainPasteRef.current);
+              editorRef.current?.focus();
+            }}
+          >
+            纯文本粘贴
+          </Button>
           {!isFocusMode && (
             <Button size="sm" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={handleToggleFocusMode}>
               <Maximize2Icon className="size-4" />
@@ -428,9 +451,14 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
             </Button>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">粘贴为纯文本：Shift + Cmd / Ctrl + V</p>
+        {plainPasteArmed && (
+          <p className="shrink-0 text-xs text-muted-foreground" role="status">
+            现在按 Cmd / Ctrl + V，下次粘贴仅保留文字。再次点击可取消。
+          </p>
+        )}
         {(isFocusMode || isFormattingToolbarVisible) && (
           <FormattingToolbar
+            className="shrink-0"
             controllerRef={editorRef}
             onInsertImages={handleInsertImages}
             exit={isFocusMode ? { action: onFocusModeExit ? "close" : "minimize", onExit: handleToggleFocusMode } : undefined}
@@ -438,7 +466,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
         )}
 
         {(memoName || (!memo && hasTimestamp)) && (
-          <div className="flex h-6 w-full items-center">
+          <div className="flex h-6 w-full shrink-0 items-center">
             <TimestampPopover />
           </div>
         )}
@@ -450,6 +478,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
           onSubmit={handleSave}
           onFiles={handleEditorFiles}
           sourceMode={sourceMode}
+          consumePlainPaste={consumePlainPaste}
         />
 
         {isAudioRecorderOpen && (audioRecorder.isBusy || isTranscribingAudio) && (
@@ -492,7 +521,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
           </div>
         )}
         {durable.status !== "idle" && (
-          <div role="status" className="text-xs leading-4 text-muted-foreground/70">
+          <div role="status" className="shrink-0 text-xs leading-4 text-muted-foreground/70">
             {durable.status === "saving"
               ? "正在保存草稿…"
               : durable.status === "saved"
@@ -504,19 +533,28 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
         )}
         {!memoName && !parentMemoName && <PendingRecords owner={currentUser?.name ?? ""} draftKey={editorCacheKey} />}
         {/* Metadata and toolbar grouped together at bottom */}
-        <div className={cn("w-full flex flex-col gap-2", isFocusMode && "sticky bottom-0 bg-card pt-2")}>
-          <EditorMetadata
-            memoName={memoName}
-            uploadingLocalFileURLs={inlineImageUpload.uploadingLocalFileURLs}
-            onInsertAttachments={inlineImageUpload.insertRemoteImages}
-            onInsertLocalFiles={inlineImageUpload.insertLocalImages}
-            onTranscribeAttachment={canTranscribe ? transcribeAttachment : undefined}
-            transcribingAttachment={transcribingAttachment}
-            transcriptionDisabled={isSaving || audioRecorder.isBusy || isTranscribingAudio}
-          />
-          {!memo && !parentMemoName && isInitialized && suggestions.length > 0 && (
-            <EditorSuggestions suggestions={suggestions} controllerRef={editorRef} space={editorSpace} />
-          )}
+        <div className={cn("w-full shrink-0 flex flex-col gap-2", isFocusMode && "bg-card pt-2")}>
+          {/* Long metadata must not displace the writing viewport or save actions. */}
+          <div
+            className={cn("w-full flex flex-col gap-2", isFocusMode && "overflow-y-auto")}
+            style={isFocusMode ? { maxHeight: "min(8rem, calc(var(--kairos-focus-height, 100dvh) * 0.2))" } : undefined}
+            role="region"
+            aria-label="附件、关联与位置信息"
+            tabIndex={isFocusMode ? 0 : undefined}
+          >
+            <EditorMetadata
+              memoName={memoName}
+              uploadingLocalFileURLs={inlineImageUpload.uploadingLocalFileURLs}
+              onInsertAttachments={inlineImageUpload.insertRemoteImages}
+              onInsertLocalFiles={inlineImageUpload.insertLocalImages}
+              onTranscribeAttachment={canTranscribe ? transcribeAttachment : undefined}
+              transcribingAttachment={transcribingAttachment}
+              transcriptionDisabled={isSaving || audioRecorder.isBusy || isTranscribingAudio}
+            />
+            {!memo && !parentMemoName && isInitialized && suggestions.length > 0 && (
+              <EditorSuggestions suggestions={suggestions} controllerRef={editorRef} space={editorSpace} />
+            )}
+          </div>
           <EditorToolbar
             onReturnToEditor={() => editorRef.current?.focus()}
             onSave={handleSave}

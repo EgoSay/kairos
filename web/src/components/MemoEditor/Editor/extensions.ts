@@ -69,6 +69,8 @@ export interface EditorExtensionsOptions {
   onUpdate: () => void;
   onSubmit: () => void;
   getTags: () => string[];
+  /** Consume the explicit one-shot plain-paste choice, independently of native shortcuts. */
+  consumePlainPaste?: () => boolean;
 }
 
 export const placeholderCompartment = new Compartment();
@@ -92,6 +94,7 @@ export function buildEditorExtensions({
   onUpdate,
   onSubmit,
   getTags,
+  consumePlainPaste,
 }: EditorExtensionsOptions): Extension[] {
   // Submitting must outrank defaultKeymap's own Mod-Enter (insertBlankLine): the save
   // shortcut ends the memo, it must not also edit the document. Meta and Ctrl are bound
@@ -136,11 +139,17 @@ export function buildEditorExtensions({
         const files = clipboardFiles(event);
         const html = clipboard?.getData?.("text/html") || "";
         const plain = clipboard?.getData?.("text/plain") || "";
+        // The explicit choice also works in browsers without a plain-paste
+        // shortcut. Consume it even when the native gesture already requests it.
+        const explicitPlainPaste = consumePlainPaste?.() ?? false;
         // Plain-text paste deliberately delegates to CodeMirror's native path.
-        if (plainPaste || (files.length === 0 && !html)) {
+        if (explicitPlainPaste || plainPaste) {
           plainPaste = false;
-          return false;
+          // An image-only clipboard has no text to insert. Letting CodeMirror
+          // paste an empty string would erase the highlighted prose.
+          return !plain && !clipboard?.getData?.("text/uri-list");
         }
+        if (files.length === 0 && !html) return false;
         const imageFiles = files.filter((file) => file.type.startsWith("image/"));
         const placements: { token: string; file: File; offset: number }[] = [];
         let text = html

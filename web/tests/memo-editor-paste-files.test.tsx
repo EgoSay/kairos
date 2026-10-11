@@ -10,6 +10,10 @@ vi.mock("@/utils/i18n", async (importOriginal) => ({
   useTranslate: () => (key: string) => key,
 }));
 vi.mock("@/hooks/useUserQueries", () => ({ useTagCounts: () => ({ data: {} }) }));
+vi.mock("@/hooks/useMemoQueries", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/useMemoQueries")>()),
+  useInfiniteMemos: () => ({ data: { pages: [{ memos: [] }] }, isPending: false, isRefetching: false, isError: false }),
+}));
 const identity = vi.hoisted(() => ({ name: "users/1" }));
 vi.mock("@/hooks/useCurrentUser", () => ({ default: () => ({ name: identity.name }) }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ userGeneralSetting: {} }) }));
@@ -188,4 +192,36 @@ describe("MemoEditor paste", () => {
     expect(container.querySelector(".cm-upload-preview")).toBeTruthy();
     expect(upload).not.toHaveBeenCalled();
   });
+
+  it("retains a long document, nonempty selection and scroll when returning from the real relation dialog", async () => {
+    const { content, container } = mount();
+    const view = EditorView.findFromDOM(content)!;
+    const markdown = Array.from({ length: 100 }, (_, index) => `${index + 1} 长文滚动验收`).join("\n");
+    act(() => view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: markdown } }));
+    const selected = view.state.doc.line(17);
+    act(() => view.dispatch({ selection: { anchor: selected.from, head: selected.to } }));
+    const scroller = view.scrollDOM;
+    scroller.scrollTop = 408;
+    fireEvent.click(screen.getByRole("button", { name: "聚焦" }));
+    await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+    expect(scroller.scrollTop).toBe(408);
+    scroller.scrollTop = 812;
+    fireEvent.click(screen.getByRole("button", { name: "关联记录" }));
+    const dialog = await screen.findByRole("dialog", { name: "关联记录" });
+    fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(content).toHaveFocus());
+    expect(container.querySelector("[data-focus-mode]")).toBeTruthy();
+    expect(scroller.scrollTop).toBe(812);
+    expect(view.state.selection.main).toMatchObject({ anchor: selected.from, head: selected.to });
+    expect(view.state.doc.toString()).toBe(markdown);
+    fireEvent.click(screen.getByRole("button", { name: "editor.exit-focus-mode" }));
+    await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+    expect(scroller.scrollTop).toBe(408);
+    expect(view.state.selection.main).toMatchObject({ anchor: selected.from, head: selected.to });
+    expect(view.state.doc.toString()).toBe(markdown);
+    expect(container.querySelector(".cm-content")).toBe(content);
+  });
 });
+
+import { EditorView } from "@codemirror/view";

@@ -13,29 +13,29 @@
 - 实现与浏览器/真实服务/发布验收全部满足后再关闭 issue；总清单最后关闭。
 
 
-## 2026-10-11 01:24 当前工程证据与剩余门槛
+## 2026-10-11 10:03 当前工程证据与剩余门槛
 
 以下137行保留源issue/历史AC的精确条款。除AC37“暂缓”外均为“验证中”：本节所述场景通过不代表最终发布通过，也未关闭issue或宣称用户本人体验确认。
 
-候选为 `1f65c5a69f6749092b5c2d06b3a1bae56fbdffdb` **加待提交补丁**，草稿 [PR #20](https://github.com/EgoSay/kairos/pull/20)。`1f65` 的4个CI工作流/14项检查全成功，含三数据库升级验证；其后菜单弹窗生命周期、版本错误/重试、开发MCP代理及ZIP文档枚举修复有单独测试/审查/浏览器证据，不能冒称已被该提交CI覆盖。当前工作树尚未正式上线。
+已推送基线为 `1b8b2c2513d65356e76b6dc44ef56cb083655c35`，草稿 [PR #20](https://github.com/EgoSay/kairos/pull/20)。该提交4个CI工作流/14项检查全部成功，包含ZIP文档、菜单弹窗和历史重试修复，并以同提交镜像完成新鲜S3快照的隔离恢复。09:32用户确认已允许定位后继续浏览器验收，另发现并修复长文聚焦滚动和纯文本粘贴边界；这些后续前端补丁需重新绑定最终提交检查，不能冒称已被1b8的CI覆盖。当前工作树尚未正式上线。
 
 - **G / DB**：Go1.27，完整Go测试、race、tidy和lint通过；SQLite/MySQL/PostgreSQL真实事务、fresh/升级与精确标签派生索引回归通过。最新ZIP修复后API两包race通过，ZIP导入/历史文档在三数据库回归通过。旧1.0.1镜像读取升级数据、新写入再升级的12项演练保留正文/原件。
-- **F / FE / E / I / C / T**：Node24.16/pnpm11.0.1，最新工作树lint、**228测试文件/2060项**及前端构建通过；分别覆盖组件、真实CodeMirror、离线队列、日历/搜索、标签。模拟网络/定位/DOM的结果不冒充实际设备行为。测试环境的`scrollTo`未实现警告不当作浏览器滚动证据。
+- **F / FE / E / I / C / T**：Node24.16/pnpm11.0.1，最新工作树lint、**228测试文件/2065项**及前端构建通过；分别覆盖组件、真实CodeMirror、离线队列、日历/搜索、标签。模拟网络/定位/DOM的结果不冒充实际设备行为。测试环境的`scrollTo`未实现警告不当作浏览器滚动证据。
 - **P / P-Docker**：105项备份/发布Python回归通过；真实隔离Docker/Compose四场故障演练已完成，涵盖容器缺失、健康失败保留pending、定时/重复恢复与实际新写入阻止覆盖；Dokploy HTTP/systemd采用明确的本机适配，不是生产破坏性演练。
-- **B**：本机ego lite、合成账户，证据截至2026-10-10T17:23:43Z。新增真实冲突/刷新/合并、复杂源码与关联往返、组合搜索跨视图、标签键盘与保存视图、详情取消置顶、回顾/漫步/排除、动态分享撤出、纯图片/音频、390px及24px字号格式/非空选区/聚焦子Esc、AI开始前告知均已留证。原生多图剪贴板、离线冷刷、各媒体特殊名/回收恢复、分区保存证据继续有效。
+- **B**：本机ego lite、合成账户，证据截至2026-10-11T02:01:03Z。新增真实冲突/刷新/合并、复杂源码与关联往返、组合搜索跨视图、标签键盘与保存视图、详情取消置顶、回顾/漫步/排除、动态分享撤出、纯图片/音频、390px及24px字号格式/非空选区/聚焦子Esc、AI开始前告知均已留证。原生多图剪贴板、离线冷刷、各媒体特殊名/回收恢复、分区保存证据继续有效。
 - **B34-corrected**：最初取消置顶/删除分区的直接fetch遗漏Authorization并返回401，旧字段比较无效。17:17Z后用授权HTTP200+精确记录名，并将先前独立ZIP审计SQLite快照与现行DB所有字段/附件/关系逐字节对比重新通过；以下只采用后证据，不沿用错误断言。
 - **ZIP**：真实浏览器普通/含历史ZIP在应用外独立核对**138/138**通过；18条合成记录、12附件/原件、10/14可移植文档、0/4版本、正文/日期/关系/原件hash及脱敏字段匹配。此前`documents=[]`静默漏导已修复，并补防空循环的三DB roundtrip断言。历史专用已移除附件的保留由实DB回归补足。
-- **P-live / R / R-receipt**：现有S3真实临时读写/hash/删除、配置失败保护、完整试备份和原timer自动调度/监控通过。新鲜`0038d722…`快照在无网络隔离容器运行`1.1.0-dev.1f65c5a69f67`；应用与授权核验均true，707正常/5回收、55原件/54预览、110保留文件、2451负向通过；712行仅派生标签索引变化，归一原始字段hash一致。非空关系由合成ZIP/三DB补证。可信状态回执与页面明确区分备份时版本、实际测试版本及独立副本未知；不是线上新版本已验收。
+- **P-live / R / R-receipt**：现有S3真实临时读写/hash/删除、配置失败保护、完整试备份和原timer自动调度/监控通过。最新真实定时`cbd5ac53…`快照在无网络隔离容器运行`1.1.0-dev.1b8b2c2513d6`；应用与授权核验均true，707正常/5回收、55原件/54预览、110保留文件、2451负向通过；712行仅派生标签索引变化，归一原始字段hash一致。非空关系由合成ZIP/三DB补证。可信状态回执与页面明确区分备份时版本、实际测试版本及独立副本未知；不是线上新版本已验收。
 - **M / M2 / M3 / A / R11**：真实Codex今天/指定日期/两时期完整分页、全文、来源及事实/解读区分通过；source实际导航通过。设置创建同一只读凭据→复制配置/检测→真实Codex读取→UI撤销→再次客户端401已闭环；HTTP/2 Connect/gRPC/gRPC-Web、旧MCP和文件入口权限边界有精确回归。
-- **GEO-PENDING**：当前位置已真实触发ego浏览器权限提示并交还用户；等手动允许/拒绝及后续应用响应。实际地名搜索/常用/最近/默认中心禁存已通过，尚不宣称当前位置结果或硬件GPS精度通过。
+- **GEO**：用户确认允许后已恢复同一ego空间；浏览器权限实际为`granted`，设备定位回调实际返回code2 `Position update is unavailable`，页面正确显示设备暂不可定位，不将默认地图中心选中或写入。选择已有合成地点可继续，取消不保存。授权等待已解除，不能把设备无坐标误写成权限拒绝，也不宣称硬件GPS成功/精度通过。
 - **U-AI**：真实provider/model/受控凭据未到位。AC09开始前不发送已实际通过；AC10–14及AC23中的真实服务/衍生生命周期六项仍缺输入。mock成功/失败与Codex MCP分析不能替代应用内真实AI服务。
-- **P0（全部非暂缓行共同待办）**：冻结最终补丁提交并使所需检查有效→合并及main可达→新语义版本标签/版本匹配→上线前新鲜完整可恢复数据库和附件备份/旧digest与回滚路径→现有Dokploy固定digest发布→实际版本/commit/digest、健康/登录、逐对象正文/日期/关系/原件hash/权限/日志/调度核验→逐issue和总清单证据闭环。普通提交/构建不替代发布；现有真实恢复证明绑定其具体测试提交，不能改称未来commit。
+- **P0（全部非暂缓行共同待办）**：冻结后续编辑器补丁并使所需检查有效→合并及main可达→新语义版本标签/版本匹配→上线前新鲜完整可恢复数据库和附件备份/旧digest与回滚路径→现有Dokploy固定digest发布→实际版本/commit/digest、健康/登录、逐对象正文/日期/关系/原件hash/权限/日志/调度核验→逐issue和总清单证据闭环。普通提交/构建不替代发布；现有真实恢复证明绑定其具体测试提交，不能改称未来commit。
 
-**除共同P0外，仍未完成的实际验收仅明确保留以下分支：**
+**浏览器收尾结果与除共同P0外的剩余边界：**
 
-- **当前位置权限及响应**：ego权限提示等待用户手动允许或拒绝；07-01–07-03的实际当前位置后续状态未通过。
-- **纯文本粘贴**：Shift+Cmd/Ctrl+V动作仍未真实执行；普通`insertText`不算纯文本粘贴验收，见19-04。HTML语义粘贴已从原始动作和返回补链通过。
-- **编辑器长文滚动**：聚焦/关联前后滚动保持仍缺实际after值；光标与非空选区、正文/元数据已证，不相互替代，见08-02、09-01、09-05、19-05。
+- **当前位置环境边界**：授权已允许，真实无坐标回调与可恢复提示已验证；当前Ego设备定位源无法返回坐标，定位成功/硬件精度未验证。地名搜索、手动/常用位置主路径与自动定位边界测试继续有效。
+- **纯文本粘贴**：当前Ego的带Shift快捷键未派发paste事件，不能记为通过。已提供显式一次性“纯文本粘贴”入口，真实原生Cmd+V已验证富文本剪贴板只取文字、选区替换、撤销及下一次恢复格式；图片-only原生粘贴已实际验证不删选区、不启动上传；URI-only链接另有精确回归，见19-04。
+- **编辑器长文滚动**：原真实跳动已定位为flex高度链失效；修复后关联预览返回保持scrollTop=923.5和非空选区，最终树两次聚焦往返均保持454.5及同一非空选区。独立审查发现的多关联短视口裁剪也已修复：390×480/root24/9关联，正文144px，元数据96px独立滚动；外层滚到257后保存按钮395–449px且真实命中。极短视口需滚动到达保存，不冒称始终固定可见。
 - **真实AI与衍生生命周期**：AC10–14、AC23六项仍待获准provider/model/凭据；AC09开始前不发送已通过。
 
 精确数据库/并发/失败/权限排列已有自动化证据，不再自动新增人工gate；实际主路径与自动断言共同构成每行证据。仍缺的动作证据在对应行明列，未执行/待权限不能写成通过。实体手机硬件按已批准范围不作为前置，也不冒称通过。
@@ -47,18 +47,20 @@
 | 代号 | 相对证据文件/定位 | 适用范围 |
 | --- | --- | --- |
 | G/DB | `final-candidate-local.json`、`review-final-go-all.log`、`recovery-guard-final-race.log`、`recovery-store-{sqlite,mysql,postgres}-final.log`、`final-zip-api-race.log` | 最终1f65基线及补丁相关测试；具体断言以行内测试名为准 |
-| FE/E/I/C/T | `final-history-tests.log`、`final-history-lint.log`、`final-history-qa-build.log`、`editor-independent-review.md`、`offline-inline-review.md`、`search-independent-review.md` | 228/2060及编辑/离线/检索专项红绿；不是最终补丁CI |
+| FE/E/I/C/T | `editor-final-full-tests.log`、`editor-final-lint.log`、`editor-final-qa-build.log`、`editor-followup-independent-review.md`、`offline-inline-review.md`、`search-independent-review.md` | 228/2065及编辑/离线/检索专项红绿；不是最终补丁CI |
 | P/P-Docker | `python-final-with-verifier.log`、`real-docker-release-drill.json`、`real-docker-release-drill.md` | 隔离发布恢复、脚本锁/健康/声明/数据保护 |
-| B | `browser-evidence.jsonl`行1–54（各行自带UTC时间；下表用B:行号） | ego实际操作；不复制合成正文或身份到公开文档 |
+| B | `browser-evidence.jsonl`行1–59（各行自带UTC时间；下表用B:行号） | ego实际操作；不复制合成正文或身份到公开文档 |
 | H | `qa-http-boundaries.json` | 40场景/135请求逐对象边界；按scenario语义采用，早期matrixIds错位不沿用 |
 | B1-proof | `b1-largefont-focus-proof.json`、`b1-largefont-focus.png`、`b1-prior-browser-action-proof.md`、`b1-prior-browser-action-proof.json` | 非空选区、源码、字号及原始动作/返回补链；HTML与补全通过，Shift-paste/after-scroll未通过；首次innerText失败保留 |
 | B34-corrected | `b34-reverified-data.json`、`b3-unpin-authenticated.json`、`b4-after-delete-partition-authenticated.json` | 取代未授权401响应上的无效比较 |
 | D | `menu-dialog-lifecycle-review.md`、`menu-dialog-mounted-after.log`、`menu-dialog-proxy-independent-review.json`、`history-error-retry-handoff.json` | 弹窗卸载/焦点修复、错误与空态区分、重试；已做独立review |
 | ZIP/ZIP-DB | `qa-export-fixed-independent-audit/audit-result.json`、`zip-document-export-handoff.json`、`zip-document-export-{green,mysql,postgres}.log` | 实际ZIP外读138项和三数据库导入安全 |
-| P-live/R/R-receipt | `backup-live-probe-evidence.jsonl`、`final-fresh-application-result.json`、`final-postflight-agent-status.json` | 真实S3、具体版本应用恢复/授权基线、调度/监控与可信回执 |
+| P-live/R/R-receipt | `backup-live-probe-evidence.jsonl`、`final-1b8-application-result.json`、`final-1b8-restore-postflight.json` | 真实S3、具体版本应用恢复/授权基线、调度/监控与可信回执 |
 | M/M2/M3/A/R11 | `codex-mcp-{result,pagination-result,two-period-result,b6-ui-result,b6-revoked-result}.md`、对应events、`r11-independent-review.md` | 真实客户端与协议/凭据权限证据 |
 | AI/U-AI | `acceptance-ai-failure-regression.log`、B:54 | 自动失败边界与实际未开始告知；真实provider输入仍缺 |
-| CI | `pr20-final-readiness.json`、`pr20-final-reviewed-file-binding.json` | 只绑定1f65的4工作流/14检查，后续补丁需新检查 |
+| CI | `final-1b8-readiness.json`、`final-1b8-check-runs.json` | 1b8的4工作流/14检查，后续编辑器补丁需新检查 |
+| GEO | `browser-geolocation-granted.json`、B:55 | 真实granted和设备code2、可恢复状态；无硬件成功坐标 |
+| B-new | `browser-longscroll-final.json`、`browser-relation-scroll.json`、`browser-native-plain-paste.json`、`native-plain-image-result.json`、`focus-many-relations-short-{before,after}.json` | 长文/关联滚动、原生纯文本与纯图选区保护、短视口多关联修复前后几何；B:56–59 |
 
 ## #1 [P1] 分区切换与正文保存需统一提交，避免按旧分区安排外发
 
@@ -90,9 +92,9 @@
 | --- | --- | --- | --- |
 | 03-01 | 仅切换分区、移出分区、重新启用暂停分区均持久化成功。 | 验证中 | 自动化：G `TestAtomicPartitionSaveUsesOnlyCommittedDestination`；F: journal-atomic-partition-save、journal-partition-save 显式重启暂停映射；实际：仅分区、正文+分区保存重开均显示真实归属；旧版本恢复后明确暂停，普通编辑不发送；显式重选同分区才发送当前正文，UI行为与签名接收事件一致。 证据：B:26–29,34–35；D；共同待办：P0 |
 | 03-02 | 保存后重新打开，显示实际归属及同步状态。 | 验证中 | 自动化：F: journal-partition-picker suspended/selected metadata；服务端原子结果 G；实际：仅分区、正文+分区保存重开均显示真实归属；旧版本恢复后明确暂停，普通编辑不发送；显式重选同分区才发送当前正文，UI行为与签名接收事件一致。 证据：B:26–29,34–35；D；共同待办：P0 |
-| 03-03 | 分区保存失败不提示成功或静默丢弃选择；重试行为明确。 | 验证中 | 自动化：F: journal-atomic-partition-save `keeps the draft selection on failure and retries the same atomic request`；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2060项全套。 证据：B:28–29；FE；共同待办：P0 |
-| 03-04 | 确实没有任何修改时仍维持原有无修改提示。 | 验证中 | 自动化：F 同文件 `keeps the no-change result for an unchanged selection`；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2060项全套。 证据：B:28–29；FE；共同待办：P0 |
-| 03-05 | 上述场景纳入前端回归测试。 | 验证中 | 自动化：分区原子保存/失败重试/暂停显式重启前端回归；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2060项全套。 证据：B:28–29；FE；共同待办：P0 |
+| 03-03 | 分区保存失败不提示成功或静默丢弃选择；重试行为明确。 | 验证中 | 自动化：F: journal-atomic-partition-save `keeps the draft selection on failure and retries the same atomic request`；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2065项全套。 证据：B:28–29；FE；共同待办：P0 |
+| 03-04 | 确实没有任何修改时仍维持原有无修改提示。 | 验证中 | 自动化：F 同文件 `keeps the no-change result for an unchanged selection`；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2065项全套。 证据：B:28–29；FE；共同待办：P0 |
+| 03-05 | 上述场景纳入前端回归测试。 | 验证中 | 自动化：分区原子保存/失败重试/暂停显式重启前端回归；实际：真实无修改提示、断网保存失败保留编辑器和分区选择、恢复网络重试成功均已验证；相应前端回归已纳入228文件/2065项全套。 证据：B:28–29；FE；共同待办：P0 |
 
 ## #4 [P2] 定时回滚完成后，流水线仍需恢复生产部署声明
 
@@ -126,7 +128,7 @@
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
 | 06-01 | 截图、复制本地图片以及浏览器提供的图片剪贴板数据可一次粘贴添加，无需额外点击上传。 | 验证中 | 自动化：E Editor paste+inline/file 分流；系统 clipboard 未由 jsdom 证明；实际：原生PNG及macOS双文件剪贴板直接粘贴并实际保存；手动添加与能力不足反馈有组件回归。系统剪贴板与模拟paste测试分开记录。 证据：B:6,20；E；共同待办：P0 |
-| 06-02 | 多张、连续及文字图片混合粘贴不丢内容，位置和顺序正确。 | 验证中 | 自动化：E mixed HTML/local-vs-remote image 顺序；I pending anchor 映射；实际：真实原生单图/双文件图片及图文顺序已证；原始工具动作确认keyboard.paste的HTML strong/list/link转成Markdown，继续编辑的含图复杂正文仍保留。local/remote图片对应、混合顺序及并发锚点由CM/队列精确回归覆盖；纯文本快捷粘贴另列19-04待验。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 06-02 | 多张、连续及文字图片混合粘贴不丢内容，位置和顺序正确。 | 验证中 | 自动化：E mixed HTML/local-vs-remote image 顺序；I pending anchor 映射；实际：真实原生单图/双文件图片及图文顺序已证；原始工具动作确认keyboard.paste的HTML strong/list/link转成Markdown，继续编辑的含图复杂正文仍保留。local/remote图片对应、混合顺序及并发锚点由CM/队列精确回归覆盖；纯文本入口已实际验证，详见19-04。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
 | 06-03 | 上传中可继续输入，失败重试后图片只插入一次。 | 验证中 | 自动化：E/I 锚点、partial retry stable IDs、失败不重传完成部分；实际：断网冷刷新后图文草稿与Blob恢复，前插文字后锚点正确，联网续传最终只生成一条记录/同一个附件，原件hash一致。丢响应、稳定ID及失败重试不重复上传有精确持久队列/CM回归，不另手工制造全部故障排列。 证据：B:12–14,20；E/I；H；共同待办：P0 |
 | 06-04 | 断网、刷新、重新打开编辑器后正文和本地图片仍可恢复，状态不误报服务器保存成功。 | 验证中 | 自动化：I 图文离线位置/重启恢复；E owner isolation；B-text 仅文字局部；实际：断网冷刷新后图文草稿与Blob恢复，前插文字后锚点正确，联网续传最终只生成一条记录/同一个附件，原件hash一致。丢响应、稳定ID及失败重试不重复上传有精确持久队列/CM回归，不另手工制造全部故障排列。 证据：B:12–14,20；E/I；H；共同待办：P0 |
 | 06-05 | 保存后记录正文与附件库引用一致，能够预览及下载原件。 | 验证中 | 自动化：I resolve inline+attachment same object；G attachment APIs；实际：断网冷刷新后图文草稿与Blob恢复，前插文字后锚点正确，联网续传最终只生成一条记录/同一个附件，原件hash一致。丢响应、稳定ID及失败重试不重复上传有精确持久队列/CM回归，不另手工制造全部故障排列。 证据：B:12–14,20；E/I；H；共同待办：P0 |
@@ -138,9 +140,9 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 07-01 | 在真实主用设备定位，区分地图显示偏移、设备精度不足和名称错误，并记录实际修复依据。 | 验证中 | 自动化：G provider/geocoding、地点坐标校验；F editor-location 低精度/晚响应；实际：真实地名搜索、常用/最近重开、手选保存和默认地图中心禁存已通过；点击当前位置已触发ego浏览器权限提示并交还用户，目前等手动允许或拒绝，尚未取得真实定位结果/拒绝后的应用状态，不能标该路径通过。低精度/超时/晚响应等模拟边界已测。 证据：B:9,15；GEO-PENDING；E；共同待办：P0 |
-| 07-02 | 快捷选择当前位置、已有常用位置和地图选点可用；地点搜索结果可预览确认。 | 验证中 | 自动化：G/FE：位置owner/CAS，search/selected map/保存；recent-location reopen新红绿在 location-reopen-after.log；实际：真实地名搜索、常用/最近重开、手选保存和默认地图中心禁存已通过；点击当前位置已触发ego浏览器权限提示并交还用户，目前等手动允许或拒绝，尚未取得真实定位结果/拒绝后的应用状态，不能标该路径通过。低精度/超时/晚响应等模拟边界已测。 证据：B:9,15；GEO-PENDING；E；共同待办：P0 |
-| 07-03 | 拒绝权限、超时、网络失败均有可恢复状态，不把默认地图中心保存为真实位置。 | 验证中 | 自动化：F editor-location denied/timeout/unavailable，location-dialog 默认中心不选中；实际：真实地名搜索、常用/最近重开、手选保存和默认地图中心禁存已通过；点击当前位置已触发ego浏览器权限提示并交还用户，目前等手动允许或拒绝，尚未取得真实定位结果/拒绝后的应用状态，不能标该路径通过。低精度/超时/晚响应等模拟边界已测。 证据：B:9,15；GEO-PENDING；E；共同待办：P0 |
+| 07-01 | 在真实主用设备定位，区分地图显示偏移、设备精度不足和名称错误，并记录实际修复依据。 | 验证中 | 自动化：G provider/geocoding、地点坐标校验；F editor-location 低精度/晚响应；实际：真实地名搜索、常用/最近重开、手选保存和默认地图中心禁存已通过；用户允许后权限granted，实际定位回调code2无坐标，页面设备不可用提示正确且选择旧地点可恢复、取消不保存。未取得硬件坐标/精度证据；低精度/超时/晚响应等模拟边界与真实环境证据分开。 证据：B:9,15；GEO；E；共同待办：P0 |
+| 07-02 | 快捷选择当前位置、已有常用位置和地图选点可用；地点搜索结果可预览确认。 | 验证中 | 自动化：G/FE：位置owner/CAS，search/selected map/保存；recent-location reopen新红绿在 location-reopen-after.log；实际：真实地名搜索、常用/最近重开、手选保存和默认地图中心禁存已通过；用户允许后权限granted，实际定位回调code2无坐标，页面设备不可用提示正确且选择旧地点可恢复、取消不保存。未取得硬件坐标/精度证据；低精度/超时/晚响应等模拟边界与真实环境证据分开。 证据：B:9,15；GEO；E；共同待办：P0 |
+| 07-03 | 拒绝权限、超时、网络失败均有可恢复状态，不把默认地图中心保存为真实位置。 | 验证中 | 自动化：F editor-location denied/timeout/unavailable，location-dialog 默认中心不选中；实际：真实地名搜索、常用/最近重开、手选保存和默认地图中心禁存已通过；用户允许后权限granted，实际定位回调code2无坐标，页面设备不可用提示正确且选择旧地点可恢复、取消不保存。未取得硬件坐标/精度证据；低精度/超时/晚响应等模拟边界与真实环境证据分开。 证据：B:9,15；GEO；E；共同待办：P0 |
 | 07-04 | 已手选位置或手填名称不会被旧异步响应覆盖；取消及重开不丢原值。 | 验证中 | 自动化：F editor-location late result/name/manual/cancel/reopen；实际：位置自动化精确覆盖手选/改名不被晚响应覆盖、取消重开保留值、反解失败仍可保存已确认坐标；实际手选、常用重开和既有地点保存亦通过，无需逐个手工伪造异步时序。 证据：B:9,15,38,52；E；共同待办：P0 |
 | 07-05 | 地名解析不可用时，已确认坐标仍可保存。 | 验证中 | 自动化：F editor-location `allows saving verified coordinates when name lookup fails`；实际：位置自动化精确覆盖手选/改名不被晚响应覆盖、取消重开保留值、反解失败仍可保存已确认坐标；实际手选、常用重开和既有地点保存亦通过，无需逐个手工伪造异步时序。 证据：B:9,15,38,52；E；共同待办：P0 |
 | 07-06 | 已有记录不会在编辑或打开页面时被自动改成当前位置。 | 验证中 | 自动化：F editor-location `preserves the original on open/cancel and never automatically locates...`；实际：复杂旧记录source/visual/focus往返后正文逐字节相等，位置/附件/原日期/关系未改变；保存重开成功，无自动定位或意外清理草稿。 证据：B:38,52；E/I；共同待办：P0 |
@@ -153,7 +155,7 @@
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
 | 08-01 | 无需展开更多菜单即可进入和退出聚焦模式，入口支持键盘与触控。 | 验证中 | 自动化：E/insert-menu direct focus 及 host frame 测试；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
-| 08-02 | 多次切换后正文、光标、附件、位置、关联及未完成上传保持一致。 | 验证中 | 自动化：E memo-editor-paste-files same editor/pending image source/focus；focus viewport；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。聚焦/关联长文滚动仍缺after值，保持真实待验收。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 08-02 | 多次切换后正文、光标、附件、位置、关联及未完成上传保持一致。 | 验证中 | 自动化：E memo-editor-paste-files same editor/pending image source/focus；focus viewport；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。后续真实长文进入/退出聚焦及关联预览返回scrollTop均923.5、非空选区一致；最终树长文两轮切换454.5与非空选区一致；多关联短视口已保留144px正文及可滚达保存，见B-new。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
 | 08-03 | 切换不会意外提交、取消编辑或清理草稿。 | 验证中 | 自动化：E 同上无 editor remount；草稿恢复回归；实际：复杂旧记录source/visual/focus往返后正文逐字节相等，位置/附件/原日期/关系未改变；保存重开成功，无自动定位或意外清理草稿。 证据：B:38,52；E/I；共同待办：P0 |
 | 08-04 | 关闭子对话框和退出聚焦的 Esc/焦点行为清楚且一致。 | 验证中 | 自动化：E `gives dialogs priority on Escape`；preview-image-dialog Esc hierarchy；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
 | 08-05 | 桌面、手机软键盘及大字号情况下核心动作可见可用。 | 验证中 | 自动化：E visual viewport frame 测试；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
@@ -165,11 +167,11 @@
 
 | ID | 验收条件 | 状态 | 证据 / 环境 / 提交 |
 | --- | --- | --- | --- |
-| 09-01 | 从当前编辑器可快速找到、预览并关联旧记录，关闭选择器后继续原位置写作。 | 验证中 | 自动化：F link-memo-search delayed open；relation preview；E focus continuity；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。聚焦/关联长文滚动仍缺after值，保持真实待验收。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 09-01 | 从当前编辑器可快速找到、预览并关联旧记录，关闭选择器后继续原位置写作。 | 验证中 | 自动化：F link-memo-search delayed open；relation preview；E focus continuity；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。后续真实长文进入/退出聚焦及关联预览返回scrollTop均923.5、非空选区一致；最终树长文两轮切换454.5与非空选区一致；多关联短视口已保留144px正文及可滚达保存，见B-new。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
 | 09-02 | 关键词搜索、后续页、空态和失败重试可用；特殊字符不导致查询失效。 | 验证中 | 自动化：F link-memo-search 后页失败/重试/晚响应；literal quoting 共用搜索；实际：搜索后页错误重试、特殊字符、晚响应、自关联/重复、失效目标和移除不丢正文均有精确组件/API/DB断言；实际搜索预览、保存与反向回看已通过，不新增每个错误的人工排列。 证据：B:5,39；H；G/DB；FE；共同待办：P0 |
 | 09-03 | 保存后正向及反向关系一致，刷新仍可回看。 | 验证中 | 自动化：G `TestMemoRelationsHideTrashedEndpointsAndRestoreBidirectionally`；DB 事务；实际：真实保存关联后从来源跳到目标，再经反向入口返回同一来源；服务端刷新、回收与恢复双向一致由隔离HTTP/DB回归补足。 证据：B:39；H；G/DB；共同待办：P0 |
 | 09-04 | 自关联、重复添加、移除关联及目标删除行为明确，不误删正文。 | 验证中 | 自动化：G `TestMemoSaveSkipsUnavailableReferencesWithoutLosingBody`；DB 并发 target 删除；F relation warns；实际：搜索后页错误重试、特殊字符、晚响应、自关联/重复、失效目标和移除不丢正文均有精确组件/API/DB断言；实际搜索预览、保存与反向回看已通过，不新增每个错误的人工排列。 证据：B:5,39；H；G/DB；FE；共同待办：P0 |
-| 09-05 | 阅读关联记录并返回时草稿、光标和滚动位置保留。 | 验证中 | 自动化：E editor retained；F direct dialog focus pointer；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。聚焦/关联长文滚动仍缺after值，保持真实待验收。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 09-05 | 阅读关联记录并返回时草稿、光标和滚动位置保留。 | 验证中 | 自动化：E editor retained；F direct dialog focus pointer；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。后续真实长文进入/退出聚焦及关联预览返回scrollTop均923.5、非空选区一致；最终树长文两轮切换454.5与非空选区一致；多关联短视口已保留144px正文及可滚达保存，见B-new。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
 | 09-06 | 键盘选择和手机操作可用，快速输入不会使用过期结果。 | 验证中 | 自动化：F link-memo-search `hides previous candidates...ignores late results`；实际：ego桌面及390×844/390×480视口、24px根字号已实际验证：格式/保存可达、非空选区、聚焦及子弹窗Esc优先级和键盘操作；按用户变更范围验收，不宣称实体软键盘/触摸硬件。快速输入晚结果等边界由组件测试覆盖。 证据：B:16–17,50,52；E；D；共同待办：P0 |
 | 09-07 | 关系可随现有导出/恢复流程保留，权限与回收站语义一致。 | 验证中 | 自动化：G `TestJournalBackupNewInstanceRoundtripAndNoReplay` relation remap + R06 trash/restore；实际：浏览器下载普通/含历史ZIP，应用外独立对fresh SQLite快照核对138/138通过：18记录、12附件/原件、10/14可移植文档、0/4版本，正文/日期/关系/原件hash及脱敏字段一致。三DB导入回归证明组织关系保留且不重放。 证据：ZIP；ZIP-DB；共同待办：P0 |
 
@@ -258,8 +260,8 @@
 | 19-01 | 不懂 Markdown 的用户可用直接可见的按钮写出包含标题、加粗、列表等首期格式的记录。 | 验证中 | 自动化：E editor-formatting full command tests；insert-menu直接入口；实际：真实格式操作/撤销重做、Chromium中文composition、source/visual/focus及大字号非空选区已验证，保存复杂Markdown原文和附件/位置/关系一致。首期全格式、代码字面量与标题/嵌套标签边界由真实CM测试覆盖，不额外人工穷举语法。 证据：B:16,38,52；E；FE；共同待办：P0 |
 | 19-02 | 直接输入 Markdown 后在编辑位置看到效果；列表、待办、引用、链接和代码等格式正确，代码内容不被误当作正文语法处理。 | 验证中 | 自动化：E editor-live-preview structure/code literal/task undo；真实CM实例测试；实际：真实格式操作/撤销重做、Chromium中文composition、source/visual/focus及大字号非空选区已验证，保存复杂Markdown原文和附件/位置/关系一致。首期全格式、代码字面量与标题/嵌套标签边界由真实CM测试覆盖，不额外人工穷举语法。 证据：B:16,38,52；E；FE；共同待办：P0 |
 | 19-03 | 粘贴一段含列表、链接和图片的内容后可以继续编辑，保存并重新打开时结构和图片位置完整。 | 验证中 | 自动化：E mixed semantic paste+I inline completion；实际：已从原始工具调用与成功返回确认真实HTML strong/list/link语义粘贴，含图复杂记录继续编辑后源码结构与已保存原文一致；原生单图/多图剪贴板另有真实保存/原件hash，混合图片占位顺序由CM精确测试覆盖。首次innerText多空行比较失败保留，采用随后raw cm-line与后端匹配的证据。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
-| 19-04 | 从网页或文档粘贴保留基础语义格式且不带入来源字体、颜色、背景；粘贴为纯文本可用。 | 验证中 | 自动化：E semantic/plain intents、HTML styles dropped、pre空行保留；实际：原始动作确认keyboard.paste({text,html})完成strong/list/link语义转换，CM测试覆盖去来源样式和代码空行。Shift+Cmd/Ctrl+V纯文本粘贴仍未真实执行：现有字面文本实际由keyboard.insertText输入，不能冒称纯文本粘贴通过。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
-| 19-05 | 来回切换可视化与源码模式，正文、标签、附件、格式、草稿和编辑位置不丢失，不因只切换模式而静默改坏原文。 | 验证中 | 自动化：E source/focus unchanged doc/editor identity；undo state；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。聚焦/关联长文滚动仍缺after值，保持真实待验收。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 19-04 | 从网页或文档粘贴保留基础语义格式且不带入来源字体、颜色、背景；粘贴为纯文本可用。 | 验证中 | 自动化：E semantic/plain intents、HTML styles dropped、pre空行保留；实际：原始动作确认keyboard.paste({text,html})完成strong/list/link语义转换，CM测试覆盖去来源样式和代码空行。当前Ego带Shift快捷键只派发按键而不派发paste，未冒称通过；显式一次性纯文本入口+真实原生Cmd+V已通过HTML剪贴板文字提取、选区替换、撤销、下一次正常格式；纯图片原生剪贴板不删选中文字且不启动上传，URI-only另有精确回归。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
+| 19-05 | 来回切换可视化与源码模式，正文、标签、附件、格式、草稿和编辑位置不丢失，不因只切换模式而静默改坏原文。 | 验证中 | 自动化：E source/focus unchanged doc/editor identity；undo state；实际：实际关联搜索预览后继续写作、正反向导航及复杂源码/元数据往返已过；原始动作核对child Esc后光标anchor/焦点保持，390px/24px后续证据补齐非空选区一致。raw cm-line的408字节与已保存后端基线匹配；该次无修改保存不冒称新增正文写入。后续真实长文进入/退出聚焦及关联预览返回scrollTop均923.5、非空选区一致；最终树长文两轮切换454.5与非空选区一致；多关联短视口已保留144px正文及可滚达保存，见B-new。 证据：B:5–6,20,38–39,52；B1-proof；E/I；共同待办：P0 |
 | 19-06 | 正确区分 Markdown 标题与嵌套标签；关联记录、附件和已有复杂内容继续可用，必要时能切源码精确编辑。 | 验证中 | 自动化：E legacyMarkdown/tags/complex/code + R06关系保存；实际：真实格式操作/撤销重做、Chromium中文composition、source/visual/focus及大字号非空选区已验证，保存复杂Markdown原文和附件/位置/关系一致。首期全格式、代码字面量与标题/嵌套标签边界由真实CM测试覆盖，不额外人工穷举语法。 证据：B:16,38,52；E；FE；共同待办：P0 |
 | 19-07 | 中文输入法组合输入、选择文字、撤销重做、草稿恢复完成验证；普通编辑与聚焦模式操作一致。 | 验证中 | 自动化：E IME deferral/undo/redo/anchor、I durable；jsdom非真实IME；实际：真实格式操作/撤销重做、Chromium中文composition、source/visual/focus及大字号非空选区已验证，保存复杂Markdown原文和附件/位置/关系一致。首期全格式、代码字面量与标题/嵌套标签边界由真实CM测试覆盖，不额外人工穷举语法。 证据：B:16,38,52；E；FE；共同待办：P0 |
 | 19-08 | 编辑呈现与保存后的阅读结构一致，历史记录及导出内容保持可读 Markdown。 | 验证中 | 自动化：E exact Markdown doc；G export exact bytes；实际：旧复杂Markdown编辑/阅读及source切换后保存原文字节一致；实际导出ZIP在应用外逐正文/元数据/媒体核对通过，未将渲染DOM额外空行误当正文变化。 证据：B:38,52；ZIP；E；共同待办：P0 |
@@ -267,7 +269,7 @@
 
 ## 历史 AC 回归范围
 
-历史已关闭不代表本轮通过。以下逐项已关联本轮证据，仍共享P0；真实AI六项和定位权限按上文保留缺口，AC37真实社媒按用户指令暂缓。
+历史已关闭不代表本轮通过。以下逐项已关联本轮证据，仍共享P0；真实AI六项和设备定位无坐标边界按上文如实保留，AC37真实社媒按用户指令暂缓。
 
 | ID | 场景 | 预期 | 本轮状态 | 实际结果 / 环境与时间 / 提交 / 证据 |
 | --- | --- | --- | --- | --- |

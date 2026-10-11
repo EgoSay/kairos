@@ -7,7 +7,7 @@ import { buildEditorExtensions } from "@/components/MemoEditor/Editor/extensions
 import { livePreview, previewCompartment } from "@/components/MemoEditor/Editor/livePreview";
 
 const views: EditorView[] = [];
-const mount = (doc: string, onFiles = vi.fn()) => {
+const mount = (doc: string, onFiles = vi.fn(), consumePlainPaste?: () => boolean) => {
   const view = new EditorView({
     parent: document.body.appendChild(document.createElement("div")),
     state: EditorState.create({
@@ -19,6 +19,7 @@ const mount = (doc: string, onFiles = vi.fn()) => {
         onUpdate: vi.fn(),
         onSubmit: vi.fn(),
         getTags: () => [],
+        consumePlainPaste,
       }),
     }),
   });
@@ -172,6 +173,47 @@ describe("Markdown visual editing", () => {
     view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "v", ctrlKey: true, shiftKey: true, bubbles: true }));
     paste(view, "<b>纯文本</b>", "纯文本");
     expect(view.state.doc.toString()).toBe("**重点**纯文本");
+  });
+
+  it("consumes an explicit plain paste once, replaces the selection and remains undoable", () => {
+    const onFiles = vi.fn();
+    const consume = vi.fn().mockReturnValueOnce(true).mockReturnValue(false);
+    const view = mount("保留 待替换 尾部", onFiles, consume);
+    view.dispatch({ selection: { anchor: 3, head: 6 } });
+    paste(view, '<strong>纯文字</strong><img src="blob:image">', "纯文字", [new File(["image"], "one.png", { type: "image/png" })]);
+    expect(view.state.doc.toString()).toBe("保留 纯文字 尾部");
+    expect(onFiles).not.toHaveBeenCalled();
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe("保留 待替换 尾部");
+    expect(redo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe("保留 纯文字 尾部");
+    paste(view, "<strong>下一次</strong>", "下一次");
+    expect(view.state.doc.toString()).toContain("**下一次**");
+    expect(consume).toHaveBeenCalledTimes(2);
+  });
+
+  it("never deletes selected text when plain paste receives only an image", () => {
+    const onFiles = vi.fn();
+    const view = mount("要保留的文字", onFiles, () => true);
+    view.dispatch({ selection: { anchor: 1, head: 5 } });
+    paste(view, '<img src="blob:image">', "", [new File(["image"], "one.png", { type: "image/png" })]);
+    expect(view.state.doc.toString()).toBe("要保留的文字");
+    expect(view.state.selection.main.from).toBe(1);
+    expect(view.state.selection.main.to).toBe(5);
+    expect(onFiles).not.toHaveBeenCalled();
+  });
+
+  it("preserves native plain-paste support for URI-only clipboard text", () => {
+    const view = mount("替换这里", vi.fn(), () => true);
+    view.dispatch({ selection: { anchor: 0, head: 4 } });
+    const event = new Event("paste", { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "clipboardData", {
+      value: { getData: (type: string) => (type === "text/uri-list" ? "https://example.test/source" : ""), items: [], files: [] },
+    });
+    view.contentDOM.dispatchEvent(event);
+    expect(view.state.doc.toString()).toBe("https://example.test/source");
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe("替换这里");
   });
   it("shows a task checkbox while continuing to type on its active line", () => {
     const view = mount("- [ ] 今天");

@@ -49,6 +49,7 @@ export interface MemoEditorProps {
 
 export interface EditorContentProps {
   sourceMode?: boolean;
+  consumePlainPaste?: () => boolean;
   placeholder?: string;
   /** Invoked by the in-editor save shortcut (Cmd/Ctrl+Enter). */
   onSubmit: () => void;

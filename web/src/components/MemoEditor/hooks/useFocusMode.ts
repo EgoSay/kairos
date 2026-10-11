@@ -8,21 +8,16 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 export function useFocusMode(isFocusMode: boolean) {
   const containerRef = useRef<HTMLDivElement>(null);
   const normalModeHeightRef = useRef(0);
-  const scrollPositions = useRef<{ normal?: number; focus?: number }>({});
+  const scrollPositions = useRef<{ normal?: { editor: number; frame: number }; focus?: { editor: number; frame: number } }>({});
+  const restoreFrame = useRef<number | undefined>(undefined);
   const captureScroll = useCallback(() => {
-    const scroller = containerRef.current?.querySelector(".cm-scroller");
-    if (scroller) scrollPositions.current[isFocusMode ? "focus" : "normal"] = scroller.scrollTop;
-  }, [isFocusMode]);
-
-  useLayoutEffect(() => {
-    const scroller = containerRef.current?.querySelector(".cm-scroller");
-    const position = scrollPositions.current[isFocusMode ? "focus" : "normal"] ?? scrollPositions.current[isFocusMode ? "normal" : "focus"];
-    if (!scroller || position === undefined) return;
-    scroller.scrollTop = position;
-    const frame = requestAnimationFrame(() => {
-      scroller.scrollTop = position;
-    });
-    return () => cancelAnimationFrame(frame);
+    if (restoreFrame.current !== undefined) cancelAnimationFrame(restoreFrame.current);
+    restoreFrame.current = undefined;
+    const container = containerRef.current;
+    const scroller = container?.querySelector(".cm-scroller");
+    if (scroller && container) {
+      scrollPositions.current[isFocusMode ? "focus" : "normal"] = { editor: scroller.scrollTop, frame: container.scrollTop };
+    }
   }, [isFocusMode]);
 
   useEffect(() => {
@@ -44,6 +39,7 @@ export function useFocusMode(isFocusMode: boolean) {
       const margin = viewport.width >= 768 ? 32 : viewport.width >= 640 ? 16 : 8;
       container.style.top = `${viewport.offsetTop + margin}px`;
       container.style.height = `${Math.max(120, viewport.height - margin * 2)}px`;
+      container.style.setProperty("--kairos-focus-height", `${Math.max(120, viewport.height - margin * 2)}px`);
       container.style.bottom = "auto";
     };
     update();
@@ -54,7 +50,28 @@ export function useFocusMode(isFocusMode: boolean) {
       viewport.removeEventListener("scroll", update);
       container.style.removeProperty("top");
       container.style.removeProperty("height");
+      container.style.removeProperty("--kairos-focus-height");
       container.style.removeProperty("bottom");
+    };
+  }, [isFocusMode]);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const scroller = container?.querySelector(".cm-scroller");
+    const position = scrollPositions.current[isFocusMode ? "focus" : "normal"] ?? scrollPositions.current[isFocusMode ? "normal" : "focus"];
+    if (!container || !scroller || position === undefined) return;
+    // Apply after the visual-viewport bounds above: an unbounded editor has no
+    // scroll range, so restoring earlier would clamp a real browser to zero.
+    scroller.scrollTop = position.editor;
+    container.scrollTop = position.frame;
+    restoreFrame.current = requestAnimationFrame(() => {
+      restoreFrame.current = undefined;
+      scroller.scrollTop = position.editor;
+      container.scrollTop = position.frame;
+    });
+    return () => {
+      if (restoreFrame.current !== undefined) cancelAnimationFrame(restoreFrame.current);
+      restoreFrame.current = undefined;
     };
   }, [isFocusMode]);
 
