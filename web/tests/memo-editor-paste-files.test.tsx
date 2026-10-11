@@ -171,7 +171,11 @@ describe("MemoEditor paste", () => {
     const upload = vi.spyOn(uploadService, "uploadFile").mockRejectedValue(new Error("must not upload offline"));
     const { content, container } = mount();
     act(() => paste(content, [new File(["png"], "focus.png", { type: "image/png" })]));
-    fireEvent.click(screen.getByRole("button", { name: "Markdown 源码" }));
+    expect(screen.queryByRole("button", { name: "Markdown 源码" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("toolbar", { name: "editor.format.heading" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "更多选项" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Markdown 源码" }));
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
     expect(container.querySelector(".cm-content")).toBe(content);
     const scroller = container.querySelector<HTMLElement>(".cm-scroller")!;
     scroller.scrollTop = 120;

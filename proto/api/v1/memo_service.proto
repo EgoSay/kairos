@@ -300,6 +300,10 @@ message Location {
 
   // The longitude of the location.
   double longitude = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // True when only a place name is recorded. Latitude and longitude are absent
+  // semantically and must be zero; false preserves legacy coordinate locations.
+  bool name_only = 4 [(google.api.field_behavior) = OPTIONAL];
 }
 
 message CreateMemoRequest {
@@ -356,7 +360,8 @@ message ListMemosRequest {
   //     supports == and comparisons against null, e.g. space != null),
   //   tags (list<string>; match with `"work" in tags`, not `tag == "work"`),
   //   has_task_list / has_link / has_code / has_incomplete_tasks (bool),
-  //   has_location (bool; true when the memo has a location attached).
+  //   has_location (bool; true when the memo has a location attached),
+  //   location_name_only (bool; true for a place name without coordinates).
   // Note: the time fields here are created_ts / updated_ts, which differ from
   // the create_time / update_time names used by order_by.
   // Examples:

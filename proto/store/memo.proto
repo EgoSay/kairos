@@ -30,5 +30,8 @@ message MemoPayload {
     string placeholder = 1;
     double latitude = 2;
     double longitude = 3;
+    // A personal place label without geographic coordinates. Legacy false
+    // values retain their coordinates, including a real point at zero, zero.
+    bool name_only = 4;
   }
 }

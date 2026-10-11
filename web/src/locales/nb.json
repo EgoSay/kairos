@@ -148,10 +148,7 @@
     "add-your-comment-here": "Legg til din kommentar her...",
     "any-thoughts": "Noen tanker...",
     "exit-focus-mode": "Avslutt fokusmodus",
-    "focus-mode": "Fokusmodus",
     "insert-menu": {
-      "add-location": "Legg til plassering",
-      "link-memo": "Koblingsnotat",
       "retry-image-upload": "Prøv på nytt",
       "add-attachment": "Legg til vedlegg",
       "image-upload-failed": "Noen bilder kunne ikke lastes opp. Prøv på nytt eller behold de opplastede filene som vedlegg.",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "Innhold kopiert vellykket.",
     "succeed-copy-link": "Link kopiert.",
     "update-succeed": "Oppdatering vellykket"
-  },
-  "reference": {
-    "no-memos-found": "Ingen memoer funnet",
-    "search-placeholder": "Søk etter innhold"
   },
   "resource": {
     "delete-all-unused": "Slett alle ubrukte",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Lenke til memo",
     "select-location": "Lokasjon"
   },
   "demo": {
@@ -941,13 +933,10 @@
     "clear-query": "Fjern spørringen",
     "edit-query": "Rediger spørringen",
     "expression": "Søkeuttrykk",
-    "expression-mode": "Uttrykk",
     "invalid-expression": "Søkeuttrykket kunne ikke brukes",
     "keyboard-hint": "Enter for å søke · Shift+Enter for en ny linje",
     "load-error": "Kunne ikke laste inn notater",
-    "mode": "Søkemodus",
-    "syntax-help": "Søkesyntaks",
-    "text": "Tekst"
+    "syntax-help": "Søkesyntaks"
   },
   "map": {
     "selection": "Valgte notater",

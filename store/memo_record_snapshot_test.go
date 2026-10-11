@@ -18,3 +18,12 @@ func TestMemoRecordSnapshotSharedClientVector(t *testing.T) {
 	snapshot.Location.Latitude = 0
 	require.NotEqual(t, "fe104109c1ab6e895f33b9d719aea8d9b723aa4e076edede43b539ac6f20fef1", snapshot.Hash())
 }
+
+func TestMemoRecordSnapshotDistinguishesPersonalPlaceNameFromOrigin(t *testing.T) {
+	snapshot := MemoRecordSnapshot{Content: "今天 🌙\u2028<真实>", CreatedTs: 946684800, UpdatedTs: 946684899, Visibility: Private, SpaceUID: "room-1", RowStatus: Normal,
+		Location: &storepb.MemoPayload_Location{Placeholder: "家\n灯", NameOnly: true}, AttachmentUIDs: []string{"z-last", "a-first"}}
+	nameOnly := snapshot.Hash()
+	require.Equal(t, "e4c1ed27c53f926d6a31a0306d3c99f7be05f218fadd9c5441b32e93a825251d", nameOnly)
+	snapshot.Location.NameOnly = false
+	require.NotEqual(t, nameOnly, snapshot.Hash())
+}

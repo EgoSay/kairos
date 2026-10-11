@@ -9,6 +9,6 @@ export const FOCUS_MODE_STYLES = {
   exitButton: "absolute top-2 right-2 z-10 opacity-60 hover:opacity-100",
 } as const;
 
-// localStorage key for the user's preference to show the formatting toolbar in
-// normal (non-focus) mode. Defaults to on; the Kairos key intentionally starts the visible-formatting UX.
-export const FORMATTING_TOOLBAR_STORAGE_KEY = "kairos-editor-formatting-toolbar";
+// The visual editor starts quiet. Its optional full toolbar uses a new key so
+// the previous default-on setting does not perpetuate a crowded first view.
+export const FORMATTING_TOOLBAR_STORAGE_KEY = "kairos-editor-formatting-toolbar-v2";

@@ -148,10 +148,7 @@
     "add-your-comment-here": "Engade aquí o comentario...",
     "any-thoughts": "O que pensas...",
     "exit-focus-mode": "Saír do modo sen distraccións",
-    "focus-mode": "Modo Sen distraccións",
     "insert-menu": {
-      "add-location": "Engadir localización",
-      "link-memo": "Nota de ligazón",
       "retry-image-upload": "Volve tentar",
       "add-attachment": "Engadir anexo",
       "image-upload-failed": "Non se puideron cargar algunhas imaxes. Téntao de novo ou garda os ficheiros cargados como anexos.",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "Contido copiado correctamente.",
     "succeed-copy-link": "Ligazón copiada correctamente.",
     "update-succeed": "Fíxose a actualización"
-  },
-  "reference": {
-    "no-memos-found": "Non hai memos",
-    "search-placeholder": "Buscar contido"
   },
   "resource": {
     "delete-all-unused": "Eliminar todos sen usar",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Ligazón á nota",
     "select-location": "Localización"
   },
   "demo": {
@@ -941,13 +933,10 @@
     "clear-query": "Borrar consulta",
     "edit-query": "Editar consulta",
     "expression": "Expresión de busca",
-    "expression-mode": "Expresión",
     "invalid-expression": "Non se puido aplicar a expresión de busca",
     "keyboard-hint": "Intro para buscar · Maiús+Intro para unha nova liña",
     "load-error": "Non se puideron cargar as notas",
-    "mode": "Modo de busca",
-    "syntax-help": "Sintaxe de busca",
-    "text": "Texto"
+    "syntax-help": "Sintaxe de busca"
   },
   "map": {
     "selection": "Notas seleccionadas",

@@ -148,7 +148,6 @@
     "add-your-comment-here": "Dodaj swój komentarz tutaj...",
     "any-thoughts": "Jakieś przemyślenia...",
     "exit-focus-mode": "Wyjdź z Trybu Skupienia",
-    "focus-mode": "Tryb Skupienia",
     "format": {
       "heading": "Nagłówek",
       "paragraph": "Akapit",
@@ -169,8 +168,6 @@
       "strikethrough": "Przekreślenie"
     },
     "insert-menu": {
-      "add-location": "Dodaj lokalizację",
-      "link-memo": "Link do notatki",
       "retry-image-upload": "Spróbować ponownie",
       "add-attachment": "Dodaj załącznik",
       "image-upload-failed": "Niektórych obrazów nie udało się przesłać. Spróbuj ponownie lub zachowaj przesłane pliki jako załączniki.",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "Treść została pomyślnie skopiowana.",
     "succeed-copy-link": "Link skopiowany pomyślnie.",
     "update-succeed": "Aktualizacja zakończona sukcesem"
-  },
-  "reference": {
-    "no-memos-found": "Nie znaleziono notatek",
-    "search-placeholder": "Szukaj treści"
   },
   "resource": {
     "delete-all-unused": "Usuń wszystkie nieużywane",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Podlinkuj Notatkę",
     "select-location": "Lokalizacja"
   },
   "demo": {
@@ -941,13 +933,10 @@
     "clear-query": "Wyczyść zapytanie",
     "edit-query": "Edytuj zapytanie",
     "expression": "Wyrażenie wyszukiwania",
-    "expression-mode": "Wyrażenie",
     "invalid-expression": "Nie można zastosować wyrażenia wyszukiwania",
     "keyboard-hint": "Enter, aby wyszukać · Shift+Enter, aby przejść do nowego wiersza",
     "load-error": "Nie można wczytać notatek",
-    "mode": "Tryb wyszukiwania",
-    "syntax-help": "Składnia wyszukiwania",
-    "text": "Tekst"
+    "syntax-help": "Składnia wyszukiwania"
   },
   "map": {
     "selection": "Wybrane notatki",

@@ -2,6 +2,7 @@ import type { MemoSuggestion } from "@/lib/memo-suggestions";
 import type { Attachment } from "@/types/proto/api/v1/attachment_service_pb";
 import type { Location, Memo, Visibility } from "@/types/proto/api/v1/memo_service_pb";
 import type { EditorFileOrigin } from "../Editor/extensions";
+import type { MemoLinkRequest } from "../Editor/memoLinkIntent";
 import type { AudioRecorderStatus } from "../hooks/useAudioRecorder";
 import type { LocalFile } from "./attachment";
 
@@ -48,6 +49,7 @@ export interface MemoEditorProps {
 }
 
 export interface EditorContentProps {
+  onLinkRequest?: (request: Omit<MemoLinkRequest, "id">) => void;
   sourceMode?: boolean;
   consumePlainPaste?: () => boolean;
   placeholder?: string;
@@ -57,18 +59,23 @@ export interface EditorContentProps {
 }
 
 /**
- * The ＋ menu's view toggles. They change how the editor presents itself
- * inline, so a hosted editor omits the whole group and both items disappear
- * together — there is no way to offer one without the other.
+ * Optional editor tools, available from More in both inline and hosted editors.
+ * Focus remains a separate, directly visible action in the editor header.
  */
 export interface EditorViewToggles {
-  onToggleFocusMode: () => void;
+  onToggleFocusMode?: () => void;
   /** Whether the formatting toolbar is shown in normal mode (persisted preference). */
   isFormattingToolbarVisible: boolean;
   onToggleFormattingToolbar: () => void;
+  sourceMode?: boolean;
+  onToggleSourceMode?: () => void;
+  plainPasteArmed?: boolean;
+  onTogglePlainPaste?: () => void;
 }
 
 export interface EditorToolbarProps {
+  linkRequest?: MemoLinkRequest;
+  locationRequest?: number;
   onReturnToEditor?: () => void;
   onSave: () => void;
   onCancel?: () => void;
@@ -86,6 +93,7 @@ export interface EditorToolbarProps {
 }
 
 export interface EditorMetadataProps {
+  onEditLocation?: () => void;
   onTranscribeAttachment?: (attachment: Attachment) => void;
   transcribingAttachment?: string;
   transcriptionDisabled?: boolean;
@@ -118,6 +126,8 @@ export interface FocusModeExitButtonProps {
 }
 
 export interface InsertMenuProps {
+  linkRequest?: MemoLinkRequest;
+  locationRequest?: number;
   onReturnToEditor?: () => void;
   isUploading?: boolean;
   isSaving?: boolean;

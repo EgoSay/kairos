@@ -11,7 +11,7 @@ import { State } from "@/types/proto/api/v1/common_pb";
 import { mapMemos } from "./model";
 
 /** What the map can show; the sidebar counts against the same scope. */
-export const MAP_MEMO_FILTER = "has_location";
+export const MAP_MEMO_FILTER = "has_location && !location_name_only";
 
 export function useMapMemos() {
   const { isUserSettingsInitialized } = useAuth();

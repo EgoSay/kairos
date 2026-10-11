@@ -186,10 +186,7 @@
     "add-your-comment-here": "Tu pridajte svoj komentár...",
     "any-thoughts": "Akékoľvek myšlienky...",
     "exit-focus-mode": "Ukončite režim zaostrenia",
-    "focus-mode": "Režim zaostrenia",
     "insert-menu": {
-      "add-location": "Pridať polohu",
-      "link-memo": "Odkaz na poznámku",
       "retry-image-upload": "Skúste to znova",
       "add-attachment": "Pridať prílohu",
       "image-upload-failed": "Niektoré obrázky sa nepodarilo nahrať. Skúste to znova alebo ponechajte nahrané súbory ako prílohy.",
@@ -369,10 +366,6 @@
     "succeed-copy-content": "Obsah bol úspešne skopírovaný.",
     "succeed-copy-link": "Odkaz bol úspešne skopírovaný.",
     "update-succeed": "Aktualizácia bola úspešná"
-  },
-  "reference": {
-    "no-memos-found": "Nenašli sa žiadne poznámky",
-    "search-placeholder": "Vyhľadajte obsah"
   },
   "resource": {
     "delete-all-unused": "Vymažte všetky nepoužité",
@@ -899,7 +892,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Odkaz na poznámku",
     "select-location": "Poloha"
   },
   "attachment-details": {
@@ -941,13 +933,10 @@
     "clear-query": "Vymazať dopyt",
     "edit-query": "Upraviť dopyt",
     "expression": "Hľadaný výraz",
-    "expression-mode": "Výraz",
     "invalid-expression": "Hľadaný výraz sa nepodarilo použiť",
     "keyboard-hint": "Enter pre vyhľadávanie · Shift+Enter pre nový riadok",
     "load-error": "Nepodarilo sa načítať poznámky",
-    "mode": "Režim vyhľadávania",
-    "syntax-help": "Syntax vyhľadávania",
-    "text": "Text"
+    "syntax-help": "Syntax vyhľadávania"
   },
   "map": {
     "selection": "Vybrané poznámky",

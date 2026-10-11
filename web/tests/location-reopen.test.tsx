@@ -29,6 +29,7 @@ function Harness() {
         onResolveName={() => void draft.resolveName()}
         onCancel={() => setOpen(false)}
         onConfirm={() => setOpen(false)}
+        onSelect={() => setOpen(false)}
       />
     </>
   );

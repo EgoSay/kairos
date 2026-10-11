@@ -43,6 +43,250 @@ const paste = (view: EditorView, html: string, plain = "", files: File[] = []) =
 };
 
 describe("Markdown visual editing", () => {
+  it("keeps the reading shape while editing formatted text on the active line", () => {
+    const source = "## 标题\n\n**重要** 与 [来源](https://example.test)\n\n#生活/散步";
+    const view = mount(source);
+    for (const word of ["标题", "重要", "来源"]) {
+      view.dispatch({ selection: { anchor: source.indexOf(word) + 1 } });
+      expect(view.contentDOM.textContent).not.toContain("## 标题");
+      expect(view.contentDOM.textContent).not.toContain("**重要**");
+      expect(view.contentDOM.textContent).not.toContain("https://example.test");
+      expect(view.contentDOM.textContent).toContain("#生活/散步");
+    }
+    view.dispatch({ changes: { from: source.indexOf("重要") + 1, insert: "新" }, userEvent: "input" });
+    expect(view.contentDOM.textContent).toContain("重新要");
+    expect(view.contentDOM.textContent).not.toContain("**");
+    expect(view.state.doc.toString()).toContain("**重新要**");
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(source);
+  });
+
+  it("renders editable table rows and code without exposing their structural delimiters", () => {
+    const source = "| 今天 | 明天 |\n| --- | --- |\n| **散步** | 阅读 |\n\n```md\n**literal**\n```";
+    const view = mount(source);
+    view.dispatch({ selection: { anchor: source.indexOf("散步") + 1 } });
+    expect(view.dom.querySelectorAll(".cm-preview-table-cell")).toHaveLength(4);
+    expect(view.contentDOM.textContent).not.toContain("|");
+    expect(view.contentDOM.textContent).not.toContain("---");
+    expect(view.contentDOM.textContent).not.toContain("```");
+    expect(view.contentDOM.textContent).toContain("**literal**");
+    view.dispatch({ changes: { from: source.indexOf("阅读"), to: source.indexOf("阅读") + 2, insert: "跑步" }, userEvent: "input" });
+    expect(view.state.doc.toString()).toBe(source.replace("阅读", "跑步"));
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(source);
+  });
+
+  it("keeps literal delimiters visible when the caret sits inside code", () => {
+    const source = "```md\n****\n```\n\n`~~~~`";
+    const view = mount(source);
+    for (const at of [source.indexOf("****") + 2, source.indexOf("~~~~") + 2]) {
+      view.dispatch({ selection: { anchor: at } });
+      expect(view.contentDOM.textContent).toContain("****");
+      expect(view.contentDOM.textContent).toContain("~~~~");
+    }
+    expect(view.state.doc.toString()).toBe(source);
+  });
+
+  it("unwraps an inline format at its hidden edge instead of leaving a broken delimiter", () => {
+    for (const [source, head, key, plain] of [
+      ["**重点**", 2, "Backspace", "重点"],
+      ["**重点**", 4, "Delete", "重点"],
+      ["[来源](https://example.test)", 1, "Backspace", "来源"],
+    ] as const) {
+      const view = mount(source);
+      view.dispatch({ selection: { anchor: head } });
+      view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+      expect(view.state.doc.toString()).toBe(plain);
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(source);
+    }
+  });
+
+  it("keeps paired syntax balanced when deleting from outside the rendered format", () => {
+    for (const [source, plain] of [
+      ["**重点**", "重点"],
+      ["*轻声*", "轻声"],
+      ["~~旧~~", "旧"],
+      ["`code`", "code"],
+      ["[来源](https://example.test)", "来源"],
+      ["```md\n**literal**\n```", "**literal**"],
+    ]) {
+      for (const [head, key] of [
+        [source.length, "Backspace"],
+        [0, "Delete"],
+      ] as const) {
+        const view = mount(source);
+        // Pasting places the caret after the closing delimiter. This is a
+        // different (but visually identical) position from its inner edge.
+        view.dispatch({ selection: { anchor: head } });
+        view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+        expect(view.state.doc.toString()).toBe(plain);
+        expect(undo(view)).toBe(true);
+        expect(view.state.doc.toString()).toBe(source);
+        expect(redo(view)).toBe(true);
+        expect(view.state.doc.toString()).toBe(plain);
+      }
+    }
+  });
+
+  it("preserves visible text when a keyboard selection deletes only a hidden edge", () => {
+    const source = "[来源](https://example.test)";
+    const view = mount(source);
+    view.dispatch({ selection: { anchor: source.length } });
+    view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", shiftKey: true, bubbles: true }));
+    view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace", bubbles: true }));
+    expect(view.state.doc.toString()).toBe("来源");
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(source);
+  });
+
+  it("keeps cross-boundary deletion, cut and replacement in a single undoable edit", () => {
+    for (const [from, to, insert, event, expected] of [
+      [4, 7, "", "delete.selection", "前重后"],
+      [0, 4, "", "delete.cut", "点后"],
+      [4, 7, "新", "input.paste", "前重新后"],
+    ] as const) {
+      const source = "前**重点**后";
+      const view = mount(source);
+      view.dispatch({ selection: { anchor: from, head: to } });
+      view.dispatch(view.state.replaceSelection(insert), { userEvent: event });
+      expect(view.state.doc.toString()).toBe(expected);
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(source);
+    }
+  });
+
+  it("does not normalize composition input or deliberate source edits", () => {
+    const view = mount("**重点**");
+    view.dispatch({ changes: { from: 2, to: 4, insert: "内容" }, userEvent: "input.type.compose" });
+    expect(view.state.doc.toString()).toBe("**内容**");
+    expect(undo(view)).toBe(true);
+    view.dispatch({ effects: previewCompartment.reconfigure([]) });
+    view.dispatch({ selection: { anchor: 6 } });
+    view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace", bubbles: true }));
+    expect(view.state.doc.toString()).toBe("**重点*");
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe("**重点**");
+  });
+
+  it("splits formatted paragraphs without exposing syntax or losing nested marks and link targets", () => {
+    for (const [source, position, expected] of [
+      ["**重点**", 3, "**重**\n\n**点**"],
+      ["***重点***", 4, "***重***\n\n***点***"],
+      ["**alpha beta**", 8, "**alpha** \n\n**beta**"],
+      ["[来源](https://example.test)", 2, "[来](https://example.test)\n\n[源](https://example.test)"],
+    ] as const) {
+      const view = mount(source);
+      view.dispatch({ selection: { anchor: position } });
+      for (let count = 0; count < 2; count++) view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      expect(view.state.doc.toString()).toBe(expected);
+      expect(view.contentDOM.textContent).not.toContain("*");
+      expect(view.contentDOM.textContent).not.toContain("https://example.test");
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(`${source.slice(0, position)}\n${source.slice(position)}`);
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(source);
+      expect(redo(view)).toBe(true);
+      expect(redo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(expected);
+    }
+  });
+
+  it("leaves full replacement and ordinary text next to nested formatting verbatim", () => {
+    const source = "前**[来源](https://example.test)**后";
+    const view = mount(source);
+    view.dispatch({ selection: { anchor: source.length } });
+    view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace", bubbles: true }));
+    expect(view.state.doc.toString()).toBe(source.slice(0, -1));
+    expect(undo(view)).toBe(true);
+    const replacement = "新内容\n\n**保留**\n\n| A | B |\n| - | - |\n| 1 | 2 |\n\n#旧标签";
+    view.dispatch({ selection: { anchor: 0, head: source.length } });
+    view.dispatch(view.state.replaceSelection(replacement), { userEvent: "input.paste" });
+    expect(view.state.doc.toString()).toBe(replacement);
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(source);
+    expect(redo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(replacement);
+  });
+
+  it("assigns table content to explicit columns and preserves an editable empty middle cell", () => {
+    const source = "| A | B | C |\n| --- | --- | --- |\n|one||three|";
+    const view = mount(source);
+    const row = view.dom.querySelectorAll(".cm-preview-table-row")[1];
+    const cells = Array.from(row.querySelectorAll<HTMLElement>(":scope > .cm-preview-table-cell"));
+    expect(cells.map((cell) => cell.textContent)).toEqual(["one", "", "three"]);
+    expect(cells.map((cell) => cell.dataset.tableColumn)).toEqual(["1", "2", "3"]);
+    cells[1].dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    expect(view.state.selection.main.head).toBe(source.indexOf("||") + 1);
+    view.dispatch(view.state.replaceSelection("two"), { userEvent: "input.type" });
+    expect(view.state.doc.toString()).toBe(source.replace("||", "|two|"));
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(source);
+    expect(view.dom.querySelectorAll(".cm-preview-table-row")[1].querySelectorAll(":scope > .cm-preview-table-cell")).toHaveLength(3);
+  });
+
+  it("keeps Enter and multiline paste inside a table cell without breaking its row", () => {
+    const source = "| A | B |\n| --- | --- |\n| one | two |";
+    const view = mount(source);
+    const position = source.indexOf("one") + 1;
+    view.dispatch({ selection: { anchor: position } });
+    view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(view.state.doc.toString()).toBe(source.replace("one", "o<br>ne"));
+    expect(view.contentDOM.querySelector(".cm-preview-table-cell br")).not.toBeNull();
+    expect(view.contentDOM.textContent).not.toContain("<br>");
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(source);
+    view.dispatch({ selection: { anchor: position } });
+    view.dispatch(view.state.replaceSelection("甲\n乙\n\n丙"), { userEvent: "input.paste" });
+    expect(view.state.doc.toString()).toBe(source.replace("one", "o甲<br>乙<br><br>丙ne"));
+    expect(view.contentDOM.querySelectorAll(".cm-preview-table-cell br")).toHaveLength(3);
+    expect(view.dom.querySelectorAll(".cm-preview-table-row")).toHaveLength(2);
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(source);
+  });
+
+  it("places the caret inside the last table cell after paste so appended text cannot create an invisible extra column", () => {
+    const source = "| A | B | C |\n| --- | --- | --- |\n|one||three|";
+    const view = mount("");
+    paste(view, "", source);
+    expect(view.state.doc.toString()).toBe(source);
+    expect(view.state.selection.main.head).toBe(source.length - 1);
+    view.dispatch(view.state.replaceSelection("末尾"), { userEvent: "input.type" });
+    expect(view.state.doc.toString()).toBe(source.slice(0, -1) + "末尾|");
+    expect(view.dom.querySelectorAll(".cm-preview-table-row")[1].querySelectorAll(":scope > .cm-preview-table-cell")).toHaveLength(3);
+  });
+
+  it("leaves the last table cell through Down and creates one undoable following paragraph", () => {
+    const source = "| A | B |\n| --- | --- |\n| one | two |";
+    const view = mount(source);
+    view.dispatch({ selection: { anchor: source.length - 1 } });
+    view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(view.state.doc.toString()).toBe(`${source}\n\n`);
+    expect(view.state.selection.main.head).toBe(source.length + 2);
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(source);
+    expect(redo(view)).toBe(true);
+    view.dispatch(view.state.replaceSelection("继续记录"), { userEvent: "input.type" });
+    expect(view.state.doc.toString()).toBe(`${source}\n\n继续记录`);
+    expect(view.dom.querySelectorAll(".cm-preview-table-row")).toHaveLength(2);
+  });
+
+  it("moves Down to existing prose after a table without changing bytes or ordinary arrow navigation", () => {
+    const table = "| A | B |\n| --- | --- |\n| one | two |";
+    const source = `${table}\n\n后文`;
+    const view = mount(source);
+    view.dispatch({ selection: { anchor: table.length - 1 } });
+    view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(view.state.doc.toString()).toBe(source);
+    expect(view.state.selection.main.head).toBe(source.indexOf("后文"));
+    view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(view.state.doc.toString()).toBe(source);
+    const normal = mount("普通文字\n最后一行");
+    normal.dispatch({ selection: { anchor: normal.state.doc.length } });
+    normal.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(normal.state.doc.toString()).toBe("普通文字\n最后一行");
+  });
+
   it("renders structure without changing legacy Markdown, tags, links or complex source", () => {
     const markdown =
       "current\n\n## 标题\n\n**重要** and *轻声* ~~旧~~\n\n- [ ] 回顾\n\n> 引用\n\n[来源](https://example.test)\n\n![照片](https://example.test/photo.png)\n\n#人生修行/阅读\n\n| A | B |\n| - | - |\n| 1 | 2 |";

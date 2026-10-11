@@ -11,6 +11,7 @@ vi.mock("@/utils/i18n", async (importOriginal) => ({
 vi.mock("@/hooks/useCurrentUser", () => ({ default: () => undefined }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ userGeneralSetting: undefined }) }));
 vi.mock("@/hooks/useSpaceQueries", () => ({ useSpaces: () => ({ data: [] }) }));
+vi.mock("@/hooks/useJournalQueries", () => ({ useJournalPreferences: () => ({ data: { timezone: "Asia/Shanghai" } }) }));
 vi.mock("@/contexts/SpaceContext", () => ({ useSpaceContext: () => ({ selectedSpaceName: undefined }) }));
 vi.mock("@/components/map/useReverseGeocoding", () => ({ lookupLocationName: vi.fn() }));
 vi.mock("@/hooks/useJournalLocations", () => ({
@@ -61,7 +62,7 @@ const renderMenu = (onInsertImages = vi.fn(), isSaving = false, hosted = false) 
   );
 
 describe("InsertMenu", () => {
-  test("opens image selection and recording directly without the more menu", () => {
+  test("keeps photos, links and places direct while recording remains available in More", () => {
     const onRecord = vi.fn();
     const { container } = render(
       <EditorProvider>
@@ -72,25 +73,25 @@ describe("InsertMenu", () => {
     const selectImage = vi.spyOn(imageInput, "click");
     fireEvent.click(screen.getByRole("button", { name: "editor.insert-menu.insert-image" }));
     expect(selectImage).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole("button", { name: "editor.audio-recorder.trigger" }));
-    expect(onRecord).toHaveBeenCalledOnce();
+    expect(screen.getByRole("button", { name: "关联记录" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "添加位置" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "editor.audio-recorder.trigger" })).not.toBeInTheDocument();
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "更多选项" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "editor.audio-recorder.trigger" }));
+    expect(onRecord).toHaveBeenCalledOnce();
   });
 
-  test("shows attachment and inline-image actions in the intended order", () => {
+  test("keeps less frequent attachment, recording and formatting actions in More", () => {
     renderMenu();
-    const trigger = screen.getByRole("button", { name: "common.add" });
+    const trigger = screen.getByRole("button", { name: "更多选项" });
     expect(trigger).toHaveAttribute("tabindex", "0");
 
     fireEvent.click(trigger);
 
     expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
       "editor.insert-menu.add-attachment",
-      "editor.insert-menu.insert-image",
       "editor.audio-recorder.trigger",
-      "editor.insert-menu.link-memo",
-      "editor.insert-menu.add-location",
-      "editor.focus-mode",
       "editor.formatting-toolbar",
     ]);
   });
@@ -98,7 +99,7 @@ describe("InsertMenu", () => {
   test("drops the view toggles when a host owns the editor's presentation", () => {
     renderMenu(vi.fn(), false, true);
 
-    fireEvent.click(screen.getByRole("button", { name: "common.add" }));
+    fireEvent.click(screen.getByRole("button", { name: "更多选项" }));
 
     const labels = screen.getAllByRole("menuitem").map((item) => item.textContent);
     expect(labels).not.toContain("editor.focus-mode");
@@ -126,7 +127,7 @@ describe("InsertMenu", () => {
   test("disables insertion controls while saving", () => {
     const { container } = renderMenu(vi.fn(), true);
 
-    expect(screen.getByRole("button", { name: "common.add" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "更多选项" })).toBeDisabled();
     for (const input of container.querySelectorAll('input[type="file"]')) {
       expect(input).toBeDisabled();
     }

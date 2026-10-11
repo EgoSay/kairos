@@ -148,12 +148,9 @@
     "add-your-comment-here": "Tambahkan komentar Anda di sini...",
     "any-thoughts": "Punya pemikiran...",
     "exit-focus-mode": "Keluar dari Mode Fokus",
-    "focus-mode": "Mode Fokus",
     "no-changes-detected": "Tidak ada perubahan yang terdeteksi",
     "save": "Simpan",
     "insert-menu": {
-      "add-location": "Tambahkan lokasi",
-      "link-memo": "Tautan memo",
       "add-attachment": "Tambahkan lampiran",
       "image-upload-failed": "Beberapa gambar tidak dapat diunggah. Coba lagi atau simpan file yang diunggah sebagai lampiran.",
       "image-upload-stopped": "Unggahan gambar dihentikan {{completed}}/{{total}}",
@@ -326,10 +323,6 @@
     "succeed-copy-content": "Konten berhasil disalin.",
     "succeed-copy-link": "Tautan berhasil disalin.",
     "update-succeed": "Pembaruan berhasil"
-  },
-  "reference": {
-    "no-memos-found": "Tidak ada memo yang ditemukan",
-    "search-placeholder": "Cari konten"
   },
   "resource": {
     "delete-all-unused": "Hapus semua yang tidak terpakai",
@@ -856,7 +849,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Tautkan Memo",
     "select-location": "Pilih Lokasi"
   },
   "live-update": {
@@ -966,14 +958,11 @@
     "clear-query": "Hapus kueri",
     "edit-query": "Edit kueri",
     "expression": "Ekspresi pencarian",
-    "expression-mode": "Ekspresi",
     "invalid-expression": "Ekspresi pencarian tidak dapat diterapkan",
     "keyboard-hint": "Tekan Enter untuk mencari · Shift+Enter untuk baris baru",
     "load-error": "Memo tidak dapat dimuat",
-    "mode": "Mode pencarian",
     "retry": "Coba lagi",
-    "syntax-help": "Sintaks pencarian",
-    "text": "Teks"
+    "syntax-help": "Sintaks pencarian"
   },
   "space": {
     "all-spaces": "Semua ruang",

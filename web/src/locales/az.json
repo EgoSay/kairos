@@ -245,7 +245,6 @@
     "add-your-comment-here": "Şərhinizi bura yazın...",
     "any-thoughts": "Ağlınıza nə gəlir...",
     "exit-focus-mode": "Fokus rejimindən çıx",
-    "focus-mode": "Fokus rejimi",
     "comment": "Şərh",
     "formatting-toolbar": "Formatlama paneli",
     "format": {
@@ -269,12 +268,10 @@
     },
     "insert-menu": {
       "add-attachment": "Qoşma əlavə et",
-      "add-location": "Məkan əlavə et",
       "image-upload-failed": "Bəzi şəkillər yüklənə bilmədi. Yenidən cəhd edin və ya yüklənmiş faylları qoşma kimi saxlayın.",
       "image-upload-stopped": "Şəkil yükləməsi dayandırıldı {{completed}}/{{total}}",
       "insert-image": "Şəkil daxil et",
       "keep-as-attachments": "Qoşma kimi saxla",
-      "link-memo": "Qeydə keçid əlavə et",
       "retry-image-upload": "Yenidən cəhd et",
       "uploading-inline-image": "Məzmuna yüklənir",
       "uploading-images": "Şəkillər yüklənir {{completed}}/{{total}}"
@@ -429,10 +426,6 @@
     "succeed-copy-link": "Keçid uğurla kopyalandı.",
     "update-succeed": "Yeniləmə uğurlu oldu"
   },
-  "reference": {
-    "no-memos-found": "Qeyd tapılmadı",
-    "search-placeholder": "Məzmunda axtar"
-  },
   "resource": {
     "delete-all-unused": "İstifadə olunmayanların hamısını sil",
     "delete-all-unused-confirm": "İstifadə olunmayan bütün resursları silmək istədiyinizə əminsiniz? BU ƏMƏLİYYAT GERİ QAYTARILA BİLMƏZ",
@@ -448,14 +441,11 @@
     "clear-query": "Sorğunu təmizlə",
     "edit-query": "Sorğunu redaktə et",
     "expression": "Axtarış ifadəsi",
-    "expression-mode": "İfadə",
     "invalid-expression": "Axtarış ifadəsi tətbiq edilə bilmədi",
     "keyboard-hint": "Axtarmaq üçün Enter · yeni sətir üçün Shift+Enter",
     "load-error": "Qeydlər yüklənmədi",
-    "mode": "Axtarış rejimi",
     "retry": "Yenidən cəhd et",
-    "syntax-help": "Axtarış sintaksisi",
-    "text": "Mətn"
+    "syntax-help": "Axtarış sintaksisi"
   },
   "setting": {
     "agent": { "label": "Agent / MCP" },
@@ -1007,7 +997,6 @@
     "switch": "Sahəni dəyiş"
   },
   "tooltip": {
-    "link-memo": "Qeydə keçid əlavə et",
     "select-location": "Məkan"
   }
 }

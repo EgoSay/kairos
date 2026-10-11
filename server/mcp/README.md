@@ -27,6 +27,11 @@ mcpService.RegisterRoutes(echoServer)
 
 The service advertises the **tools** capability only — no prompts, no resources.
 
+The owner-scoped journal reader also returns a record's optional `location`.
+`nameOnly: true` means a personal label and omits latitude/longitude entirely;
+agents must not infer geographic coordinates from that name. Coordinate places
+return `nameOnly: false` and their actual point, including a legitimate `(0, 0)`.
+
 ## Startup flow
 
 `NewMCPService` (`service.go`) wires everything up at construction time and fails

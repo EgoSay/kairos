@@ -283,3 +283,48 @@
     border-radius: 0.2rem;
   }
 }
+
+/* Visual editing keeps this layout stable as the caret enters each block. */
+.memo-editor-content {
+  & .cm-preview-table-row {
+    display: flex;
+    border-left: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+  }
+  & .cm-preview-table-row > :not(.cm-preview-table-cell) {
+    /* Replaced pipes produce empty spans and CodeMirror caret buffers. They
+       keep zero-width positions in document flow, including the final caret. */
+    flex: 0 0 0;
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+  & .cm-preview-table-cell {
+    box-sizing: border-box;
+    flex: 0 0 calc(100% / var(--table-columns));
+    min-width: 0;
+    padding: 0.35rem 0.5rem;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+  & .cm-preview-table-heading {
+    font-weight: 600;
+    background: var(--muted);
+  }
+  & .cm-preview-code-edge {
+    min-height: 0.4rem;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+  }
+  & .cm-preview-code-label {
+    color: var(--muted-foreground);
+    user-select: none;
+  }
+  & .cm-line hr {
+    margin: 0.65rem 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+  }
+}

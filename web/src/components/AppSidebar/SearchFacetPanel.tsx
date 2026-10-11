@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { FilterFactor, MemoFilter } from "@/contexts/MemoFilterContext";
@@ -11,6 +11,8 @@ interface Props {
   filters: MemoFilter[];
   onChange: (filters: MemoFilter[]) => void;
   scopeFilter?: string;
+  state?: State;
+  onDateValidationChange?: (error: string | undefined) => void;
 }
 
 export const searchDateError = (filters: MemoFilter[]): string | undefined => {
@@ -19,14 +21,50 @@ export const searchDateError = (filters: MemoFilter[]): string | undefined => {
   return start && end && start > end ? "开始日期不能晚于结束日期。" : undefined;
 };
 
-export default function SearchFacetPanel({ filters, onChange, scopeFilter }: Props) {
+export default function SearchFacetPanel({ filters, onChange, scopeFilter, state = State.NORMAL, onDateValidationChange }: Props) {
   const partitions = useJournalPartitions();
-  const stats = useAllUserStats({ filter: scopeFilter, state: State.NORMAL, includeArchived: searchIncludesArchived(filters) });
+  const stats = useAllUserStats({
+    filter: scopeFilter,
+    state,
+    includeArchived: state !== State.ARCHIVED && searchIncludesArchived(filters),
+  });
   const tags = [...new Set(stats.data?.flatMap((item) => Object.keys(item.tagCount)) ?? [])].sort();
   const tagListId = useId();
   const [tagInput, setTagInput] = useState("");
   const [tagAction, setTagAction] = useState<"tagSearch" | "tagExclude">("tagSearch");
   const value = (factor: FilterFactor) => filters.find((filter) => filter.factor === factor)?.value ?? "";
+  const start = value("dateStart");
+  const end = value("dateEnd");
+  const [dateDraft, setDateDraft] = useState({ start, end });
+  const [dateDraftError, setDateDraftError] = useState<string>();
+  useEffect(() => {
+    setDateDraft({ start, end });
+    setDateDraftError(undefined);
+    onDateValidationChange?.(undefined);
+  }, [start, end, onDateValidationChange]);
+  useEffect(() => () => onDateValidationChange?.(undefined), [onDateValidationChange]);
+  const updateDate = (edge: "start" | "end", value: string) => {
+    const draft = { ...dateDraft, [edge]: value };
+    setDateDraft(draft);
+    const error =
+      Boolean(draft.start) !== Boolean(draft.end)
+        ? "请补全开始和结束日期，完整范围会立即生效。"
+        : draft.start && draft.end && draft.start > draft.end
+          ? "开始日期不能晚于结束日期。"
+          : undefined;
+    setDateDraftError(error);
+    onDateValidationChange?.(error);
+    if (error) return;
+    onChange([
+      ...filters.filter((filter) => !["dateStart", "dateEnd", "displayTime"].includes(filter.factor)),
+      ...(draft.start
+        ? [
+            { factor: "dateStart" as const, value: draft.start },
+            { factor: "dateEnd" as const, value: draft.end },
+          ]
+        : []),
+    ]);
+  };
   const setValue = (factor: FilterFactor, next: string | undefined) =>
     onChange([
       ...filters.filter((filter) => filter.factor !== factor && !(factor === "untagged" && next && filter.factor === "tagSearch")),
@@ -43,6 +81,15 @@ export default function SearchFacetPanel({ filters, onChange, scopeFilter }: Pro
     ]);
     setTagInput("");
   };
+  const clearFilters = () => {
+    // An incomplete range has not reached filters, so resetting only the
+    // parent value would leave its unchanged dates and validation stranded.
+    setDateDraft({ start: "", end: "" });
+    setDateDraftError(undefined);
+    onDateValidationChange?.(undefined);
+    setTagInput("");
+    onChange([]);
+  };
   const toggles: Array<[FilterFactor, string]> = [
     ["untagged", "未添加标签"],
     ["property.hasImage", "有图片"],
@@ -57,26 +104,16 @@ export default function SearchFacetPanel({ filters, onChange, scopeFilter }: Pro
       <div className="grid grid-cols-2 gap-3">
         <label className="space-y-1">
           开始日期
-          <Input
-            type="date"
-            aria-label="开始日期"
-            value={value("dateStart")}
-            onChange={(e) => setValue("dateStart", e.target.value || undefined)}
-          />
+          <Input type="date" aria-label="开始日期" value={dateDraft.start} onChange={(e) => updateDate("start", e.target.value)} />
         </label>
         <label className="space-y-1">
           结束日期
-          <Input
-            type="date"
-            aria-label="结束日期"
-            value={value("dateEnd")}
-            onChange={(e) => setValue("dateEnd", e.target.value || undefined)}
-          />
+          <Input type="date" aria-label="结束日期" value={dateDraft.end} onChange={(e) => updateDate("end", e.target.value)} />
         </label>
       </div>
-      {searchDateError(filters) && (
+      {(dateDraftError || searchDateError(filters)) && (
         <p role="alert" className="text-destructive">
-          {searchDateError(filters)}
+          {dateDraftError || searchDateError(filters)}
         </p>
       )}
       <div className="flex flex-wrap gap-x-4 gap-y-3">
@@ -211,7 +248,7 @@ export default function SearchFacetPanel({ filters, onChange, scopeFilter }: Pro
         </p>
       )}
       <p className="text-xs text-muted-foreground">日期按记录原始时间及 Kairos 时区筛选。回收站不包含在搜索中。</p>
-      <Button type="button" variant="ghost" size="sm" onClick={() => onChange([])}>
+      <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
         清空筛选条件
       </Button>
     </div>

@@ -245,7 +245,6 @@
     "add-your-comment-here": "Add your comment here...",
     "any-thoughts": "Any thoughts...",
     "exit-focus-mode": "Exit Focus Mode",
-    "focus-mode": "Focus Mode",
     "comment": "Comment",
     "formatting-toolbar": "Formatting toolbar",
     "format": {
@@ -269,12 +268,10 @@
     },
     "insert-menu": {
       "add-attachment": "Add attachment",
-      "add-location": "Add location",
       "image-upload-failed": "Some images could not be uploaded. Retry or keep the uploaded files as attachments.",
       "image-upload-stopped": "Image upload stopped {{completed}}/{{total}}",
       "insert-image": "Insert image",
       "keep-as-attachments": "Keep as attachments",
-      "link-memo": "Link memo",
       "retry-image-upload": "Retry",
       "uploading-inline-image": "Uploading to content",
       "uploading-images": "Uploading images {{completed}}/{{total}}"
@@ -429,10 +426,6 @@
     "succeed-copy-link": "Link copied successfully.",
     "update-succeed": "Update succeeded"
   },
-  "reference": {
-    "no-memos-found": "No memos found",
-    "search-placeholder": "Search content"
-  },
   "resource": {
     "delete-all-unused": "Delete all unused",
     "delete-all-unused-confirm": "Are you sure you want to delete all unused resources? THIS ACTION IS IRREVERSIBLE",
@@ -448,14 +441,11 @@
     "clear-query": "Clear query",
     "edit-query": "Edit query",
     "expression": "Search expression",
-    "expression-mode": "Expression",
     "invalid-expression": "Search expression couldn’t be applied",
     "keyboard-hint": "Enter to search · Shift+Enter for a new line",
     "load-error": "Couldn’t load memos",
-    "mode": "Search mode",
     "retry": "Retry",
-    "syntax-help": "Search syntax",
-    "text": "Text"
+    "syntax-help": "Search syntax"
   },
   "setting": {
     "agent": { "label": "Agent / MCP" },
@@ -1007,7 +997,6 @@
     "switch": "Switch space"
   },
   "tooltip": {
-    "link-memo": "Link Memo",
     "select-location": "Location"
   }
 }

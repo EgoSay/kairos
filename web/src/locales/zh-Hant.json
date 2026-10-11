@@ -227,7 +227,6 @@
     "add-your-comment-here": "在這裡添加您的評論...",
     "any-thoughts": "任何想法...",
     "exit-focus-mode": "退出專注模式",
-    "focus-mode": "專注模式",
     "formatting-toolbar": "格式工具列",
     "format": {
       "heading": "標題",
@@ -250,12 +249,10 @@
     },
     "insert-menu": {
       "add-attachment": "新增附件",
-      "add-location": "新增位置",
       "image-upload-failed": "部分圖片上傳失敗，請重試或將已上傳檔案保留為附件。",
       "image-upload-stopped": "圖片上傳已暫停 {{completed}}/{{total}}",
       "insert-image": "插入圖片",
       "keep-as-attachments": "保留為附件",
-      "link-memo": "連結備忘錄",
       "retry-image-upload": "重試",
       "uploading-inline-image": "正在上傳到正文",
       "uploading-images": "正在上傳圖片 {{completed}}/{{total}}"
@@ -410,10 +407,6 @@
     "succeed-copy-content": "內容複製到剪貼簿成功。",
     "succeed-copy-link": "複製連結到剪貼簿成功。",
     "update-succeed": "更新成功"
-  },
-  "reference": {
-    "no-memos-found": "未找到任何備忘錄",
-    "search-placeholder": "搜尋內容"
   },
   "resource": {
     "delete-all-unused": "刪除所有未使用的檔案",
@@ -975,7 +968,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "連結備忘錄",
     "select-location": "位置"
   },
   "search": {
@@ -984,13 +976,10 @@
     "clear-query": "清除查詢",
     "edit-query": "編輯查詢",
     "expression": "搜尋表達式",
-    "expression-mode": "表達式",
     "invalid-expression": "搜尋表達式無法套用",
     "keyboard-hint": "按 Enter 鍵搜尋 · 按 Shift+Enter 鍵換行",
     "load-error": "無法載入備忘錄",
-    "mode": "搜尋模式",
-    "syntax-help": "搜尋語法",
-    "text": "文字"
+    "syntax-help": "搜尋語法"
   },
   "map": {
     "selection": "已選備忘錄",

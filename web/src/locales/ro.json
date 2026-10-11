@@ -186,10 +186,7 @@
     "add-your-comment-here": "Adauga comentariul tau aici...",
     "any-thoughts": "Orice gânduri...",
     "exit-focus-mode": "Ieșiți din modul de focalizare",
-    "focus-mode": "Modul de focalizare",
     "insert-menu": {
-      "add-location": "Adăugați locația",
-      "link-memo": "Notă de legături",
       "retry-image-upload": "Reîncercați",
       "add-attachment": "Adăugați atașament",
       "image-upload-failed": "Unele imagini nu au putut fi încărcate. Încercați din nou sau păstrați fișierele încărcate ca atașamente.",
@@ -369,10 +366,6 @@
     "succeed-copy-content": "Conținutul a fost copiat cu succes.",
     "succeed-copy-link": "Linkul a fost copiat cu succes.",
     "update-succeed": "Actualizarea a reușit"
-  },
-  "reference": {
-    "no-memos-found": "Nu au fost găsite note",
-    "search-placeholder": "Căutați conținut"
   },
   "resource": {
     "delete-all-unused": "Ștergeți toate cele neutilizate",
@@ -899,7 +892,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Link Memo",
     "select-location": "Locaţie"
   },
   "attachment-details": {
@@ -941,13 +933,10 @@
     "clear-query": "Ștergeți interogarea",
     "edit-query": "Editați interogarea",
     "expression": "Expresie de căutare",
-    "expression-mode": "Expresie",
     "invalid-expression": "Expresia de căutare nu a putut fi aplicată",
     "keyboard-hint": "Enter pentru căutare · Shift+Enter pentru o linie nouă",
     "load-error": "Nu s-au putut încărca note",
-    "mode": "Mod de căutare",
-    "syntax-help": "Sintaxă de căutare",
-    "text": "Text"
+    "syntax-help": "Sintaxă de căutare"
   },
   "map": {
     "selection": "Memo-uri selectate",

@@ -148,12 +148,9 @@
     "add-your-comment-here": "तुमची टिप्पणी येथे जो़डा",
     "any-thoughts": "आपले विचार...",
     "exit-focus-mode": "फोकस मोड सोडा",
-    "focus-mode": "फोकस मोड",
     "no-changes-detected": "कोणतेही बदल आढळले नाहीत",
     "save": "जतन",
     "insert-menu": {
-      "add-location": "स्थान जोडा",
-      "link-memo": "लिंक मेमो",
       "image-upload-stopped": "प्रतिमा अपलोड थांबले {{completed}}/{{total}}",
       "insert-image": "प्रतिमा घाला",
       "keep-as-attachments": "संलग्नक म्हणून ठेवा",
@@ -326,10 +323,6 @@
     "succeed-copy-content": "सामग्री यशस्वीरित्या कॉपी केली.",
     "succeed-copy-link": "लिंक यशस्वीरित्या कॉपी केली.",
     "update-succeed": "अपडेट यशस्वी झाले"
-  },
-  "reference": {
-    "no-memos-found": "कोणतेही मेमो आढळले नाहीत",
-    "search-placeholder": "सामग्री शोधा"
   },
   "resource": {
     "delete-all-unused": "सर्व न वापरलेली हटवा",
@@ -856,7 +849,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "मेमो लिंक करा",
     "select-location": "स्थान"
   },
   "live-update": {
@@ -966,14 +958,11 @@
     "clear-query": "क्वेरी साफ करा",
     "edit-query": "क्वेरी संपादित करा",
     "expression": "शोध अभिव्यक्ती",
-    "expression-mode": "अभिव्यक्ती",
     "invalid-expression": "शोध अभिव्यक्ती लागू करता आली नाही",
     "keyboard-hint": "शोधण्यासाठी एंटर दाबा · नवीन ओळीसाठी शिफ्ट+एंटर दाबा",
     "load-error": "मेमो लोड करता आले नाहीत",
-    "mode": "शोध मोड",
     "retry": "पुन्हा प्रयत्न करा",
-    "syntax-help": "शोध वाक्यरचना",
-    "text": "मजकूर"
+    "syntax-help": "शोध वाक्यरचना"
   },
   "space": {
     "all-spaces": "सर्व स्पेस",

@@ -234,11 +234,11 @@ interface SegmentButtonProps extends ComponentPropsWithoutRef<"button"> {
 }
 
 // The one segment element, shared by command toggles and dropdown triggers: the kit's
-// quiet 28px square, so the toolbar container stays transparent and only the verb that
+// quiet 44px square, so touch targets remain usable and only the verb that
 // is on carries the accent fill. Forwards ref + rest props so it also works as a Base UI
 // `render` trigger (which injects its own onClick/aria attributes).
 const SegmentButton = forwardRef<HTMLButtonElement, SegmentButtonProps>(({ Icon, label, active, ...rest }, ref) => (
-  <Button ref={ref} variant="quiet" size="icon-compact" aria-label={label} aria-pressed={active} title={label} {...rest}>
+  <Button ref={ref} variant="quiet" size="icon" className="size-11" aria-label={label} aria-pressed={active} title={label} {...rest}>
     {Icon && <Icon className="size-4" strokeWidth={1.8} />}
   </Button>
 ));

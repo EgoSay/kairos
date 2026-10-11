@@ -179,7 +179,6 @@
     "add-your-comment-here": "请输入您的评论...",
     "any-thoughts": "此刻的想法...",
     "exit-focus-mode": "退出聚焦模式",
-    "focus-mode": "聚焦模式",
     "formatting-toolbar": "格式工具栏",
     "format": {
       "heading": "标题",
@@ -215,12 +214,10 @@
     },
     "insert-menu": {
       "add-attachment": "添加附件",
-      "add-location": "添加位置",
       "image-upload-failed": "部分图片上传失败，请重试或将已上传文件保留为附件。",
       "image-upload-stopped": "图片上传已暂停 {{completed}}/{{total}}",
       "insert-image": "插入图片",
       "keep-as-attachments": "保留为附件",
-      "link-memo": "链接备忘录",
       "retry-image-upload": "重试",
       "uploading-inline-image": "正在上传到正文",
       "uploading-images": "正在上传图片 {{completed}}/{{total}}"
@@ -357,10 +354,6 @@
     "succeed-copy-content": "复制内容到剪贴板成功。",
     "succeed-copy-link": "复制链接到剪贴板成功。",
     "update-succeed": "更新成功"
-  },
-  "reference": {
-    "no-memos-found": "没有发现备忘录",
-    "search-placeholder": "搜索内容"
   },
   "resource": {
     "delete-all-unused": "删除所有未使用资源",
@@ -887,7 +880,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "链接备忘录",
     "select-location": "位置"
   },
   "live-update": {
@@ -1002,12 +994,9 @@
     "clear-query": "清除查询",
     "edit-query": "编辑查询",
     "expression": "搜索表达式",
-    "expression-mode": "表达式",
     "invalid-expression": "搜索表达式无法应用",
     "keyboard-hint": "按 Enter 键搜索 · 按 Shift+Enter 键换行",
     "load-error": "无法加载备忘录",
-    "mode": "搜索模式",
-    "syntax-help": "搜索语法",
-    "text": "文本"
+    "syntax-help": "搜索语法"
   }
 }

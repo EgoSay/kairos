@@ -10,6 +10,7 @@ export interface MapViewport {
 
 export const validLocation = (location: Location | undefined): location is Location =>
   !!location &&
+  !location.nameOnly &&
   Number.isFinite(location.latitude) &&
   Number.isFinite(location.longitude) &&
   Math.abs(location.latitude) <= 90 &&

@@ -54,6 +54,8 @@ export interface FormattingController {
   run(command: EditorCommandId, ctx?: EditorCommandContext): void;
   /** Link URL at the current selection, when editing an existing Markdown link. */
   getLink?(): string | undefined;
+  /** Visible selection bounds for contextual tools; absent for a caret or composition. */
+  getSelectionBounds?(): { top: number; bottom: number; left: number; right: number } | undefined;
   /** Snapshot of which marks/blocks are active at the current selection. */
   getActiveFormats(): ActiveFormatState;
   /** Register a listener fired on every transaction/selection change. Returns an unsubscribe. */

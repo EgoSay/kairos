@@ -148,10 +148,7 @@
     "add-your-comment-here": "Aggiungi qui il tuo commento...",
     "any-thoughts": "Qualsiasi cosa pensi...",
     "exit-focus-mode": "Esci Modalità Focus",
-    "focus-mode": "Modalità Focus",
     "insert-menu": {
-      "add-location": "Aggiungi posizione",
-      "link-memo": "Collegamento promemoria",
       "retry-image-upload": "Riprova",
       "add-attachment": "Aggiungi allegato",
       "image-upload-stopped": "Caricamento immagine interrotto {{completed}}/{{total}}",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "Contenuto copiato con successo.",
     "succeed-copy-link": "Link copiato.",
     "update-succeed": "Aggiornato con successo"
-  },
-  "reference": {
-    "no-memos-found": "Nessun memo trovato",
-    "search-placeholder": "Cerca contenuto"
   },
   "resource": {
     "delete-all-unused": "Elimina tutte le risorse inutilizzate",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Link Memo",
     "select-location": "Posizione"
   },
   "demo": {
@@ -941,13 +933,10 @@
     "clear-query": "Cancella query",
     "edit-query": "Modifica query",
     "expression": "Espressione di ricerca",
-    "expression-mode": "Espressione",
     "invalid-expression": "Impossibile applicare l'espressione di ricerca",
     "keyboard-hint": "Invio per cercare · Maiusc+Invio per andare a capo",
     "load-error": "Impossibile caricare i promemoria",
-    "mode": "Modalità di ricerca",
-    "syntax-help": "Sintassi di ricerca",
-    "text": "Testo"
+    "syntax-help": "Sintassi di ricerca"
   },
   "map": {
     "selection": "Note selezionate",

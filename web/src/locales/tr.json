@@ -174,7 +174,6 @@
     "add-your-comment-here": "Yorumunuzu buraya ekleyin...",
     "any-thoughts": "Düşünceleriniz...",
     "exit-focus-mode": "Odak modundan çık",
-    "focus-mode": "Odak modu",
     "comment": "Yorum yap",
     "formatting-toolbar": "Biçimlendirme araç çubuğu",
     "format": {
@@ -198,12 +197,10 @@
     },
     "insert-menu": {
       "add-attachment": "Ek ekle",
-      "add-location": "Konum ekle",
       "image-upload-failed": "Bazı görseller yüklenemedi. Yeniden deneyin ya da yüklenen dosyaları ek olarak tutun.",
       "image-upload-stopped": "Görsel yükleme durdu {{completed}}/{{total}}",
       "insert-image": "Görsel ekle",
       "keep-as-attachments": "Ek olarak tut",
-      "link-memo": "Not bağla",
       "retry-image-upload": "Yeniden dene",
       "uploading-inline-image": "İçeriğe yükleniyor",
       "uploading-images": "Görseller yükleniyor {{completed}}/{{total}}"
@@ -358,10 +355,6 @@
     "succeed-copy-link": "Bağlantı başarıyla kopyalandı.",
     "update-succeed": "Güncelleme başarılı"
   },
-  "reference": {
-    "no-memos-found": "Not bulunamadı",
-    "search-placeholder": "İçerik ara"
-  },
   "resource": {
     "delete-all-unused": "Kullanılmayanların hepsini sil",
     "delete-all-unused-confirm": "Kullanılmayan tüm kaynakları silmek istediğinizden emin misiniz? BU İŞLEM GERİ ALINAMAZ",
@@ -377,14 +370,11 @@
     "clear-query": "Sorguyu temizle",
     "edit-query": "Sorguyu düzenle",
     "expression": "Arama ifadesi",
-    "expression-mode": "İfade",
     "invalid-expression": "Arama ifadesi uygulanamadı",
     "keyboard-hint": "Aramak için Enter · Yeni satır için Shift+Enter",
     "load-error": "Notlar yüklenemedi",
-    "mode": "Arama modu",
     "retry": "Yeniden dene",
-    "syntax-help": "Arama sözdizimi",
-    "text": "Metin"
+    "syntax-help": "Arama sözdizimi"
   },
   "setting": {
     "agent": { "label": "Agent / MCP" },
@@ -936,7 +926,6 @@
     "switch": "Alan değiştir"
   },
   "tooltip": {
-    "link-memo": "Notu Bağla",
     "select-location": "Konum seç"
   },
   "demo": {

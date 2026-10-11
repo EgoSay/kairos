@@ -116,4 +116,23 @@ describe("editor location session", () => {
     expect(result.current.state.nameError).toBe("名称服务不可用");
     expect(result.current.getLocation()).toMatchObject({ latitude: 31, longitude: 121, placeholder: "" });
   });
+  it("preserves a name-only place on reopen and does not treat invalid coordinate edits as one", () => {
+    const label = create(LocationSchema, { placeholder: "家", nameOnly: true });
+    const { result } = renderHook(() => useLocation(label));
+    expect(result.current.state.position).toBeUndefined();
+    expect(result.current.getLocation()).toMatchObject({ placeholder: "家", nameOnly: true });
+    act(() => result.current.updateCoordinate("lat", "31"));
+    expect(result.current.getLocation()).toBeUndefined();
+    act(() => result.current.updateCoordinate("lng", "121"));
+    expect(result.current.getLocation()).toMatchObject({ placeholder: "家", nameOnly: false, latitude: 31, longitude: 121 });
+  });
+  it("ignores late coordinates after selecting a name-only place", () => {
+    const { result } = renderHook(() => useLocation());
+    act(() => result.current.locate());
+    const complete = device.mock.calls[0][0] as PositionCallback;
+    act(() => result.current.reset(create(LocationSchema, { placeholder: "咖啡店", nameOnly: true })));
+    act(() => complete(position()));
+    expect(result.current.getLocation()).toMatchObject({ placeholder: "咖啡店", nameOnly: true });
+    expect(result.current.state.position).toBeUndefined();
+  });
 });

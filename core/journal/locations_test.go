@@ -3,6 +3,7 @@ package journal_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -54,4 +55,43 @@ func TestNamedPlacesOwnerCASAndHistoricalNames(t *testing.T) {
 	valid, err := journal.GetNamedPlaces(ctx, s, owner.ID)
 	require.NoError(t, err)
 	require.Equal(t, 0.0, valid.Places[0].Latitude)
+}
+
+func TestNameOnlyPlacesDoNotCollapseIntoOriginAndRemainOwnerScoped(t *testing.T) {
+	ctx := context.Background()
+	s := storetest.NewTestingStore(ctx, t)
+	t.Cleanup(func() { require.NoError(t, s.Close()) })
+	owner, err := s.CreateUser(ctx, &store.User{Username: "named-owner", Role: store.RoleAdmin})
+	require.NoError(t, err)
+	for index, location := range []*storepb.MemoPayload_Location{
+		{Placeholder: "家", NameOnly: true},
+		{Placeholder: "咖啡店", NameOnly: true},
+		{Placeholder: "zero point", Latitude: 0, Longitude: 0},
+		{Placeholder: "家", NameOnly: true},
+	} {
+		_, err := s.CreateMemo(ctx, &store.Memo{UID: fmt.Sprintf("place-%d", index), CreatorID: owner.ID, Content: "record", Visibility: store.Private, Payload: &storepb.MemoPayload{Location: location}})
+		require.NoError(t, err)
+	}
+	recent, err := journal.RecentPlaces(ctx, s, owner.ID)
+	require.NoError(t, err)
+	require.Len(t, recent, 3)
+	nameOnly := 0
+	for _, place := range recent {
+		if place.NameOnly {
+			nameOnly++
+			encoded, err := json.Marshal(place)
+			require.NoError(t, err)
+			require.NotContains(t, string(encoded), "latitude")
+			require.NotContains(t, string(encoded), "longitude")
+		}
+	}
+	require.Equal(t, 2, nameOnly)
+	saved, err := journal.SaveNamedPlaces(ctx, s, owner.ID, journal.NamedPlaces{Places: []journal.NamedPlace{{ID: "home", Name: "家", NameOnly: true}}})
+	require.NoError(t, err)
+	loaded, err := journal.GetNamedPlaces(ctx, s, owner.ID)
+	require.NoError(t, err)
+	require.True(t, loaded.Places[0].NameOnly)
+	saved.Places[0].Latitude = 1
+	_, err = journal.SaveNamedPlaces(ctx, s, owner.ID, saved)
+	require.Error(t, err)
 }

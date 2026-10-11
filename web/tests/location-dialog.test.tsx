@@ -55,6 +55,11 @@ function Harness({ original, onSave }: { original?: Location; onSave: (value?: L
         onLocate={draft.locate}
         onResolveName={() => void draft.resolveName()}
         onCancel={close}
+        onSelect={(location) => {
+          draft.reset(location);
+          onSave(location);
+          setOpen(false);
+        }}
         onConfirm={() => {
           onSave(draft.getLocation());
           setOpen(false);
@@ -63,57 +68,94 @@ function Harness({ original, onSave }: { original?: Location; onSave: (value?: L
     </>
   );
 }
-describe("location dialog confirmation and public search", () => {
+describe("location picker and explicit public search", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mocks.save.mockResolvedValue({});
     Object.defineProperty(navigator, "geolocation", { configurable: true, value: { getCurrentPosition: mocks.locate } });
   });
   it("does not turn the default map viewport into a selected position", () => {
     const save = vi.fn();
     render(<Harness onSave={save} />);
-    expect(screen.getByRole("button", { name: "确认此位置" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "选择地图上的地点" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "搜索地图上的地点" }));
+    expect(screen.getByRole("button", { name: "使用此位置" })).toBeDisabled();
     expect(mocks.locate).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "选择地图上的地点" }));
-    expect(screen.getByRole("button", { name: "确认此位置" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "使用此位置" })).toBeEnabled();
     expect(save).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "确认此位置" }));
+    fireEvent.click(screen.getByRole("button", { name: "使用此位置" }));
     expect(save).toHaveBeenCalledWith(expect.objectContaining({ latitude: 31, longitude: 121, placeholder: "" }));
   });
   it("cancels edits and reopens with the original value", async () => {
     const save = vi.fn();
     const original = create(LocationSchema, { latitude: 31, longitude: 121, placeholder: "原地点" });
     render(<Harness original={original} onSave={save} />);
-    fireEvent.change(screen.getByLabelText("地点名称（可留空，仅保存坐标）"), { target: { value: "改过的名字" } });
+    fireEvent.click(screen.getByRole("button", { name: "搜索地图上的地点" }));
+    fireEvent.change(screen.getByLabelText("地点名称"), { target: { value: "改过的名字" } });
     fireEvent.click(screen.getByRole("button", { name: "取消" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: "重新打开位置" }));
-    expect(screen.getByLabelText("地点名称（可留空，仅保存坐标）")).toHaveValue("原地点");
+    fireEvent.click(screen.getByRole("button", { name: "搜索地图上的地点" }));
+    expect(screen.getByLabelText("地点名称")).toHaveValue("原地点");
     expect(save).not.toHaveBeenCalled();
   });
-  it("only searches on explicit submission, previews a result, then confirms it", async () => {
+  it("only searches on explicit submission and adds the chosen result immediately", async () => {
     vi.mocked(searchPublicPlaces).mockResolvedValue({
       places: [{ name: "人民公园", address: "上海人民公园", latitude: 31.23, longitude: 121.47 }],
     });
     const save = vi.fn();
     render(<Harness onSave={save} />);
+    fireEvent.click(screen.getByRole("button", { name: "搜索地图上的地点" }));
     fireEvent.change(screen.getByLabelText("搜索公开地点名称"), { target: { value: "上海 人民公园" } });
     expect(searchPublicPlaces).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "搜索" }));
-    fireEvent.click(await screen.findByRole("button", { name: "预览地点 人民公园，上海人民公园" }));
-    expect(screen.getByLabelText("地点名称（可留空，仅保存坐标）")).toHaveValue("人民公园");
-    expect(save).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "确认此位置" }));
+    fireEvent.click(await screen.findByRole("button", { name: "选择地点 人民公园，上海人民公园" }));
+
     expect(save).toHaveBeenCalledWith(expect.objectContaining({ latitude: 31.23, longitude: 121.47, placeholder: "人民公园" }));
   });
   it("renames a reusable place without confirming or rewriting a memo", async () => {
     const save = vi.fn();
     render(<Harness onSave={save} />);
-    fireEvent.click(screen.getByRole("button", { name: "工作室" }));
-    fireEvent.change(screen.getByLabelText("地点名称（可留空，仅保存坐标）"), { target: { value: "我的工作室" } });
+    fireEvent.click(screen.getByRole("button", { name: "管理常用地点" }));
+    fireEvent.click(screen.getByRole("button", { name: "编辑常用地点 工作室" }));
+    fireEvent.change(screen.getByLabelText("地点名称"), { target: { value: "我的工作室" } });
     fireEvent.click(screen.getByRole("button", { name: "更新常用地点名称" }));
     await waitFor(() =>
       expect(mocks.save).toHaveBeenCalledWith({ version: 1, places: [{ id: "office", name: "我的工作室", latitude: 32, longitude: 120 }] }),
     );
     expect(save).not.toHaveBeenCalled();
+  });
+  it("adds a favorite in one click without mounting the map or requesting location", () => {
+    const save = vi.fn();
+    render(<Harness onSave={save} />);
+    fireEvent.click(screen.getByRole("button", { name: "工作室" }));
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ placeholder: "工作室", latitude: 32, longitude: 120, nameOnly: false }));
+    expect(screen.queryByRole("button", { name: "选择地图上的地点" })).not.toBeInTheDocument();
+    expect(mocks.locate).not.toHaveBeenCalled();
+    expect(searchPublicPlaces).not.toHaveBeenCalled();
+  });
+  it("filters personal places as the user types and saves a new name without invented coordinates", () => {
+    const save = vi.fn();
+    render(<Harness onSave={save} />);
+    fireEvent.change(screen.getByLabelText("搜索自己的地点或只记名称"), { target: { value: "咖啡店" } });
+    expect(screen.queryByRole("button", { name: "工作室" })).not.toBeInTheDocument();
+    expect(searchPublicPlaces).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "只记“咖啡店”" }));
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ placeholder: "咖啡店", nameOnly: true }));
+    expect(mocks.locate).not.toHaveBeenCalled();
+  });
+  it("keeps name-only entry available after device permission fails", () => {
+    vi.stubGlobal("isSecureContext", true);
+    const save = vi.fn();
+    render(<Harness onSave={save} />);
+    mocks.locate.mockImplementationOnce((_success, fail) => fail({ code: 1 }));
+    fireEvent.click(screen.getByRole("button", { name: "使用当前位置" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("定位权限被拒绝");
+    fireEvent.change(screen.getByLabelText("搜索自己的地点或只记名称"), { target: { value: "家" } });
+    fireEvent.click(screen.getByRole("button", { name: "只记“家”" }));
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ placeholder: "家", nameOnly: true }));
+    vi.unstubAllGlobals();
   });
 });

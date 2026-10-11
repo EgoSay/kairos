@@ -7,6 +7,7 @@ export interface NamedPlace {
   name: string;
   latitude: number;
   longitude: number;
+  nameOnly?: boolean;
 }
 export interface PlaceCandidate {
   name: string;

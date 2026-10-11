@@ -34,7 +34,9 @@ func NewWriter(w io.Writer, modified time.Time) *Writer {
 }
 
 // WriteManifest writes manifest.json. It fills in the format name and
-// version, and must be called exactly once.
+// version, and must be called exactly once. All new archives use version 2.0:
+// records arrive after the manifest, so a later name-only place must not leave
+// the archive mislabeled as compatible with a version 1 reader.
 func (w *Writer) WriteManifest(manifest *Manifest) error {
 	if w.wroteManifest {
 		return errors.New("manifest already written")

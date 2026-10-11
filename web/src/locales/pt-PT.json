@@ -148,10 +148,7 @@
     "add-your-comment-here": "Adicione o seu comentário aqui...",
     "any-thoughts": "Alguma ideia…",
     "exit-focus-mode": "Sair do Modo Foco",
-    "focus-mode": "Modo Foco",
     "insert-menu": {
-      "add-location": "Adicionar local",
-      "link-memo": "Vincular memorando",
       "retry-image-upload": "Tentar novamente",
       "add-attachment": "Adicionar anexo",
       "image-upload-failed": "Algumas imagens não puderam ser carregadas. Tente novamente ou mantenha os ficheiros carregados como anexos.",
@@ -331,10 +328,6 @@
     "succeed-copy-content": "Conteúdo copiado com sucesso.",
     "succeed-copy-link": "Link copiado com sucesso.",
     "update-succeed": "Atualização bem-sucedida"
-  },
-  "reference": {
-    "no-memos-found": "Não foram encontrados memos",
-    "search-placeholder": "Pesquisar conteúdo"
   },
   "resource": {
     "delete-all-unused": "Eliminar todos os não utilizados",
@@ -861,7 +854,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Associar Memo",
     "select-location": "Localização"
   },
   "demo": {
@@ -941,13 +933,10 @@
     "clear-query": "Limpar consulta",
     "edit-query": "Editar consulta",
     "expression": "Expressão de pesquisa",
-    "expression-mode": "Expressão",
     "invalid-expression": "A expressão de pesquisa não pôde ser aplicada",
     "keyboard-hint": "Prima Enter para pesquisar · Shift+Enter para uma nova linha",
     "load-error": "Não foi possível carregar os memorandos",
-    "mode": "Modo de pesquisa",
-    "syntax-help": "Sintaxe de pesquisa",
-    "text": "Texto"
+    "syntax-help": "Sintaxe de pesquisa"
   },
   "map": {
     "selection": "Memorandos selecionados",

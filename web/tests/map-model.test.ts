@@ -40,6 +40,15 @@ describe("map model", () => {
       ),
     ).toEqual(["valid"]);
   });
+  it("excludes a name-only location while preserving a real origin point", () => {
+    const label = create(LocationSchema, { placeholder: "家", nameOnly: true });
+    expect(validLocation(label)).toBe(false);
+    expect(
+      mapMemos([{ memos: [create(MemoSchema, { name: "named", location: label }), memo("origin")] }], "create_time").map(
+        (item) => item.name,
+      ),
+    ).toEqual(["origin"]);
+  });
   it("does not merge different coordinates based on their labels", () => {
     const a = create(LocationSchema, { placeholder: "Cafe", latitude: 1, longitude: 2 });
     const b = create(LocationSchema, { placeholder: "Cafe", latitude: 1, longitude: 3 });

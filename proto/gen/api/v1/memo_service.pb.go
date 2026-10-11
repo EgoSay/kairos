@@ -418,7 +418,10 @@ type Location struct {
 	// The latitude of the location.
 	Latitude float64 `protobuf:"fixed64,2,opt,name=latitude,proto3" json:"latitude,omitempty"`
 	// The longitude of the location.
-	Longitude     float64 `protobuf:"fixed64,3,opt,name=longitude,proto3" json:"longitude,omitempty"`
+	Longitude float64 `protobuf:"fixed64,3,opt,name=longitude,proto3" json:"longitude,omitempty"`
+	// True when only a place name is recorded. Latitude and longitude are absent
+	// semantically and must be zero; false preserves legacy coordinate locations.
+	NameOnly      bool `protobuf:"varint,4,opt,name=name_only,json=nameOnly,proto3" json:"name_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -472,6 +475,13 @@ func (x *Location) GetLongitude() float64 {
 		return x.Longitude
 	}
 	return 0
+}
+
+func (x *Location) GetNameOnly() bool {
+	if x != nil {
+		return x.NameOnly
+	}
+	return false
 }
 
 type CreateMemoRequest struct {
@@ -625,7 +635,8 @@ type ListMemosRequest struct {
 	//	  supports == and comparisons against null, e.g. space != null),
 	//	tags (list<string>; match with `"work" in tags`, not `tag == "work"`),
 	//	has_task_list / has_link / has_code / has_incomplete_tasks (bool),
-	//	has_location (bool; true when the memo has a location attached).
+	//	has_location (bool; true when the memo has a location attached),
+	//	location_name_only (bool; true for a place name without coordinates).
 	//
 	// Note: the time fields here are created_ts / updated_ts, which differ from
 	// the create_time / update_time names used by order_by.
@@ -2455,11 +2466,12 @@ const file_api_v1_memo_service_proto_rawDesc = "" +
 	"\x11memos.api.v1/Memo\x12\fmemos/{memo}\x1a\x04name*\x05memos2\x04memoB\t\n" +
 	"\a_parentB\v\n" +
 	"\t_locationB\b\n" +
-	"\x06_spaceJ\x04\b\x06\x10\aR\fdisplay_time\"u\n" +
+	"\x06_spaceJ\x04\b\x06\x10\aR\fdisplay_time\"\x97\x01\n" +
 	"\bLocation\x12%\n" +
 	"\vplaceholder\x18\x01 \x01(\tB\x03\xe0A\x01R\vplaceholder\x12\x1f\n" +
 	"\blatitude\x18\x02 \x01(\x01B\x03\xe0A\x01R\blatitude\x12!\n" +
-	"\tlongitude\x18\x03 \x01(\x01B\x03\xe0A\x01R\tlongitude\"\xb9\x01\n" +
+	"\tlongitude\x18\x03 \x01(\x01B\x03\xe0A\x01R\tlongitude\x12 \n" +
+	"\tname_only\x18\x04 \x01(\bB\x03\xe0A\x01R\bnameOnly\"\xb9\x01\n" +
 	"\x11CreateMemoRequest\x12+\n" +
 	"\x04memo\x18\x01 \x01(\v2\x12.memos.api.v1.MemoB\x03\xe0A\x02R\x04memo\x12\x1c\n" +
 	"\amemo_id\x18\x02 \x01(\tB\x03\xe0A\x01R\x06memoId\x12Y\n" +

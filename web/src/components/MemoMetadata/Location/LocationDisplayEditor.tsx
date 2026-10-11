@@ -13,19 +13,31 @@ import { getLocationCoordinatesText, getLocationDisplayText } from "./locationHe
 interface LocationDisplayEditorProps {
   location: Location;
   onRemove?: () => void;
+  onEdit?: () => void;
 }
 
 /** The draft's location as one metadata row; the remove control shows once the row is engaged. */
-const LocationDisplayEditor: FC<LocationDisplayEditorProps> = ({ location, onRemove }) => {
+const LocationDisplayEditor: FC<LocationDisplayEditorProps> = ({ location, onRemove, onEdit }) => {
   const displayText = getLocationDisplayText(location);
 
   return (
     <div className={METADATA_ROW_BOX_CLASSES}>
       <MetadataRowIconSlot icon={MapPinIcon} />
-      <span className={METADATA_ROW_TEXT_CLASSES} title={displayText}>
-        {displayText}
-      </span>
-      <MetadataRowDetail parts={[getLocationCoordinatesText(location)]} />
+      {onEdit ? (
+        <button
+          type="button"
+          className={`${METADATA_ROW_TEXT_CLASSES} min-h-11 text-start`}
+          aria-label={`修改位置：${displayText}`}
+          onClick={onEdit}
+        >
+          {displayText}
+        </button>
+      ) : (
+        <span className={METADATA_ROW_TEXT_CLASSES} title={displayText}>
+          {displayText}
+        </span>
+      )}
+      {!location.nameOnly && <MetadataRowDetail parts={[getLocationCoordinatesText(location)]} />}
       {onRemove && <MetadataRowRemoveControl label="Remove location" onClick={onRemove} />}
     </div>
   );

@@ -219,7 +219,6 @@
     "add-your-comment-here": "הוסיפו את התגובה שלכם כאן...",
     "any-thoughts": "יש מחשבות...",
     "exit-focus-mode": "יציאה ממצב מיקוד",
-    "focus-mode": "מצב מיקוד",
     "formatting-toolbar": "סרגל עיצוב",
     "format": {
       "heading": "כותרת",
@@ -242,12 +241,10 @@
     },
     "insert-menu": {
       "add-attachment": "הוסף קובץ מצורף",
-      "add-location": "הוסף מיקום",
       "image-upload-failed": "לא ניתן להעלות חלק מהתמונות. נסו שוב או השאירו את התמונות שהועלו כקבצים מצורפים.",
       "image-upload-stopped": "העלאת התמונה נעצרה {{completed}}/{{total}}",
       "insert-image": "הוסף תמונה",
       "keep-as-attachments": "שמור כקבצים מצורפים",
-      "link-memo": "קשר פתק",
       "retry-image-upload": "נסה שוב",
       "uploading-inline-image": "מעלה לתוכן",
       "uploading-images": "מעלה תמונות {{completed}}/{{total}}"
@@ -402,10 +399,6 @@
     "succeed-copy-content": "התוכן הועתק בהצלחה.",
     "succeed-copy-link": "הקישור הועתק בהצלחה.",
     "update-succeed": "העדכון הצליח"
-  },
-  "reference": {
-    "no-memos-found": "לא נמצאו פתקים",
-    "search-placeholder": "חיפוש בתוכן"
   },
   "resource": {
     "delete-all-unused": "מחק את כל המשאבים שאינם בשימוש",
@@ -932,7 +925,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "קשר פתק",
     "select-location": "מיקום"
   },
   "search": {
@@ -941,13 +933,10 @@
     "clear-query": "נקה שאילתה",
     "edit-query": "עריכת שאילתה",
     "expression": "ביטוי חיפוש",
-    "expression-mode": "ביטוי",
     "invalid-expression": "לא ניתן היה להחיל את ביטוי החיפוש",
     "keyboard-hint": "Enter לחיפוש · Shift+Enter לשורה חדשה",
     "load-error": "לא ניתן היה לטעון תזכירים",
-    "mode": "מצב חיפוש",
-    "syntax-help": "תחביר חיפוש",
-    "text": "טקסט"
+    "syntax-help": "תחביר חיפוש"
   },
   "map": {
     "selection": "תזכירים נבחרים",

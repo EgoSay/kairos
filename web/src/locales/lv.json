@@ -186,10 +186,7 @@
     "add-your-comment-here": "Pievienojiet savu komentāru šeit...",
     "any-thoughts": "Jebkuras domas...",
     "exit-focus-mode": "Iziet no fokusa režīma",
-    "focus-mode": "Fokusa režīms",
     "insert-menu": {
-      "add-location": "Pievienot atrašanās vietu",
-      "link-memo": "Saites piezīme",
       "retry-image-upload": "Mēģiniet vēlreiz",
       "add-attachment": "Pievienot pielikumu",
       "image-upload-failed": "Dažus attēlus nevarēja augšupielādēt. Mēģiniet vēlreiz vai saglabājiet augšupielādētos failus kā pielikumus.",
@@ -369,10 +366,6 @@
     "succeed-copy-content": "Saturs ir veiksmīgi kopēts.",
     "succeed-copy-link": "Saite ir veiksmīgi nokopēta.",
     "update-succeed": "Atjaunināšana izdevās"
-  },
-  "reference": {
-    "no-memos-found": "Nav atrasta neviena piezīme",
-    "search-placeholder": "Meklēt saturu"
   },
   "resource": {
     "delete-all-unused": "Dzēst visu neizmantoto",
@@ -899,7 +892,6 @@
     }
   },
   "tooltip": {
-    "link-memo": "Saites piezīme",
     "select-location": "Atrašanās vieta"
   },
   "attachment-details": {
@@ -941,13 +933,10 @@
     "clear-query": "Notīrīt vaicājumu",
     "edit-query": "Rediģēt vaicājumu",
     "expression": "Meklēšanas izteiksme",
-    "expression-mode": "Izteiksme",
     "invalid-expression": "Meklēšanas izteiksmi nevarēja lietot",
     "keyboard-hint": "Nospiediet taustiņu Enter, lai meklētu · Shift+Enter, lai pārietu uz jaunu rindu",
     "load-error": "Nevarēja ielādēt piezīmes",
-    "mode": "Meklēšanas režīms",
-    "syntax-help": "Meklēšanas sintakse",
-    "text": "Teksts"
+    "syntax-help": "Meklēšanas sintakse"
   },
   "map": {
     "selection": "Atlasītās piezīmes",
