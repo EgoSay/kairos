@@ -1,297 +1,94 @@
 # Color System Guide
 
-This document explains the color system used in the Kairos application, built with OKLCH color space for better perceptual uniformity and accessibility.
+Kairos 的颜色系统建立在 OKLCH 色彩空间与语义化 CSS 变量之上。
+本文是**事实文档**：以 `default.css` / `default-dark.css` / `paper.css` 的实际定义为准；
+设计意图与完整规范见 `docs/design/kairos-design-system-2026-10-16.md`。
 
-## Overview
+## 工作方式
 
-The color system supports both light and dark themes automatically through CSS custom properties. All colors are defined using OKLCH (Oklab LCH) color space, which provides better perceptual uniformity than traditional RGB/HSL.
+- 每个主题是一个 CSS 文件，只定义 `:root` 下的语义变量。
+- `default.css` 末尾的 `@theme inline` 块把这些变量一次性映射成 Tailwind
+  颜色（`bg-card`、`text-primary` 等），所有主题共享这一份映射。
+- 主题切换发生在运行时：`utils/theme.ts` 把所选主题文件的 `:root` 覆写注入
+  `<style id="instance-theme">`，**不是** `.dark` class 开关。
+- 组件只消费语义 token，不写十六进制色值、不写调色板直写类（`blue-500`）、
+  不手动加 `dark:` 覆写——换一个主题文件即可。
 
-## Color Categories
+## Token 清单
 
-### 🎨 Primary Brand Colors
+### 表面
 
-| Variable               | Light Theme   | Dark Theme      | Usage                          |
-| ---------------------- | ------------- | --------------- | ------------------------------ |
-| `--primary`            | Golden yellow | Brighter golden | Main brand color, primary CTAs |
-| `--primary-foreground` | White         | White           | Text on primary backgrounds    |
+| Token | 用途 |
+| --- | --- |
+| `--background` | 页面底（亮色为暖纸色） |
+| `--card` | 记录卡、书写卡、浮层底 |
+| `--popover` | 弹窗/下拉浮层底 |
+| `--overlay` | 遮罩基色（恒为黑，透明度由工具类给出，如 `bg-overlay/50`） |
+| `--secondary` / `--muted` / `--accent` | 次级表面、弱化表面、悬停表面 |
+| `--sidebar` / `--sidebar-accent` | 侧栏底与侧栏悬停底 |
 
-**When to use:**
+### 文字
 
-- Call-to-action buttons
-- Active navigation items
-- Important links and highlights
-- Brand elements
+| Token | 用途 |
+| --- | --- |
+| `--foreground` | 正文 |
+| `--muted-foreground` | 次级文字、占位、弱化说明 |
+| `*-foreground` 系列 | 与同名底色配对的前景（如 `primary-foreground` 用在 `primary` 底上） |
 
-```css
-/* Example usage */
-.cta-button {
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
-```
+### 品牌与交互
 
-### 🔘 Secondary Colors
+| Token | 用途 |
+| --- | --- |
+| `--primary` | **松绿**主色：主按钮、链接、选中态、日历热力。亮色 `oklch(0.40 0.062 162)`，暗色提亮为 `oklch(0.72 0.06 163)` |
+| `--ring` | focus-visible 环色，与 primary 同色相 |
+| `--moment` / `--moment-ink` | 品牌琥珀点。**仅限标识位**：logo、头像角标、可选的时刻标记；禁止用作通用交互色 |
 
-| Variable                 | Light Theme | Dark Theme      | Usage                         |
-| ------------------------ | ----------- | --------------- | ----------------------------- |
-| `--secondary`            | Light gray  | Very light gray | Supporting actions            |
-| `--secondary-foreground` | Dark gray   | Dark gray       | Text on secondary backgrounds |
+琥珀不是第二个主色：小面积是"标记"，大面积就成了警告色。
 
-**When to use:**
+### 反馈
 
-- Secondary buttons
-- Less important actions
-- Alternative navigation items
-- Subtle highlights
+| Token | 用途 |
+| --- | --- |
+| `--destructive` | 删除、危险操作 |
+| `--success` | 完成确认（已复制、已保存） |
+| `--warning` | 非关键提醒（未使用资源等）；正文内搜索高亮也用 `warning` |
 
-### 📄 Background & Surface Colors
+淡彩处理统一用透明度修饰：`border-warning/30 bg-warning/10 text-warning`，
+不写死 `amber-*`/`green-*` 调色板类，也不为反馈色手动加 `dark:`。
 
-| Variable               | Light Theme | Dark Theme  | Usage                       |
-| ---------------------- | ----------- | ----------- | --------------------------- |
-| `--background`         | Near white  | Dark gray   | Main page background        |
-| `--card`               | Near white  | Dark gray   | Card/container backgrounds  |
-| `--card-foreground`    | Very dark   | Near white  | Text on card backgrounds    |
-| `--popover`            | Pure white  | Darker gray | Overlay backgrounds         |
-| `--popover-foreground` | Dark gray   | Light gray  | Text on overlay backgrounds |
-| `--overlay`            | Pure black  | Pure black  | Scrim behind modals         |
-
-**When to use:**
-
-- Page backgrounds (`--background`)
-- Content cards and panels (`--card`)
-- Tooltips, dropdowns, modals (`--popover`)
-- Modal scrims (`--overlay`, always with an alpha utility: `bg-overlay/50` for dialogs and sheets, `bg-overlay/20` for focus mode)
-
-### ✏️ Text & Content Colors
-
-| Variable             | Light Theme | Dark Theme   | Usage                    |
-| -------------------- | ----------- | ------------ | ------------------------ |
-| `--foreground`       | Dark gray   | Light gray   | Primary text color       |
-| `--muted`            | Light gray  | Very dark    | Subtle background areas  |
-| `--muted-foreground` | Medium gray | Medium light | Secondary text, captions |
-
-**When to use:**
-
-- Main body text (`--foreground`)
-- Helper text, placeholders (`--muted-foreground`)
-- Disabled text states
-- Subtle background sections (`--muted`)
-
-### 🎯 Interactive Elements
-
-| Variable              | Light Theme  | Dark Theme  | Usage                        |
-| --------------------- | ------------ | ----------- | ---------------------------- |
-| `--accent`            | Light gray   | Very dark   | Hover states, selected items |
-| `--accent-foreground` | Dark gray    | Light gray  | Text on accent backgrounds   |
-| `--border`            | Medium light | Medium dark | Dividers, input borders      |
-| `--input`             | Medium light | Medium dark | Form input backgrounds       |
-
-**When to use:**
-
-- Hover states (`--accent`)
-- Form field borders (`--border`)
-- Input field backgrounds (`--input`)
-
-### ⚠️ Feedback Colors
-
-| Variable                   | Light Theme | Dark Theme    | Usage                              |
-| -------------------------- | ----------- | ------------- | ---------------------------------- |
-| `--destructive`            | Very dark   | Red           | Error states, dangerous actions    |
-| `--destructive-foreground` | White       | White         | Text on destructive backgrounds    |
-| `--success`                | Green       | Brighter green| Confirmation states (copied, saved)|
-| `--success-foreground`     | Near white  | Near black    | Text on success backgrounds        |
-| `--warning`                | Amber       | Brighter amber| Caution states (unused, deprecated)|
-| `--warning-foreground`     | Dark        | Dark          | Text on warning backgrounds        |
-
-**When to use:**
-
-- Error messages, delete buttons, validation failures → `--destructive`
-- Success confirmations (e.g. "copied ✓", saved) → `--success`
-- Non-critical caution (e.g. unused attachments) → `--warning`
-
-For tinted treatments (badges, panels), pair the token with an opacity modifier
-the same way `--destructive` is used, e.g. `border-warning/30 bg-warning/10 text-warning`.
-This auto-adapts across themes — never hardcode `amber-*` / `green-*` palette classes
-or add manual `dark:` overrides for feedback states.
-
-### 📊 Data Visualization
-
-| Variable    | Purpose                                 |
-| ----------- | --------------------------------------- |
-| `--chart-1` | Primary data series (golden)            |
-| `--chart-2` | Secondary data series (purple)          |
-| `--chart-3` | Tertiary data series (light)            |
-| `--chart-4` | Quaternary data series (purple variant) |
-| `--chart-5` | Quinary data series (golden variant)    |
-
-**When to use:**
-
-- Charts and graphs
-- Data visualization
-- Progress indicators
-- Statistical displays
-
-### 🔧 Sidebar System
-
-| Variable                       | Usage                        |
-| ------------------------------ | ---------------------------- |
-| `--sidebar`                    | Sidebar background           |
-| `--sidebar-foreground`         | Sidebar text                 |
-| `--sidebar-primary`            | Active sidebar items         |
-| `--sidebar-primary-foreground` | Text on active sidebar items |
-| `--sidebar-accent`             | Sidebar hover states         |
-| `--sidebar-accent-foreground`  | Text on sidebar hover states |
-| `--sidebar-border`             | Sidebar dividers             |
-
-## Best Practices
-
-### ✅ Do's
-
-1. **Always pair colors correctly:**
-
-   ```css
-   /* Correct */
-   background: var(--primary);
-   color: var(--primary-foreground);
-   ```
-
-2. **Use semantic meaning:**
-   - Primary = main actions
-   - Secondary = supporting actions
-   - Destructive = dangerous/delete actions
-   - Muted = less important content
-
-3. **Respect the design system:**
-   - Use existing color tokens instead of custom colors
-   - Maintain consistency across components
-
-### ❌ Don'ts
-
-1. **Don't mix incompatible pairs:**
-
-   ```css
-   /* Incorrect - poor contrast */
-   background: var(--primary);
-   color: var(--foreground);
-   ```
-
-2. **Don't use colors outside their intended purpose:**
-   - Don't use destructive colors for positive actions
-   - Don't use primary colors for secondary elements
-
-3. **Don't hardcode color values:**
-
-   ```css
-   /* Bad */
-   color: #333333;
-
-   /* Good */
-   color: var(--foreground);
-   ```
-
-## Theme Switching
-
-The color system automatically adapts between light and dark themes when the `.dark` class is applied to a parent element (typically `<html>` or `<body>`):
-
-```javascript
-// Toggle dark mode
-document.documentElement.classList.toggle("dark");
-```
-
-## Accessibility
-
-- All color pairs meet WCAG contrast requirements
-- Color is never the only means of conveying information
-
-## Implementation Examples
-
-### Button Variants
+## 配对规则
 
 ```css
-/* Primary button */
-.btn-primary {
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border: 1px solid var(--primary);
-}
+/* 对：前景与同名底色成对 */
+background: var(--primary);
+color: var(--primary-foreground);
 
-/* Secondary button */
-.btn-secondary {
-  background: var(--secondary);
-  color: var(--secondary-foreground);
-  border: 1px solid var(--border);
-}
-
-/* Destructive button */
-.btn-destructive {
-  background: var(--destructive);
-  color: var(--destructive-foreground);
-  border: 1px solid var(--destructive);
-}
+/* 错：跨对混用导致对比度失控 */
+background: var(--primary);
+color: var(--foreground);
 ```
-
-### Form Elements
 
 ```css
-/* Input field */
-.input {
-  background: var(--input);
-  color: var(--foreground);
-  border: 1px solid var(--border);
-}
+/* 对：语义 token */
+color: var(--muted-foreground);
+
+/* 错：硬编码 */
+color: #555;
 ```
 
-### Cards and Containers
+## Z-Index 分层
 
-```css
-/* Content card */
-.card {
-  background: var(--card);
-  color: var(--card-foreground);
-  border: 1px solid var(--border);
-}
+| 层 | Utility | 值 | 用途 |
+| --- | --- | --- | --- |
+| 基础内容 | `z-0` | 0 | 普通页面内容 |
+| 遮罩与弹窗 | `z-overlay` | 50 | Dialog/Sheet 遮罩与内容 |
+| 下拉 | `z-dropdown` | 60 | Select/Menu/Popover |
+| 提示 | `z-tooltip` | 70 | Tooltip（最高） |
 
-/* Popover/Modal */
-.popover {
-  background: var(--popover);
-  color: var(--popover-foreground);
-  box-shadow: var(--shadow-lg);
-}
-```
+`ui/` 原语已内置这些层级；对话框内的下拉无需额外处理。禁止 `z-[60]` 字面量。
 
-## Color Testing
+## 已知偏差与清理方向
 
-To ensure proper contrast and accessibility:
-
-1. Test both light and dark themes
-2. Verify readability at different zoom levels
-3. Check with colorblind simulation tools
-4. Validate WCAG contrast ratios
-
-## Z-Index Hierarchy
-
-The layering tiers are defined once as Tailwind tokens in `default.css`
-(`--z-index-overlay/dropdown/tooltip`) and consumed via named utilities — do not
-hardcode `z-[60]`-style literals.
-
-| Component Type    | Utility       | Value | Usage                                 |
-| ----------------- | ------------- | ----- | ------------------------------------- |
-| **Base Content**  | `z-0`         | 0     | Normal page content                   |
-| **Overlays**      | `z-overlay`   | 50    | Dialog/Sheet backgrounds              |
-| **Modal Content** | `z-overlay`   | 50    | Dialog/Sheet content                  |
-| **Dropdowns**     | `z-dropdown`  | 60    | Select, DropdownMenu, Popover content |
-| **Tooltips**      | `z-tooltip`   | 70    | Tooltip content (highest priority)    |
-
-### Rules
-
-1. **Dialog/Sheet**: Use `z-overlay` for both overlay and content
-2. **Interactive Elements**: Use `z-dropdown` for dropdowns inside dialogs
-3. **Tooltips**: Use `z-tooltip` to appear above all other elements
-4. **Always test**: Ensure Select/DropdownMenu works inside Dialog/Sheet
-
-These are already the defaults baked into the `ui/` primitives, so a `Select`
-inside a `Dialog` renders above the overlay without any extra `z-*` class.
-
----
-
-_This color system is designed to provide a consistent, accessible, and beautiful user experience across all themes and components._
+- `--chart-*`、`--sidebar-primary`、`--sidebar-border` 等 token **不存在**于本仓库——旧指南记载有误，勿再引用。
+- 组件中仍可见少量十六进制色值、任意 px 值与 inline style，按设计系统规范第 8 节逐步收口。
+- `rounded` 与 `rounded-lg` 在当前半径定义下同值（0.5rem），按规范归一为语义化圆角层级。

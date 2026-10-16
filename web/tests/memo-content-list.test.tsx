@@ -31,8 +31,8 @@ describe("memo content lists", () => {
     expect(listOpenTags[1]).not.toContain(TASK_LIST_CLASS);
     expect(listOpenTags[1]).toContain("ps-6");
     expect(listOpenTags[1]).toContain("list-disc");
-    expect(html).toContain('<li class="mt-0.5 leading-6">milk</li>');
-    expect(html).not.toContain('<li class="mt-0.5 leading-6">\n<p>milk</p>');
+    expect(html).toContain('<li class="mt-0.5 leading-7">milk</li>');
+    expect(html).not.toContain('<li class="mt-0.5 leading-7">\n<p>milk</p>');
     expect(html).toContain(TASK_LIST_ITEM_CLASS);
     expect(html).toContain("grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2");
     expect(html).toContain('<div class="min-w-0 [overflow-wrap:anywhere] [&amp;&gt;*:last-child]:mb-0"> pickup package</div>');
