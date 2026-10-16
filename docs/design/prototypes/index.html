@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-Hans" data-variant="pine">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kairos · 设计方向原型</title>
+<link rel="stylesheet" href="shared.css" />
+</head>
+<body>
+<div class="cover">
+
+  <!-- 标识：松绿底 + 暖白 K + 琥珀点（真实品牌三色的缩微版） -->
+  <svg class="mark" viewBox="0 0 512 512" role="img" aria-label="Kairos">
+    <rect width="512" height="512" rx="128" fill="#263a35"/>
+    <path d="M162 132v248M340 142 208 256l132 114" fill="none" stroke="#f5f0e6" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="362" cy="116" r="23" fill="#d7ab71"/>
+  </svg>
+
+  <h1>设计方向原型</h1>
+  <p class="lede">
+    配色已定<b>松绿</b>，内容字体已定<b>文楷</b>——字体分层：你写的内容（标题/正文/书写区）用文楷，
+    界面信息（侧栏/按钮/数字/时间戳）保持黑体，代码保持等宽。
+    右上角仍可切换到"全黑体"或"宋体标题"作对照。书写区可直接输入感受。
+  </p>
+
+  <h2>四个方向</h2>
+
+  <a class="vcard" href="feed.html?v=blue">
+    <span class="dots">
+      <span class="dot" style="background:#faf9f5;border:1px solid #ddd"></span>
+      <span class="dot" style="background:#3f5ba9"></span>
+      <span class="dot" style="background:#3f5ba9;opacity:.4"></span>
+    </span>
+    <span class="t"><b>A · 墨蓝</b><span>现状蓝的精修版。最中性、最"工具"，品牌感最弱，但零风险。</span></span>
+    <span class="go">打开 →</span>
+  </a>
+
+  <a class="vcard rec" href="feed.html?v=pine">
+    <span class="dots">
+      <span class="dot" style="background:#faf9f5;border:1px solid #ddd"></span>
+      <span class="dot" style="background:#2e5248"></span>
+      <span class="dot" style="background:#2e5248;opacity:.4"></span>
+    </span>
+    <span class="t"><b>B · 松绿</b><span>标识松绿直接当主色。保存按钮、链接、热力格全绿，琥珀只留在标识点。字体与细节已按选定方向精修。</span></span>
+    <span class="badge">当前选定</span>
+    <span class="go">打开 →</span>
+  </a>
+
+  <a class="vcard" href="feed.html?v=ink">
+    <span class="dots">
+      <span class="dot" style="background:#faf9f5;border:1px solid #ddd"></span>
+      <span class="dot" style="background:#3f5d5e"></span>
+      <span class="dot" style="background:#d7ab71"></span>
+    </span>
+    <span class="t"><b>C · 青墨 + 琥珀</b><span>备选：主色向松绿靠拢的墨，琥珀做"时刻"点缀。保留作对照，若松绿过重可回退到此。</span></span>
+    <span class="go">打开 →</span>
+  </a>
+
+  <a class="vcard" href="feed.html?v=night">
+    <span class="dots">
+      <span class="dot" style="background:#23262b"></span>
+      <span class="dot" style="background:#7fb5a8"></span>
+      <span class="dot" style="background:#d7ab71"></span>
+    </span>
+    <span class="t"><b>D · 夜读</b><span>松绿的暗色检验版。同一组语义变量只换取值——证明 token 分层能扛住明暗两态。睡前记录的场景。</span></span>
+    <span class="go">打开 →</span>
+  </a>
+
+  <h2>本轮体验时看什么</h2>
+  <ul class="checklist">
+    <li><b>字体分层</b>：正文、页标题、书写区是文楷；侧栏导航、按钮、日历数字、时间戳仍是黑体——温度的边界划在"你写的东西"和"界面"之间。在书写区打字感受最明显。</li>
+    <li><b>文楷标题无粗体</b>：memo 里的一级标题收敛到正常字重，避免手写体合成粗体发糊。</li>
+    <li><b>文字选中</b>：划选一段正文，选中色是松绿淡彩而不是系统蓝。</li>
+    <li><b>中西文混排</b>：中文与英文/数字之间的自动空距（如"flomo 上"）。</li>
+    <li><b>保存按钮</b>：内高光 + 底边厚度 + 按下 0.5px 下沉。</li>
+    <li><b>书写卡聚焦</b>：点击进入书写区，卡片浮现松绿聚焦环。</li>
+    <li><b>滚动条</b>：细胶囊半透明，不再用系统粗条。</li>
+    <li><b>热力格</b>：保持松绿热力；若想要琥珀热力告诉我。</li>
+  </ul>
+
+  <h2>这一轮不在比较范围内</h2>
+  <ul class="checklist">
+    <li>布局结构：四个方向的骨架完全一致（侧栏 256px / 阅读栏 672px），布局决策另行讨论。</li>
+    <li>真实数据密度：演示数据偏稀疏，实际长文、大图、密集标签下的观感需第二期验证。</li>
+    <li>交互动效：静态态和悬停态已收敛；完整动效时长/缓动规范在设计系统文档里定。</li>
+  </ul>
+
+  <div class="foot">
+    docs/design/prototypes/ · 仅含虚构演示数据 · 双击任一 html 即可在浏览器打开
+  </div>
+</div>
+</body>
+</html>
