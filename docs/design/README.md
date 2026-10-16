@@ -5,6 +5,14 @@ Design documents may evolve while a feature is being designed and implemented. O
 Do not update implemented designs to track later code changes. They preserve the original design and rationale; source code and tests describe current
 behavior. New and unimplemented designs may still be added or revised.
 
+Active design specifications (decided direction, not yet implemented):
+
+- [Kairos 设计系统规范](kairos-design-system-2026-10-16.md) — 配色（松绿）、字体分层（文楷内容层）、圆角/阴影/空间/文案/Token/组件状态的完整规范与迁移优先级；视觉依据为 `prototypes/` 方向 B。
+
+Explorations (not yet decided, free to change):
+
+- `prototypes/` — 设计系统方向原型（HTML，可直接双击打开）。入口 `prototypes/index.html`；用于配色、排版等风格取舍的实际体验对比。
+
 Personal Life Journal design baseline:
 
 - [Product Requirements and Interaction Specification](personal-life-journal-prd.md) — original review proposal, preserved as the implementation baseline.
