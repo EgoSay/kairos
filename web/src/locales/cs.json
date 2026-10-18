@@ -340,7 +340,9 @@
     "back-to-top": "Zpět na začátek"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Přístupový token zkopírován do schránky",
       "access-token-deleted": "Přístupový token `{{description}}` odstraněn",
@@ -456,6 +458,10 @@
       "appearance-title": "Vzhled",
       "default-memo-visibility-description": "Viditelnost se použije na nově vytvořené poznámky, pokud se nezmění v editoru.",
       "language-description": "Okamžitě aktualizuje jazyk rozhraní a uloží jej do vašeho účtu.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Nastavte výchozí hodnoty používané při vytváření nových poznámek.",
       "memo-defaults-title": "Výchozí nastavení poznámek",
       "theme-description": "Okamžitě použije vybraný motiv na tomto zařízení.",

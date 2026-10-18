@@ -340,7 +340,9 @@
     "back-to-top": "Vissza az oldal tetejére"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Hozzáférési token vágólapra másolva",
       "access-token-deleted": "Hozzáférési token `{{description}}` törölve",
@@ -456,6 +458,10 @@
       "appearance-title": "Megjelenés",
       "default-memo-visibility-description": "A láthatóság az újonnan létrehozott jegyzetekre vonatkozik, hacsak nem módosítja a szerkesztőben.",
       "language-description": "Azonnal frissíti a felület nyelvét, és elmenti a fiókjába.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Állítsa be az új jegyzetek írásakor használt alapértelmezett értékeket.",
       "memo-defaults-title": "A jegyzet alapbeállításai",
       "theme-description": "Azonnal alkalmazza a kiválasztott témát ezen az eszközön.",

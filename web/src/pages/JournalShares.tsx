@@ -377,7 +377,7 @@ export default function JournalShares() {
       </Link>
       <header className="mb-8 flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-serif text-3xl font-medium tracking-tight">我的分享</h1>
+          <h1 className="font-content text-3xl font-medium">我的分享</h1>
           <p className="mt-3 text-sm text-muted-foreground">把自己选中的片段，分享给想分享的人。</p>
         </div>
         {!editing && (

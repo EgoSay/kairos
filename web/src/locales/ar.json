@@ -335,7 +335,9 @@
     "back-to-top": "اذهب إلى الأعلى"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "member": {
       "admin": "مدير",
       "archive-member": "أرشفة العضو",
@@ -367,6 +369,10 @@
       "appearance-title": "المظهر",
       "default-memo-visibility-description": "يتم تطبيق مستوى الرؤية على المذكرات المُنشأة حديثًا ما لم يتم تغييره في المحرر.",
       "language-description": "يُحدّث لغة واجهة المستخدم فورًا ويحفظها في حسابك.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "يُعيّن الإعدادات الافتراضية المستخدمة عند كتابة مذكرات جديدة.",
       "memo-defaults-title": "الإعدادات الافتراضية للمذكرات",
       "save-media-metadata": "حفظ بيانات الوسائط الوصفية",

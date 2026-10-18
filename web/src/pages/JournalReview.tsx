@@ -64,12 +64,12 @@ export default function JournalReview() {
     <div className="mx-auto max-w-2xl pb-12 pt-2 sm:pt-7">
       <Link
         to={ROUTES.JOURNAL}
-        className="mb-7 inline-flex min-h-11 items-center gap-2 rounded text-sm text-muted-foreground hover:text-foreground"
+        className="mb-7 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeftIcon className="size-4" />
         随便看看
       </Link>
-      <h1 className="mb-8 font-serif text-3xl font-medium tracking-tight">每日回顾</h1>
+      <h1 className="mb-8 font-content text-3xl font-medium">每日回顾</h1>
       {preferences.isPending && (
         <p role="status" className="text-sm text-muted-foreground">
           正在翻开记录…

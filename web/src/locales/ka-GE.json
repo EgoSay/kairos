@@ -340,7 +340,9 @@
     "back-to-top": "ზემოთ დაბრუნება"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "წვდომის ტოკენი დაკოპირდა",
       "access-token-deleted": "წვდომის ტოკენი `{{description}}` წაიშალა",
@@ -456,6 +458,10 @@
       "appearance-title": "გარეგნობა",
       "default-memo-visibility-description": "ხილვადობა გამოყენებულია ახლად შექმნილ შენიშვნებზე, თუ არ შეიცვალა რედაქტორში.",
       "language-description": "დაუყოვნებლივ განაახლებს ინტერფეისის ენას და ინახავს თქვენს ანგარიშში.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "დააყენეთ ნაგულისხმევი მნიშვნელობები, რომლებიც გამოიყენება ახალი შენიშვნების შედგენისას.",
       "memo-defaults-title": "Memo ნაგულისხმევი",
       "theme-description": "არჩეულ თემას დაუყოვნებლივ იყენებს ამ მოწყობილობაზე.",

@@ -81,7 +81,7 @@ export default function JournalShared() {
       <div className="mx-auto max-w-2xl">
         <header className="mb-10">
           <p className="mb-4 text-xs tracking-widest text-muted-foreground">生活片段</p>
-          <h1 className="break-words font-serif text-3xl font-medium tracking-tight">{collection?.title || "分享的记录"}</h1>
+          <h1 className="break-words font-content text-3xl font-medium">{collection?.title || "分享的记录"}</h1>
         </header>
         {busy && (
           <p role="status" className="text-sm text-muted-foreground">

@@ -378,7 +378,9 @@
     "back-to-top": "Atpakaļ uz augšu"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Piekļuves pilnvara ir kopēta starpliktuvē",
       "access-token-deleted": "Piekļuves pilnvara `{{description}}` ir izdzēsta",
@@ -571,6 +573,10 @@
       "default-memo-visibility-description": "Redzamība tiek piemērota jaunizveidotajām piezīmēm, ja vien tas nav mainīts redaktorā.",
       "label": "Preferences",
       "language-description": "Nekavējoties atjaunina saskarnes valodu un saglabā to jūsu kontā.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Iestatiet noklusējuma iestatījumus, kas tiek izmantoti, veidojot jaunas piezīmes.",
       "memo-defaults-title": "Atgādņu noklusējuma iestatījumi",
       "theme-description": "Šajā ierīcē nekavējoties tiek lietots atlasītais motīvs.",

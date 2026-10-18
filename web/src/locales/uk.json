@@ -340,7 +340,9 @@
     "back-to-top": "На початок"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Токен доступу скопійовано в буфер обміну",
       "access-token-deleted": "Токен доступу `{{description}}` видалено",
@@ -456,6 +458,10 @@
       "appearance-title": "Зовнішній вигляд",
       "default-memo-visibility-description": "Видимість застосовується до новостворених нотаток, якщо не змінено в редакторі.",
       "language-description": "Негайно оновлює мову інтерфейсу та зберігає його у вашому обліковому записі.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Встановіть стандартні параметри, які використовуються під час створення нових нагадувань.",
       "memo-defaults-title": "Пам'ятки за замовчуванням",
       "theme-description": "Вибрану тему негайно застосовує на цьому пристрої.",

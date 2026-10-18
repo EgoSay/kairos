@@ -99,7 +99,7 @@ export default function JournalBackup() {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8 pb-12 pt-5 sm:pt-10">
       <header>
-        <h1 className="font-serif text-3xl font-medium tracking-tight">数据与备份</h1>
+        <h1 className="font-content text-3xl font-medium">数据与备份</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">把自己的日子带走，也能在另一处接着保存。</p>
       </header>
       <CloudBackupConfiguration />

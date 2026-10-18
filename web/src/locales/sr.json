@@ -378,7 +378,9 @@
     "back-to-top": "Назад на врх"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Приступни токен је копиран у међуспремник",
       "access-token-deleted": "Приступни токен `{{description}}` је избрисан",
@@ -571,6 +573,10 @@
       "default-memo-visibility-description": "Видљивост се примењује на новокреиране белешке осим ако се не промени у уређивачу.",
       "label": "Преференцес",
       "language-description": "Одмах ажурира језик интерфејса и чува га на вашем налогу.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Подесите подразумеване вредности које се користе приликом састављања нових белешки.",
       "memo-defaults-title": "Подразумеване вредности за белешке",
       "theme-description": "Одмах примењује изабрану тему на овом уређају.",

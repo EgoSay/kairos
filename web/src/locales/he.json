@@ -411,7 +411,9 @@
     "back-to-top": "חזרה לראש הדף"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "אסימון הגישה הועתק ללוח",
       "access-token-deleted": "אסימון הגישה `{{description}}` נמחק",
@@ -604,6 +606,10 @@
       "default-memo-visibility-description": "הנראות שחלה על פתקים חדשים שנוצרו, אלא אם תשנו אותה בעורך.",
       "label": "העדפות",
       "language-description": "מעדכן את שפת הממשק באופן מיידי ושומר אותה בחשבון שלכם.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "הגדירו את ברירות המחדל המשמשות בעת כתיבת פתקים חדשים.",
       "memo-defaults-title": "ברירות מחדל של פתקים",
       "save-media-metadata": "שמור מטא־נתונים של מדיה",

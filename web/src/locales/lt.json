@@ -378,7 +378,9 @@
     "back-to-top": "Atgal į viršų"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Prieigos prieigos raktas nukopijuotas į mainų sritį",
       "access-token-deleted": "Prieigos prieigos raktas `{{description}}` ištrintas",
@@ -571,6 +573,10 @@
       "default-memo-visibility-description": "Matomumas taikomas naujai sukurtoms pastaboms, nebent tai būtų pakeista redaktoriuje.",
       "label": "Parinktys",
       "language-description": "Nedelsiant atnaujina sąsajos kalbą ir išsaugo ją paskyroje.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Nustatykite numatytuosius nustatymus, naudojamus kuriant naujas pastabas.",
       "memo-defaults-title": "Atmintinės numatytosios nuostatos",
       "theme-description": "Šiame įrenginyje iš karto pritaiko pasirinktą temą.",

@@ -340,7 +340,9 @@
     "back-to-top": "Back to Top"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Access token copied to clipboard",
       "access-token-deleted": "Access token `{{description}}` deleted",
@@ -456,6 +458,10 @@
       "appearance-title": "Appearance",
       "default-memo-visibility-description": "Visibility applied to newly created memos unless changed in the editor.",
       "language-description": "Updates the interface language immediately and saves it to your account.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Set the defaults used when composing new memos.",
       "memo-defaults-title": "Memo defaults",
       "theme-description": "Applies the selected theme immediately on this device.",

@@ -19,7 +19,7 @@ export default function JournalExplore() {
   return (
     <div className="mx-auto w-full max-w-2xl pb-12 pt-5 sm:pt-10 [&_button]:min-h-11">
       <header className="mb-10 px-1">
-        <h1 className="font-serif text-3xl font-medium tracking-tight">随便看看</h1>
+        <h1 className="font-content text-3xl font-medium">随便看看</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">过去的日子，就在这里。</p>
       </header>
       <div className="divide-y divide-border/65 rounded-xl border border-border/65 bg-card px-5 sm:px-7">

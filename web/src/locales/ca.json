@@ -340,7 +340,9 @@
     "back-to-top": "Torna a dalt"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Token d'accés copiat al porta-retalls",
       "access-token-deleted": "Token d'accés `{{description}}` eliminat",
@@ -456,6 +458,10 @@
       "appearance-title": "Aparença",
       "default-memo-visibility-description": "La visibilitat s'aplica a les notes de nova creació tret que es modifiqui a l'editor.",
       "language-description": "Actualitza l'idioma de la interfície immediatament i el desa al vostre compte.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Estableix els valors predeterminats que s'utilitzen per redactar memòries noves.",
       "memo-defaults-title": "Memo per defecte",
       "theme-description": "Aplica el tema seleccionat immediatament en aquest dispositiu.",

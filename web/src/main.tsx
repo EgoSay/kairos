@@ -18,11 +18,13 @@ import { useTokenRefreshOnFocus } from "@/hooks/useTokenRefreshOnFocus";
 import { registerJournalShell } from "@/lib/journal-shell";
 import { queryClient } from "@/lib/query-client";
 import router from "./router";
+import { applyContentFontEarly } from "./utils/contentFont";
 import { applyLocaleEarly } from "./utils/i18n";
 import { applyThemeEarly } from "./utils/theme";
 
 // Apply theme and locale early to prevent flash
 applyThemeEarly();
+applyContentFontEarly();
 applyLocaleEarly();
 
 // Inner component that initializes contexts

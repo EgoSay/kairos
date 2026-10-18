@@ -335,7 +335,9 @@
     "back-to-top": "Kembali ke Atas"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "member": {
       "admin": "Admin",
       "archive-member": "Arsip anggota",
@@ -367,6 +369,10 @@
       "appearance-title": "Tampilan",
       "default-memo-visibility-description": "Visibilitas diterapkan pada memo yang baru dibuat kecuali diubah di editor.",
       "language-description": "Memperbarui bahasa antarmuka secara instan dan menyimpannya ke akun Anda.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Mengatur default yang digunakan saat membuat memo baru.",
       "memo-defaults-title": "Default memo",
       "save-media-metadata": "Menyimpan metadata media",

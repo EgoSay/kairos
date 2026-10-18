@@ -88,11 +88,14 @@ export default function JournalDay() {
   const preferences = useJournalPreferences();
   return (
     <div className="mx-auto max-w-2xl pb-12 pt-2 sm:pt-7">
-      <Link to={from} className="mb-7 inline-flex min-h-11 items-center gap-2 rounded text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to={from}
+        className="mb-7 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeftIcon className="size-4" />
         记录
       </Link>
-      <h1 className="mb-2 font-serif text-3xl font-medium tracking-tight">{date}</h1>
+      <h1 className="mb-2 font-content text-3xl font-medium">{date}</h1>
       <p className="mb-8 text-sm text-muted-foreground">
         {search.get("scoped") === "1" ? "沿用进入日历时的筛选范围。" : "全部记录，包含已归档的片段。"}
       </p>

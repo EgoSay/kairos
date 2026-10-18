@@ -378,7 +378,9 @@
     "back-to-top": "Înapoi sus"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Token de acces copiat în clipboard",
       "access-token-deleted": "Jetonul de acces `{{description}}` a fost șters",
@@ -571,6 +573,10 @@
       "default-memo-visibility-description": "Vizibilitatea aplicată notificărilor nou create, dacă nu este schimbată în editor.",
       "label": "Preferințe",
       "language-description": "Actualizează imediat limba interfeței și o salvează în contul tău.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Setați setările implicite folosite la compunerea noilor note.",
       "memo-defaults-title": "Memo implicite",
       "theme-description": "Aplică tema selectată imediat pe acest dispozitiv.",

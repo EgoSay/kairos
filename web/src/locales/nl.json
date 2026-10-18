@@ -340,7 +340,9 @@
     "back-to-top": "Terug naar boven"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Accesstoken gekopieerd naar klembord",
       "access-token-deleted": "Accesstoken `{{description}}` verwijderd",
@@ -456,6 +458,10 @@
       "appearance-title": "Verschijning",
       "default-memo-visibility-description": "Zichtbaarheid wordt toegepast op nieuw gemaakte memo's, tenzij gewijzigd in de editor.",
       "language-description": "Werkt de interfacetaal onmiddellijk bij en slaat deze op in uw account.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Stel de standaardinstellingen in die worden gebruikt bij het opstellen van nieuwe memo's.",
       "memo-defaults-title": "Standaardinstellingen voor memo's",
       "theme-description": "Past het geselecteerde thema onmiddellijk toe op dit apparaat.",

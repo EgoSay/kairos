@@ -335,7 +335,9 @@
     "back-to-top": "Lên đầu trang"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "member": {
       "admin": "Quản trị viên",
       "archive-member": "Lưu trữ thành viên",
@@ -367,6 +369,10 @@
       "appearance-title": "Giao diện",
       "default-memo-visibility-description": "Chế độ hiển thị được áp dụng cho các ghi chú mới được tạo trừ khi được thay đổi trong trình chỉnh sửa.",
       "language-description": "Cập nhật ngôn ngữ giao diện ngay lập tức và lưu vào tài khoản của bạn.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Đặt các cài đặt mặc định được sử dụng khi soạn thảo ghi chú mới.",
       "memo-defaults-title": "Cài đặt mặc định ghi chú",
       "save-media-metadata": "Lưu siêu dữ liệu phương tiện",

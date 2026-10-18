@@ -340,7 +340,9 @@
     "back-to-top": "В начало"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Токен скопирован в буфер обмена",
       "access-token-deleted": "Токен доступа `{{description}}` удален",
@@ -456,6 +458,10 @@
       "appearance-title": "Появление",
       "default-memo-visibility-description": "Видимость применяется ко вновь созданным заметкам, если она не изменена в редакторе.",
       "language-description": "Немедленно обновляет язык интерфейса и сохраняет его в вашей учетной записи.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Установите настройки по умолчанию, используемые при создании новых заметок.",
       "memo-defaults-title": "Памятка по умолчанию",
       "theme-description": "Немедленно применяет выбранную тему на этом устройстве.",

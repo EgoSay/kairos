@@ -378,7 +378,9 @@
     "back-to-top": "Tilbage til toppen"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Adgangstoken kopieret til udklipsholder",
       "access-token-deleted": "Adgangstoken `{{description}}` slettet",
@@ -571,6 +573,10 @@
       "default-memo-visibility-description": "Synlighed anvendt på nyoprettede notater, medmindre det ændres i editoren.",
       "label": "Præferencer",
       "language-description": "Opdaterer grænsefladesproget med det samme og gemmer det på din konto.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Indstil de standardindstillinger, der bruges, når du komponerer nye notater.",
       "memo-defaults-title": "Memo standarder",
       "theme-description": "Anvender det valgte tema med det samme på denne enhed.",

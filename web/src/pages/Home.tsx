@@ -69,7 +69,7 @@ const Home = () => {
           renderHeader={() =>
             user && canComposeInScope ? (
               <header className="mb-6 px-1 pt-3">
-                <h1 className="font-serif text-2xl font-medium tracking-tight">记录</h1>
+                <h1 className="font-content text-2xl font-medium">记录</h1>
                 <p className="mt-2 text-sm text-muted-foreground">给此刻，留一点位置。</p>
               </header>
             ) : null

@@ -340,7 +340,9 @@
     "back-to-top": "Na vrh"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Token pristupa kopiran u međuspremnik",
       "access-token-deleted": "Token pristupa `{{description}}` obrisan",
@@ -456,6 +458,10 @@
       "appearance-title": "Izgled",
       "default-memo-visibility-description": "Vidljivost se primjenjuje na novostvorene bilješke osim ako se ne promijeni u uređivaču.",
       "language-description": "Odmah ažurira jezik sučelja i sprema ga na vaš račun.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Postavite zadane postavke koje se koriste pri sastavljanju novih bilješki.",
       "memo-defaults-title": "Zadane postavke bilješke",
       "theme-description": "Odmah primjenjuje odabranu temu na ovom uređaju.",

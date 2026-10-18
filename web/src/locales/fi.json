@@ -378,7 +378,9 @@
     "back-to-top": "Takaisin alkuun"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Käyttöoikeustunnus kopioitiin leikepöydälle",
       "access-token-deleted": "Käyttöoikeustunnus `{{description}}` poistettu",
@@ -571,6 +573,10 @@
       "default-memo-visibility-description": "Näkyvyys koskee äskettäin luotuja muistioita, ellei sitä ole muutettu editorissa.",
       "label": "Asetukset",
       "language-description": "Päivittää käyttöliittymän kielen välittömästi ja tallentaa sen tilillesi.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Aseta oletusasetukset, joita käytetään luotaessa uusia muistioita.",
       "memo-defaults-title": "Muistiinpanon oletusasetukset",
       "theme-description": "Ottaa valitun teeman käyttöön välittömästi tässä laitteessa.",

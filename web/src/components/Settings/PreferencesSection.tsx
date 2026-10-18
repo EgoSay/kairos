@@ -1,10 +1,11 @@
 import { create } from "@bufbuild/protobuf";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUpdateUserGeneralSetting } from "@/hooks/useUserQueries";
 import { UserSetting_GeneralSetting, UserSetting_GeneralSettingSchema } from "@/types/proto/api/v1/user_service_pb";
+import { type ContentFont, getContentFont, loadContentFont } from "@/utils/contentFont";
 import { loadLocale, useTranslate } from "@/utils/i18n";
 import { convertVisibilityFromString, DEFAULT_VISIBILITY_OPTIONS } from "@/utils/memo";
 import { loadTheme } from "@/utils/theme";
@@ -36,6 +37,15 @@ const PreferencesSection = () => {
 
   const visibilityOptions = useMemo(
     () => DEFAULT_VISIBILITY_OPTIONS.map((option) => ({ value: option.name, label: t(option.labelKey) })),
+    [t],
+  );
+
+  const [contentFont, setContentFont] = useState(getContentFont);
+  const contentFontOptions = useMemo(
+    () => [
+      { value: "kai", label: t("setting.preference.content-font-kai") },
+      { value: "sans", label: t("setting.preference.content-font-sans") },
+    ],
     [t],
   );
 
@@ -95,6 +105,28 @@ const PreferencesSection = () => {
 
           <SettingListItem label={t("setting.preference.theme")} description={t("setting.preference.theme-description")}>
             <ThemeSelect value={setting.theme} onValueChange={handleThemeChange} />
+          </SettingListItem>
+
+          <SettingListItem label={t("setting.preference.content-font")} description={t("setting.preference.content-font-description")}>
+            <Select
+              value={contentFont}
+              items={contentFontOptions}
+              onValueChange={(value: string) => {
+                setContentFont(value as ContentFont);
+                loadContentFont(value);
+              }}
+            >
+              <SelectTrigger className="min-w-fit">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {contentFontOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value} className="whitespace-nowrap">
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </SettingListItem>
         </SettingList>
       </SettingGroup>

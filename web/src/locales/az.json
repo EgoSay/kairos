@@ -448,7 +448,9 @@
     "syntax-help": "Axtarış sintaksisi"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Giriş tokeni mübadilə buferinə kopyalandı",
       "access-token-deleted": "`{{description}}` giriş tokeni silindi",
@@ -762,6 +764,10 @@
       "default-memo-visibility-description": "Redaktorda dəyişdirilmədikcə yeni yaradılan qeydlərə tətbiq edilən görünürlük.",
       "label": "Tərcihlər",
       "language-description": "İnterfeys dilini dərhal yeniləyir və hesabınızda yadda saxlayır.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Yeni qeyd yazarkən istifadə olunan defolt dəyərləri təyin edin.",
       "memo-defaults-title": "Qeyd üçün defoltlar",
       "save-media-metadata": "Media metaməlumatını yadda saxla",

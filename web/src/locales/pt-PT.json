@@ -340,7 +340,9 @@
     "back-to-top": "Voltar ao Topo"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Token de acesso copiado para a área de transferência",
       "access-token-deleted": "Token de acesso `{{description}}` eliminado",
@@ -456,6 +458,10 @@
       "appearance-title": "Aparência",
       "default-memo-visibility-description": "Visibilidade aplicada a memorandos recém-criados, a menos que seja alterada no editor.",
       "language-description": "Atualiza o idioma da interface imediatamente e salva-o em sua conta.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Defina os padrões usados ​​ao redigir novos memorandos.",
       "memo-defaults-title": "Padrões de memorando",
       "theme-description": "Aplica o tema selecionado imediatamente neste dispositivo.",

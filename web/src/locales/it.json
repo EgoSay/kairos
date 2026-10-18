@@ -340,7 +340,9 @@
     "back-to-top": "Torna su"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Token di accesso copiato negli appunti",
       "access-token-deleted": "Token di accesso `{{description}}` eliminato",
@@ -456,6 +458,10 @@
       "appearance-title": "Aspetto",
       "default-memo-visibility-description": "Visibilità applicata ai promemoria appena creati a meno che non vengano modificati nell'editor.",
       "language-description": "Aggiorna immediatamente la lingua dell'interfaccia e la salva sul tuo account.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Imposta le impostazioni predefinite utilizzate durante la composizione di nuovi promemoria.",
       "memo-defaults-title": "Impostazioni predefinite del promemoria",
       "theme-description": "Applica immediatamente il tema selezionato su questo dispositivo.",

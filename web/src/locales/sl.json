@@ -340,7 +340,9 @@
     "back-to-top": "Nazaj na vrh"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Žeton za dostop je kopiran v odložišče",
       "access-token-deleted": "Dostopni žeton `{{description}}` je izbrisan",
@@ -456,6 +458,10 @@
       "appearance-title": "Videz",
       "default-memo-visibility-description": "Vidnost velja za novo ustvarjene beležke, razen če je spremenjena v urejevalniku.",
       "language-description": "Takoj posodobi jezik vmesnika in ga shrani v vaš račun.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Nastavite privzete nastavitve, ki se uporabljajo pri sestavljanju novih beležk.",
       "memo-defaults-title": "Privzete nastavitve beležke",
       "theme-description": "Izbrano temo takoj uporabi v tej napravi.",

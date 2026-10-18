@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "./themes/default.css";
+/* Self-hosted LXGW WenKai Screen (GB subset): ~400 unicode-range woff2 chunks
+   served from our own origin — glyphs stream in on demand, nothing goes third-party. */
+@import "lxgw-wenkai-screen-webfont/lxgwwenkaigbscreen.css";
 
 @layer base {
   * {

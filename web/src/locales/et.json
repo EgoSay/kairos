@@ -378,7 +378,9 @@
     "back-to-top": "Tagasi üles"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Juurdepääsuluba kopeeriti lõikelauale",
       "access-token-deleted": "Juurdepääsuluba `{{description}}` on kustutatud",
@@ -571,6 +573,10 @@
       "default-memo-visibility-description": "Nähtavus rakendatakse äsja loodud memodele, kui seda pole redaktoris muudetud.",
       "label": "Eelistused",
       "language-description": "Värskendab koheselt liidese keelt ja salvestab selle teie kontole.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Määrake uute memode koostamisel kasutatavad vaikeseaded.",
       "memo-defaults-title": "Memo vaikeseaded",
       "theme-description": "Rakendab valitud teema kohe selles seadmes.",

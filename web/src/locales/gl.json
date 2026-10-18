@@ -340,7 +340,9 @@
     "back-to-top": "Volver arriba"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Token de acceso copiado ao portapapeis",
       "access-token-deleted": "Eliminouse o token de acceso `{{description}}`",
@@ -456,6 +458,10 @@
       "appearance-title": "Aparición",
       "default-memo-visibility-description": "A visibilidade aplícase ás notas recentemente creadas a non ser que se modifique no editor.",
       "language-description": "Actualiza o idioma da interface inmediatamente e gárdao na túa conta.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Establece os valores predeterminados utilizados ao redactar novas notas.",
       "memo-defaults-title": "Valores predeterminados da nota",
       "theme-description": "Aplica o tema seleccionado inmediatamente neste dispositivo.",

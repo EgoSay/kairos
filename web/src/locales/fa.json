@@ -335,7 +335,9 @@
     "back-to-top": "بازگشت به بالا"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "member": {
       "admin": "مدیر",
       "archive-member": "آرشیو کردن عضو",
@@ -367,6 +369,10 @@
       "appearance-title": "ظاهر",
       "default-memo-visibility-description": "قابلیت مشاهده برای یادداشت‌های تازه ایجاد شده اعمال می‌شود، مگر اینکه در ویرایشگر تغییر کند.",
       "language-description": "زبان رابط را فوراً به‌روزرسانی می‌کند و آن را در حساب شما ذخیره می‌کند.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "پیش‌فرض‌های مورد استفاده هنگام نوشتن یادداشت‌های جدید را تنظیم می‌کند.",
       "memo-defaults-title": "پیش‌فرض‌های یادداشت",
       "save-media-metadata": "ذخیره فراداده رسانه",

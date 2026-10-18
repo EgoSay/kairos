@@ -335,7 +335,9 @@
     "back-to-top": "กลับสู่ด้านบน"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "member": {
       "admin": "ผู้ดูแล",
       "archive-member": "เก็บถาวรสมาชิก",
@@ -367,6 +369,10 @@
       "appearance-title": "ลักษณะการแสดงผล",
       "default-memo-visibility-description": "การมองเห็นที่ใช้กับบันทึกช่วยจำที่สร้างใหม่ เว้นแต่จะเปลี่ยนแปลงในโปรแกรมแก้ไข",
       "language-description": "อัปเดตภาษาของอินเทอร์เฟซทันทีและบันทึกไว้ในบัญชีของคุณ",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "ตั้งค่าเริ่มต้นที่ใช้เมื่อเขียนบันทึกช่วยจำใหม่",
       "memo-defaults-title": "ค่าเริ่มต้นของบันทึกช่วยจำ",
       "save-media-metadata": "บันทึกข้อมูลเมตาของสื่อ",

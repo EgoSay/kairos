@@ -335,7 +335,9 @@
     "back-to-top": "परत वर जा"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "member": {
       "admin": "ॲडमिन",
       "archive-member": "संग्रहण सदस्य",
@@ -367,6 +369,10 @@
       "appearance-title": "स्वरूप",
       "default-memo-visibility-description": "संपादकामध्ये बदल न केल्यास, नव्याने तयार केलेल्या मेमोंना दृश्यमानता लागू होते.",
       "language-description": "इंटरफेसची भाषा त्वरित अद्ययावत करते आणि ती तुमच्या खात्यात जतन करते.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "नवीन मेमो तयार करताना वापरले जाणारे डीफॉल्ट सेट करा.",
       "memo-defaults-title": "मेमो डीफॉल्ट्स",
       "save-media-metadata": "मीडिया मेटाडेटा जतन करा",

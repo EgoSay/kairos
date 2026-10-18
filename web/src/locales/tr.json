@@ -377,7 +377,9 @@
     "syntax-help": "Arama sözdizimi"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Erişim tokeni panoya kopyalandı",
       "access-token-deleted": "`{{description}}` erişim tokeni silindi",
@@ -616,6 +618,10 @@
       "appearance-title": "Dış görünüş",
       "default-memo-visibility-description": "Editörde değiştirilmediği sürece görünürlük yeni oluşturulan notlara uygulandı.",
       "language-description": "Arayüz dilini anında günceller ve hesabınıza kaydeder.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Yeni notlar oluştururken kullanılan varsayılanları ayarlayın.",
       "memo-defaults-title": "Not varsayılanları",
       "save-media-metadata": "Medya meta verilerini kaydet",

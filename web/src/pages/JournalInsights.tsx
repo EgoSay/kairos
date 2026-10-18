@@ -90,7 +90,7 @@ export default function JournalInsights() {
         随便看看
       </Link>
       <header>
-        <h1 className="font-serif text-3xl font-medium">AI 洞察</h1>
+        <h1 className="font-content text-3xl font-medium">AI 洞察</h1>
         <p className="mt-3 text-sm leading-7 text-muted-foreground">选几条记录，换个角度看看。原来的文字始终留在那里。</p>
       </header>
       <details className="rounded-lg border border-border/60 p-4" open={!configQuery.data?.config.providerId || undefined}>

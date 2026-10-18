@@ -419,7 +419,9 @@
     "back-to-top": "回到頂端"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "存取令牌已複製到剪貼簿",
       "access-token-deleted": "存取令牌 `{{description}}` 已刪除",
@@ -612,6 +614,10 @@
       "default-memo-visibility-description": "套用於新建立的備忘錄，除非在編輯器中變更。",
       "label": "偏好設定",
       "language-description": "立即更新介面語言並儲存至您的帳號。",
+      "content-font": "內容字體",
+      "content-font-description": "正文、標題和書寫區使用的字體，僅儲存在目前裝置。",
+      "content-font-kai": "文楷",
+      "content-font-sans": "系統黑體",
       "memo-defaults-description": "設定撰寫新備忘錄時使用的預設值。",
       "memo-defaults-title": "備忘錄預設值",
       "save-media-metadata": "儲存媒體中繼資料",

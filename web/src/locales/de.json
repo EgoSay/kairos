@@ -340,7 +340,9 @@
     "back-to-top": "Zurück nach oben"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Zugangstoken in die Zwischenablage kopiert",
       "access-token-deleted": "Zugangstoken `{{description}}` gelöscht",
@@ -456,6 +458,10 @@
       "appearance-title": "Aussehen",
       "default-memo-visibility-description": "Die Sichtbarkeit wird auf neu erstellte Kairos angewendet, sofern sie nicht im Editor geändert wird.",
       "language-description": "Aktualisiert die Sprache der Benutzeroberfläche sofort und speichert sie in Ihrem Konto.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Legen Sie die Standardeinstellungen fest, die beim Verfassen neuer Kairos verwendet werden.",
       "memo-defaults-title": "Memo-Standardwerte",
       "theme-description": "Wendet das ausgewählte Thema sofort auf diesem Gerät an.",

@@ -340,7 +340,9 @@
     "back-to-top": "トップに戻る"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "アクセストークンをクリップボードにコピーしました",
       "access-token-deleted": "アクセストークン `{{description}}` を削除しました",
@@ -456,6 +458,10 @@
       "appearance-title": "外観",
       "default-memo-visibility-description": "エディターで変更しない限り、新しく作成されたメモに表示設定が適用されます。",
       "language-description": "インターフェイス言語をすぐに更新し、アカウントに保存します。",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "新しいメモを作成するときに使用するデフォルトを設定します。",
       "memo-defaults-title": "メモのデフォルト",
       "theme-description": "選択したテーマをこのデバイスにすぐに適用します。",

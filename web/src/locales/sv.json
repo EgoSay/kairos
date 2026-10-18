@@ -340,7 +340,9 @@
     "back-to-top": "Tillbaka till toppen"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Åtkomsttoken kopierad till urklipp",
       "access-token-deleted": "Åtkomsttoken `{{description}}` raderad",
@@ -456,6 +458,10 @@
       "appearance-title": "Utseende",
       "default-memo-visibility-description": "Synlighet tillämpas på nyskapade memon om de inte ändras i redigeraren.",
       "language-description": "Uppdaterar gränssnittsspråket omedelbart och sparar det på ditt konto.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Ställ in standardinställningarna som används när du skriver nya anteckningar.",
       "memo-defaults-title": "Memo standardinställningar",
       "theme-description": "Tillämpar det valda temat direkt på den här enheten.",

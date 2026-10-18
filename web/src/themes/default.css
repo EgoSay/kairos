@@ -43,6 +43,8 @@
      stays on --font-sans. Falls back to the OS kai face when the self-hosted
      subset is unavailable. */
   --font-kai: "LXGW WenKai Screen", "LXGW WenKai", "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", serif;
+  /* Active content face — resolved by data-content-font (utils/contentFont.ts). */
+  --font-content: var(--font-kai);
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   /* Radius tiers: ctl=6px (sm) · card=10px (lg) · popover=12px (xl). */
@@ -56,6 +58,12 @@
   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
   /* A surface floating over page content: a soft contact edge plus a wide, faint ambient fall. */
   --shadow-float: 0 1px 2px hsl(0 0% 0% / 0.05), 0 8px 24px -6px hsl(0 0% 0% / 0.1), 0 24px 56px -16px hsl(0 0% 0% / 0.14);
+}
+
+/* Content-font preference: "sans" drops writing surfaces back to the UI face.
+   "kai" needs no rule — :root already resolves --font-content to --font-kai. */
+:root[data-content-font="sans"] {
+  --font-content: var(--font-sans);
 }
 
 /* Tailwind v4 token mappings — compiled once at build time, shared by all themes.
@@ -94,6 +102,7 @@
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
   --font-kai: var(--font-kai);
+  --font-content: var(--font-content);
 
   --color-moment: var(--moment);
   --color-moment-ink: var(--moment-ink);

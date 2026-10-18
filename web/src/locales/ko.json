@@ -335,7 +335,9 @@
     "back-to-top": "맨 위로 돌아가기"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "member": {
       "admin": "관리자",
       "archive-member": "멤버 보관처리",
@@ -367,6 +369,10 @@
       "appearance-title": "모양",
       "default-memo-visibility-description": "편집기에서 변경하지 않는 한 새로 생성된 메모에 표시됩니다.",
       "language-description": "인터페이스 언어를 즉시 업데이트하고 계정에 저장합니다.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "새 메모를 작성할 때 사용할 기본 설정을 지정합니다.",
       "memo-defaults-title": "메모 기본 설정",
       "save-media-metadata": "미디어 메타데이터 저장",

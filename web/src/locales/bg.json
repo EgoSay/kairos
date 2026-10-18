@@ -378,7 +378,9 @@
     "back-to-top": "Обратно към началото"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "access-token-copied-to-clipboard": "Означението за достъп е копирано в клипборда",
       "access-token-deleted": "Токенът за достъп `{{description}}` е изтрит",
@@ -571,6 +573,10 @@
       "default-memo-visibility-description": "Видимостта се прилага към новосъздадените бележки, освен ако не е променена в редактора.",
       "label": "Предпочитания",
       "language-description": "Незабавно актуализира езика на интерфейса и го записва във вашия акаунт.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Задайте настройките по подразбиране, използвани при съставяне на нови бележки.",
       "memo-defaults-title": "Мемо по подразбиране",
       "theme-description": "Прилага избраната тема веднага на това устройство.",

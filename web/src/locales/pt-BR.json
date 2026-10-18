@@ -335,7 +335,9 @@
     "back-to-top": "Voltar ao Topo"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "member": {
       "admin": "Admin",
       "archive-member": "Arquivar membro",
@@ -367,6 +369,10 @@
       "appearance-title": "Aparência",
       "default-memo-visibility-description": "Visibilidade aplicada a memorandos recém-criados, a menos que seja alterada no editor.",
       "language-description": "Atualiza o idioma da interface imediatamente e o salva em sua conta.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Define os padrões usados ​​ao compor novos memorandos.",
       "memo-defaults-title": "Padrões de memorando",
       "save-media-metadata": "Salvar metadados de mídia",

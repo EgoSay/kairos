@@ -105,12 +105,12 @@ export default function JournalWander() {
       <Link
         to={ROUTES.JOURNAL}
         onClick={() => setWander(undefined)}
-        className="mb-7 inline-flex min-h-11 items-center gap-2 rounded text-sm text-muted-foreground hover:text-foreground"
+        className="mb-7 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeftIcon className="size-4" />
         随便看看
       </Link>
-      <h1 className="mb-8 font-serif text-3xl font-medium tracking-tight">随机漫步</h1>
+      <h1 className="mb-8 font-content text-3xl font-medium">随机漫步</h1>
       {preferences.isPending && (
         <p role="status" className="text-sm text-muted-foreground">
           正在翻开记录…

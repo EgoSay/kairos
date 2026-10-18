@@ -448,7 +448,9 @@
     "syntax-help": "Søkjesyntaks"
   },
   "setting": {
-    "agent": { "label": "Agent / MCP" },
+    "agent": {
+      "label": "Agent / MCP"
+    },
     "access-token": {
       "about-description": "Ein personleg åtgangslykel (PAT) er ein løynd lykel som autentiserer API-førespurnader på vegner av kontoen din. Alle appar og skript som har ein slik lykel, til dømes ein MCP-tenar, eit kommandolineverkty eller ein mobilklient, kan gjera alt du kan gjera i Kairos, til lykelen går ut eller du slettar han. Send han som Bearer-legitimasjon i Authorization-hovudfeltet:",
       "access-token-copied-to-clipboard": "Åtgangslykelen er kopiert til utklippstavla",
@@ -687,6 +689,10 @@
       "default-memo-visibility-description": "Synlegheita som vert nytta for nye notat dersom ho ikkje vert endra i redigeringa.",
       "label": "Brukarval",
       "language-description": "Endrar grensesnittspråket med ein gong og lagrar det på kontoen din.",
+      "content-font": "Content font",
+      "content-font-description": "Typeface for your writing — body text, headings, and the composer. Stored on this device only.",
+      "content-font-kai": "LXGW WenKai",
+      "content-font-sans": "System sans",
       "memo-defaults-description": "Vel standardane som vert nytta når du skriv nye notat.",
       "memo-defaults-title": "Notatstandardar",
       "save-media-metadata": "Lagre mediemetadata",
