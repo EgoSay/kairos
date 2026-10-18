@@ -10,6 +10,7 @@ import useCurrentUser from "@/hooks/useCurrentUser";
 import { journalRequest, useJournalPreferences } from "@/hooks/useJournalQueries";
 import { type JournalShare, type JournalSharedItem, type JournalShareFilter, shareChanges } from "@/lib/journal-share";
 import { ROUTES } from "@/router/routes";
+import { useTranslate } from "@/utils/i18n";
 
 interface ShareRequest {
   title: string;
@@ -334,6 +335,7 @@ function ShareEditor({
 }
 
 export default function JournalShares() {
+  const t = useTranslate();
   const user = useCurrentUser();
   const client = useQueryClient();
   const preferences = useJournalPreferences();
@@ -373,12 +375,12 @@ export default function JournalShares() {
     <div className="mx-auto min-w-0 max-w-2xl pb-12 pt-2 sm:pt-7 [&_button]:min-h-11">
       <Link to={ROUTES.HOME} className="mb-7 inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
         <ArrowLeftIcon className="size-4" />
-        记录
+        {t("journal.records")}
       </Link>
       <header className="mb-8 flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-content text-3xl font-medium">我的分享</h1>
-          <p className="mt-3 text-sm text-muted-foreground">把自己选中的片段，分享给想分享的人。</p>
+          <h1 className="font-content text-3xl font-medium">{t("journal.my-shares")}</h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("journal.shares-tagline")}</p>
         </div>
         {!editing && (
           <Button variant="outline" onClick={() => setEditing("new")}>

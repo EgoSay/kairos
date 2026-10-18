@@ -8,8 +8,10 @@ import useCurrentUser from "@/hooks/useCurrentUser";
 import { type JournalPreferences, useJournalCandidates, useJournalMemoDetails, useJournalPreferences } from "@/hooks/useJournalQueries";
 import { advanceJournalWander, isJournalCandidate, journalDate, startJournalWander } from "@/lib/journal";
 import { ROUTES } from "@/router/routes";
+import { useTranslate } from "@/utils/i18n";
 
 function WanderRecords({ preferences }: { preferences: JournalPreferences }) {
+  const t = useTranslate();
   const user = useCurrentUser();
   const { wander, setWander } = useJournalSession();
   const [day] = useState(() => ({
@@ -59,7 +61,7 @@ function WanderRecords({ preferences }: { preferences: JournalPreferences }) {
         <JournalMemo key={memo.name} memo={memo} />
       ) : (
         <p className="py-12 text-sm text-muted-foreground">
-          {exhausted ? "这些记录已经翻过了。" : name ? "这条记录已移除，或暂不出现在漫步中。" : "这里暂时没有过去的记录。"}
+          {exhausted ? t("journal.wander-done") : name ? t("journal.wander-missing") : t("journal.wander-empty")}
         </p>
       )}
       {wander && wander.names.length > 0 && (
@@ -98,6 +100,7 @@ function WanderRecords({ preferences }: { preferences: JournalPreferences }) {
 }
 
 export default function JournalWander() {
+  const t = useTranslate();
   const preferences = useJournalPreferences();
   const { setWander } = useJournalSession();
   return (
@@ -108,9 +111,9 @@ export default function JournalWander() {
         className="mb-7 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeftIcon className="size-4" />
-        随便看看
+        {t("journal.explore")}
       </Link>
-      <h1 className="mb-8 font-content text-3xl font-medium">随机漫步</h1>
+      <h1 className="mb-8 font-content text-3xl font-medium">{t("journal.random-walk")}</h1>
       {preferences.isPending && (
         <p role="status" className="text-sm text-muted-foreground">
           正在翻开记录…

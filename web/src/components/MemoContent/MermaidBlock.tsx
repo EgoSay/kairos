@@ -11,7 +11,7 @@ interface MermaidBlockProps {
 
 type MermaidTheme = "default" | "dark";
 
-const toMermaidTheme = (appTheme: string): MermaidTheme => (appTheme === "default-dark" ? "dark" : "default");
+const toMermaidTheme = (appTheme: string): MermaidTheme => (appTheme.endsWith("-dark") ? "dark" : "default");
 
 const formatErrorMessage = (err: unknown): string => {
   const msg = err instanceof Error ? err.message : "Failed to render diagram";

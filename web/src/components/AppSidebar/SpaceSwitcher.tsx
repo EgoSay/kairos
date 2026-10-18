@@ -185,7 +185,7 @@ function SpaceSwitcher({ className, size = "md" }: { className?: string; size?: 
                         to={ROUTES.JOURNAL}
                         current={location.pathname.startsWith(ROUTES.JOURNAL)}
                         icon={CompassIcon}
-                        label="随便看看"
+                        label={t("journal.explore")}
                       />
                     </nav>
                   </>

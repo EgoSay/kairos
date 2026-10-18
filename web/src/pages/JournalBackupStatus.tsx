@@ -5,8 +5,10 @@ import { backupStateLabel, backupTime, useCloudBackup, useCloudBackupAction } fr
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { journalDrafts } from "@/lib/journal-drafts";
 import { User_Role } from "@/types/proto/api/v1/user_service_pb";
+import { useTranslate } from "@/utils/i18n";
 
 export default function JournalBackupStatus() {
+  const t = useTranslate();
   const user = useCurrentUser();
   const query = useCloudBackup();
   const action = useCloudBackupAction();
@@ -37,7 +39,7 @@ export default function JournalBackupStatus() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 pb-12 pt-5 sm:pt-10">
       <header className="space-y-3">
-        <h1 className="font-content text-3xl">备份与同步状态</h1>
+        <h1 className="font-content text-3xl">{t("journal.backup-status")}</h1>
         <Link className="inline-block min-h-11 py-3 text-sm underline" to="/journal/backup">
           配置备份与个人档案
         </Link>

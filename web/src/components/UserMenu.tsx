@@ -31,7 +31,14 @@ import { cn } from "@/lib/utils";
 import { Routes } from "@/router";
 import { UserNotification_Status } from "@/types/proto/api/v1/user_service_pb";
 import { getLocaleDisplayName, getLocaleWithFallback, loadLocale, useTranslate } from "@/utils/i18n";
-import { getThemeWithFallback, loadTheme, THEME_OPTIONS } from "@/utils/theme";
+import {
+  getThemeWithFallback,
+  loadTheme,
+  parseThemePreference,
+  serializeThemePreference,
+  THEME_MODE_OPTIONS,
+  type ThemePreference,
+} from "@/utils/theme";
 
 // One row grammar for the whole scope panel: 28px rows, 13px text, and a 20px leading slot
 // (a 14px glyph with 3px each side) so icons, the avatar and Space marks share one column.
@@ -94,12 +101,16 @@ const UserPreferenceMenu = () => {
   const [locale, setLocale] = useState<string>();
   const currentTheme = theme ?? getThemeWithFallback(userGeneralSetting?.theme);
   const currentLocale = locale ?? getLocaleWithFallback(userGeneralSetting?.locale);
+  // Brightness axis only — the finish axis lives in Settings > Preferences.
+  const modeOptions = THEME_MODE_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) }));
 
   const handleThemeChange = (value: string) => {
-    setTheme(value);
-    loadTheme(value);
+    const pref = parseThemePreference(currentTheme) ?? { mode: "system" as const, surface: "plain" as const };
+    const next = serializeThemePreference({ ...pref, mode: value as ThemePreference["mode"] });
+    setTheme(next);
+    loadTheme(next);
     if (currentUser) {
-      updateUserGeneralSetting({ generalSetting: { theme: value }, updateMask: ["theme"] }, { onSuccess: () => refetchSettings() });
+      updateUserGeneralSetting({ generalSetting: { theme: next }, updateMask: ["theme"] }, { onSuccess: () => refetchSettings() });
     }
   };
 
@@ -115,8 +126,8 @@ const UserPreferenceMenu = () => {
       <PreferenceSubmenu
         icon={PaletteIcon}
         label={t("setting.preference.theme")}
-        value={currentTheme}
-        options={THEME_OPTIONS}
+        value={parseThemePreference(currentTheme)?.mode ?? "system"}
+        options={modeOptions}
         onChange={handleThemeChange}
       />
       <PreferenceSubmenu

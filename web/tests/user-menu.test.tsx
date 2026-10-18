@@ -106,25 +106,28 @@ describe("User menu panel", () => {
 
   it("shows current preferences on rows that open their choices as submenus", async () => {
     renderMenu();
-    fireEvent.click(screen.getByRole("button", { name: /setting.preference.theme.*Sync with system/ }));
+    fireEvent.click(screen.getByRole("button", { name: /setting.preference.theme.*setting.preference.theme-mode-system/ }));
     const themes = await screen.findByRole("menu");
-    expect(within(themes).getByRole("menuitemradio", { name: "Sync with system" })).toHaveAttribute("aria-checked", "true");
+    expect(within(themes).getByRole("menuitemradio", { name: "setting.preference.theme-mode-system" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
     expect(
       within(themes)
         .getAllByRole("menuitemradio")
         .map((item) => item.textContent),
-    ).toEqual(["Sync with system", "Light", "Dark", "Paper"]);
+    ).toEqual(["setting.preference.theme-mode-system", "setting.preference.theme-mode-light", "setting.preference.theme-mode-dark"]);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it.each([
     {
       row: /setting.preference.theme/,
-      choice: "Dark",
+      choice: "setting.preference.theme-mode-dark",
       load: loadTheme,
-      value: "default-dark",
+      value: "dark",
       field: "theme",
-      label: /setting.preference.theme.*Dark/,
+      label: /setting.preference.theme.*setting.preference.theme-mode-dark/,
     },
     { row: /common.language/, choice: "Français", load: loadLocale, value: "fr", field: "locale", label: /common.language.*Français/ },
   ] as const)("applies and saves $field from its submenu", async ({ row, choice, load, value, field, label }) => {
@@ -143,10 +146,10 @@ describe("User menu panel", () => {
   it.each([
     {
       row: /setting.preference.theme/,
-      choice: "Dark",
+      choice: "setting.preference.theme-mode-dark",
       storageKey: "memos-theme",
-      value: "default-dark",
-      label: /setting.preference.theme.*Dark/,
+      value: "dark",
+      label: /setting.preference.theme.*setting.preference.theme-mode-dark/,
     },
     { row: /common.language/, choice: "Français", storageKey: "memos-locale", value: "fr", label: /common.language.*Français/ },
   ] as const)("persists a guest's choice of $storageKey locally without updating an account", async ({

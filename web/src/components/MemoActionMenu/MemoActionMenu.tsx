@@ -114,7 +114,7 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
   const deleteItem = (
     <DropdownMenuItem variant="destructive" onClick={isComment ? handleDeleteMemoClick : confirmDeleteMemo}>
       <TrashIcon />
-      {isComment ? t("common.delete") : "移到最近删除"}
+      {isComment ? t("common.delete") : t("journal.move-to-trash")}
     </DropdownMenuItem>
   );
 

@@ -30,7 +30,7 @@ describe("guest theme preferences", () => {
     dark = true;
     changes.dispatchEvent(new Event("change"));
     expect(document.documentElement).toHaveAttribute("data-theme", "paper");
-    expect(localStorage.getItem("memos-theme")).toBe("paper");
+    expect(localStorage.getItem("memos-theme")).toBe("light:paper");
 
     loadTheme("system");
     expect(document.documentElement).toHaveAttribute("data-theme", "default-dark");

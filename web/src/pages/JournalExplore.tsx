@@ -4,14 +4,30 @@ import { Button } from "@/components/ui/button";
 import { useJournalSession } from "@/contexts/JournalSessionContext";
 import { useJournalPreferences, useUpdateJournalPreferences } from "@/hooks/useJournalQueries";
 import { ROUTES } from "@/router/routes";
-
-const journeys = [
-  { to: ROUTES.JOURNAL_REVIEW, icon: BookOpenIcon, title: "每日回顾", description: "翻开几页过去的日常。" },
-  { to: ROUTES.JOURNAL_WANDER, icon: ShuffleIcon, title: "随机漫步", description: "没有顺序，随便遇见一段从前。" },
-  { to: ROUTES.JOURNAL_INSIGHTS, icon: SparklesIcon, title: "AI 洞察", description: "选几条记录，换一个角度看看。" },
-];
+import { useTranslate } from "@/utils/i18n";
 
 export default function JournalExplore() {
+  const t = useTranslate();
+  const journeys = [
+    {
+      to: ROUTES.JOURNAL_REVIEW,
+      icon: BookOpenIcon,
+      title: t("journal.daily-review"),
+      description: t("journal.review-desc"),
+    },
+    {
+      to: ROUTES.JOURNAL_WANDER,
+      icon: ShuffleIcon,
+      title: t("journal.random-walk"),
+      description: t("journal.walk-desc"),
+    },
+    {
+      to: ROUTES.JOURNAL_INSIGHTS,
+      icon: SparklesIcon,
+      title: t("journal.ai-insights"),
+      description: t("journal.insights-desc"),
+    },
+  ];
   const preferences = useJournalPreferences();
   const update = useUpdateJournalPreferences();
   const { setWander, setReviewDay } = useJournalSession();
@@ -19,8 +35,8 @@ export default function JournalExplore() {
   return (
     <div className="mx-auto w-full max-w-2xl pb-12 pt-5 sm:pt-10 [&_button]:min-h-11">
       <header className="mb-10 px-1">
-        <h1 className="font-content text-3xl font-medium">随便看看</h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">过去的日子，就在这里。</p>
+        <h1 className="font-content text-3xl font-medium">{t("journal.explore")}</h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("journal.explore-tagline")}</p>
       </header>
       <div className="divide-y divide-border/65 rounded-xl border border-border/65 bg-card px-5 sm:px-7">
         {journeys.map(({ to, icon: Icon, title, description }) => (

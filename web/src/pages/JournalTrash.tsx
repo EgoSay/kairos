@@ -7,8 +7,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { journalRequest } from "@/hooks/useJournalQueries";
 import { MemoSchema } from "@/types/proto/api/v1/memo_service_pb";
+import { useTranslate } from "@/utils/i18n";
 
 export default function JournalTrash() {
+  const t = useTranslate();
   const owner = useCurrentUser();
   const client = useQueryClient();
   const [purge, setPurge] = useState<string>();
@@ -34,7 +36,7 @@ export default function JournalTrash() {
         回到记录
       </Link>
       <header>
-        <h1 className="text-2xl">最近删除</h1>
+        <h1 className="text-2xl">{t("journal.trash")}</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">在这里保留 30 天。恢复后记录只对你可见，旧分享和同步不会恢复。</p>
       </header>
       {records.isPending && <p role="status">正在读取…</p>}

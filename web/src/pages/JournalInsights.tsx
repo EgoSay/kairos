@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { journalRequest } from "@/hooks/useJournalQueries";
+import { useTranslate } from "@/utils/i18n";
 
 interface Insight {
   id: string;
@@ -26,6 +27,7 @@ interface AISettings {
 }
 
 export default function JournalInsights() {
+  const t = useTranslate();
   const user = useCurrentUser();
   const client = useQueryClient();
   const [params] = useSearchParams();
@@ -87,10 +89,10 @@ export default function JournalInsights() {
     <main className="mx-auto max-w-2xl space-y-7 pb-16 pt-4 sm:pt-8">
       <Link to="/journal" className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
         <ArrowLeftIcon className="size-4" />
-        随便看看
+        {t("journal.explore")}
       </Link>
       <header>
-        <h1 className="font-content text-3xl font-medium">AI 洞察</h1>
+        <h1 className="font-content text-3xl font-medium">{t("journal.ai-insights")}</h1>
         <p className="mt-3 text-sm leading-7 text-muted-foreground">选几条记录，换个角度看看。原来的文字始终留在那里。</p>
       </header>
       <details className="rounded-lg border border-border/60 p-4" open={!configQuery.data?.config.providerId || undefined}>

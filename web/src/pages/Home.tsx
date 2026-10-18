@@ -16,8 +16,10 @@ import useMediaQuery from "@/hooks/useMediaQuery";
 import { spaceScopedCacheKey } from "@/lib/resource-names";
 import { State } from "@/types/proto/api/v1/common_pb";
 import { Memo } from "@/types/proto/api/v1/memo_service_pb";
+import { useTranslate } from "@/utils/i18n";
 
 const Home = () => {
+  const t = useTranslate();
   const user = useCurrentUser();
   const desktop = useMediaQuery("md");
   const { isUserSettingsInitialized } = useAuth();
@@ -65,12 +67,12 @@ const Home = () => {
           orderBy={orderBy}
           filter={memoFilter}
           contextFilter={contextFilter}
-          emptyMessage="记录留在这里，什么时候想写都可以。"
+          emptyMessage={t("journal.empty-feed")}
           renderHeader={() =>
             user && canComposeInScope ? (
               <header className="mb-6 px-1 pt-3">
-                <h1 className="font-content text-2xl font-medium">记录</h1>
-                <p className="mt-2 text-sm text-muted-foreground">给此刻，留一点位置。</p>
+                <h1 className="font-content text-2xl font-medium">{t("journal.records")}</h1>
+                <p className="mt-2 text-sm text-muted-foreground">{t("journal.tagline")}</p>
               </header>
             ) : null
           }
@@ -84,7 +86,7 @@ const Home = () => {
                   autoFocus={desktop ? claimHomeAutoFocus : false}
                   className={useGrid ? undefined : "mb-2"}
                   cacheKey={editorCacheKey}
-                  placeholder="写点什么……"
+                  placeholder={t("journal.compose-placeholder")}
                   defaultCreateTime={defaultCreateTime}
                   defaultSpace={selectedSpaceName}
                 />

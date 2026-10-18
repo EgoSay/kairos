@@ -1,7 +1,8 @@
-import { Monitor, Moon, Palette, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import type { ReactElement } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { loadTheme, THEME_OPTIONS } from "@/utils/theme";
+import { useTranslate } from "@/utils/i18n";
+import { loadTheme, parseThemePreference, serializeThemePreference, THEME_MODE_OPTIONS, type ThemePreference } from "@/utils/theme";
 
 interface ThemeSelectProps {
   value?: string;
@@ -10,40 +11,37 @@ interface ThemeSelectProps {
   compact?: boolean;
 }
 
-const THEME_ICONS: Record<string, ReactElement> = {
+const MODE_ICONS: Record<ThemePreference["mode"], ReactElement> = {
   system: <Monitor className="w-4 h-4" />,
-  default: <Sun className="w-4 h-4" />,
-  "default-dark": <Moon className="w-4 h-4" />,
-  paper: <Palette className="w-4 h-4" />,
+  light: <Sun className="w-4 h-4" />,
+  dark: <Moon className="w-4 h-4" />,
 };
 
+/** Brightness-only picker (auth pages / compact chrome): the surface axis is preserved untouched. */
 const ThemeSelect = ({ value, onValueChange, className, compact = false }: ThemeSelectProps = {}) => {
-  const currentTheme = value || "system";
-  const triggerLabel = currentTheme === "system" ? "System" : THEME_OPTIONS.find((option) => option.value === currentTheme)?.label;
+  const t = useTranslate();
+  const pref = parseThemePreference(value) ?? { mode: "system" as const, surface: "plain" as const };
 
-  const handleThemeChange = (newTheme: string) => {
-    // Apply theme globally immediately
-    loadTheme(newTheme);
-    // Also notify parent component if callback is provided
-    if (onValueChange) {
-      onValueChange(newTheme);
-    }
+  const handleModeChange = (newMode: string) => {
+    const next = serializeThemePreference({ ...pref, mode: newMode as ThemePreference["mode"] });
+    loadTheme(next);
+    onValueChange?.(next);
   };
 
   return (
-    <Select value={currentTheme} items={THEME_OPTIONS} onValueChange={handleThemeChange}>
+    <Select value={pref.mode} onValueChange={handleModeChange}>
       <SelectTrigger className={className}>
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          {compact && THEME_ICONS[currentTheme]}
-          {compact ? <span className="truncate">{triggerLabel}</span> : <SelectValue className="truncate" placeholder="Select theme" />}
+          {compact && MODE_ICONS[pref.mode]}
+          <SelectValue className="truncate" placeholder={t("setting.preference.theme")} />
         </div>
       </SelectTrigger>
       <SelectContent>
-        {THEME_OPTIONS.map((option) => (
+        {THEME_MODE_OPTIONS.map((option) => (
           <SelectItem key={option.value} value={option.value}>
             <div className="flex items-center gap-2">
-              {THEME_ICONS[option.value]}
-              <span>{option.label}</span>
+              {MODE_ICONS[option.value]}
+              <span>{t(option.labelKey)}</span>
             </div>
           </SelectItem>
         ))}

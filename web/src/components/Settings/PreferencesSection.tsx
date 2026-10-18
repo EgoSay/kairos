@@ -8,7 +8,7 @@ import { UserSetting_GeneralSetting, UserSetting_GeneralSettingSchema } from "@/
 import { type ContentFont, getContentFont, loadContentFont } from "@/utils/contentFont";
 import { loadLocale, useTranslate } from "@/utils/i18n";
 import { convertVisibilityFromString, DEFAULT_VISIBILITY_OPTIONS } from "@/utils/memo";
-import { loadTheme } from "@/utils/theme";
+import { loadTheme, parseThemePreference, serializeThemePreference, THEME_SURFACE_OPTIONS, type ThemeSurface } from "@/utils/theme";
 import LocaleSelect from "../LocaleSelect";
 import ThemeSelect from "../ThemeSelect";
 import VisibilityIcon from "../VisibilityIcon";
@@ -48,6 +48,8 @@ const PreferencesSection = () => {
     ],
     [t],
   );
+
+  const surfaceOptions = useMemo(() => THEME_SURFACE_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) })), [t]);
 
   const handleDefaultMemoVisibilityChanged = (value: string) => {
     updateUserGeneralSetting(
@@ -95,6 +97,21 @@ const PreferencesSection = () => {
       saveMediaMetadata: false,
     });
 
+  const themePreference = parseThemePreference(setting.theme) ?? { mode: "system" as const, surface: "plain" as const };
+
+  const handleSurfaceChange = (surface: string) => {
+    const theme = serializeThemePreference({ ...themePreference, surface: surface as ThemeSurface });
+    loadTheme(theme);
+    updateUserGeneralSetting(
+      { generalSetting: { theme }, updateMask: ["theme"] },
+      {
+        onSuccess: () => {
+          refetchSettings();
+        },
+      },
+    );
+  };
+
   return (
     <SettingSection title={t("setting.preference.label")}>
       <SettingGroup title={t("setting.preference.appearance-title")} description={t("setting.preference.appearance-description")}>
@@ -105,6 +122,21 @@ const PreferencesSection = () => {
 
           <SettingListItem label={t("setting.preference.theme")} description={t("setting.preference.theme-description")}>
             <ThemeSelect value={setting.theme} onValueChange={handleThemeChange} />
+          </SettingListItem>
+
+          <SettingListItem label={t("setting.preference.theme-surface")} description={t("setting.preference.theme-surface-description")}>
+            <Select value={themePreference.surface} items={surfaceOptions} onValueChange={handleSurfaceChange}>
+              <SelectTrigger className="min-w-fit">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {surfaceOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value} className="whitespace-nowrap">
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </SettingListItem>
 
           <SettingListItem label={t("setting.preference.content-font")} description={t("setting.preference.content-font-description")}>

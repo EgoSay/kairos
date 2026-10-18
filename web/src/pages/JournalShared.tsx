@@ -4,6 +4,7 @@ import JournalSharedContent from "@/components/JournalSharedContent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { JournalSharedItem } from "@/lib/journal-share";
+import { useTranslate } from "@/utils/i18n";
 
 interface SharedCollection {
   title: string;
@@ -12,6 +13,7 @@ interface SharedCollection {
 }
 
 export default function JournalShared() {
+  const t = useTranslate();
   const { token = "" } = useParams();
   const [passcode, setPasscode] = useState("");
   const [collection, setCollection] = useState<SharedCollection>();
@@ -81,7 +83,7 @@ export default function JournalShared() {
       <div className="mx-auto max-w-2xl">
         <header className="mb-10">
           <p className="mb-4 text-xs tracking-widest text-muted-foreground">生活片段</p>
-          <h1 className="break-words font-content text-3xl font-medium">{collection?.title || "分享的记录"}</h1>
+          <h1 className="break-words font-content text-3xl font-medium">{collection?.title || t("journal.shared-collection")}</h1>
         </header>
         {busy && (
           <p role="status" className="text-sm text-muted-foreground">
