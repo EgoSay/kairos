@@ -174,7 +174,7 @@ function SpaceSwitcher({ className, size = "md" }: { className?: string; size?: 
                 currentUser && (
                   <>
                     <SidebarSectionHeader>{t("common.browse")}</SidebarSectionHeader>
-                    <nav aria-label={t("common.browse")} className="grid grid-cols-2 gap-0.5 rounded-md bg-muted p-0.5">
+                    <nav aria-label={t("common.browse")} className="grid grid-cols-2 gap-0.5 rounded-sm bg-muted p-0.5">
                       <BrowseLink
                         to={getCreatorSwitchPath(location, currentUser.username, currentUser.username)}
                         current={Boolean(creatorUsername)}

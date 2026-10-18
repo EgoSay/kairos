@@ -166,7 +166,7 @@ export function PendingRecords({ owner, draftKey }: { owner: string; draftKey: s
   };
   if (!entries.length && !resumed) return null;
   return (
-    <div className="w-full rounded border border-border/60 p-3 text-sm space-y-2">
+    <div className="w-full rounded-lg border border-border/60 p-3 text-sm space-y-2">
       {resumed && (
         <Dialog
           open

@@ -190,12 +190,12 @@ const TagsSection = () => {
                 </datalist>
               </div>
 
-              <div className="flex h-8 items-center gap-2 rounded-md border border-border bg-background px-2 text-sm text-muted-foreground">
+              <div className="flex h-8 items-center gap-2 rounded-sm border border-border bg-background px-2 text-sm text-muted-foreground">
                 <PaletteIcon className="size-4" />
                 <span>{t("setting.tags.background-color")}</span>
                 <input
                   type="color"
-                  className="size-6 cursor-pointer rounded border border-border bg-transparent p-0.5"
+                  className="size-6 cursor-pointer rounded-lg border border-border bg-transparent p-0.5"
                   value={newTagColor ?? DEFAULT_TAG_COLOR}
                   onChange={(e) => setNewTagColor(e.target.value)}
                   aria-label={t("setting.tags.background-color")}
@@ -205,7 +205,7 @@ const TagsSection = () => {
                 </Button>
               </div>
 
-              <label className="flex h-8 items-center gap-2 rounded-md border border-border bg-background px-2 text-sm text-muted-foreground">
+              <label className="flex h-8 items-center gap-2 rounded-sm border border-border bg-background px-2 text-sm text-muted-foreground">
                 <EyeOffIcon className="size-4" />
                 <span>{t("setting.tags.blur-content")}</span>
                 <Switch checked={newTagBlur} onCheckedChange={setNewTagBlur} />
@@ -216,7 +216,7 @@ const TagsSection = () => {
 
         <div className="flex items-center justify-between gap-3">
           <h4 className="text-sm font-medium text-muted-foreground">{t("setting.tags.configured-rules")}</h4>
-          <Badge variant="outline" className="rounded-md px-2 py-0 text-xs font-normal">
+          <Badge variant="outline" className="rounded-sm px-2 py-0 text-xs font-normal">
             {configuredEntries.length}
           </Badge>
         </div>
@@ -245,13 +245,13 @@ const TagsSection = () => {
 
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span
-                      className={cn("size-5 rounded-md border border-border", !localTags[row.name].color && "bg-background")}
+                      className={cn("size-5 rounded-sm border border-border", !localTags[row.name].color && "bg-background")}
                       style={{ backgroundColor: localTags[row.name].color ?? DEFAULT_TAG_COLOR }}
                       aria-hidden
                     />
                     <input
                       type="color"
-                      className="size-8 cursor-pointer rounded-md border border-border bg-transparent p-0.5"
+                      className="size-8 cursor-pointer rounded-sm border border-border bg-transparent p-0.5"
                       value={localTags[row.name].color ?? DEFAULT_TAG_COLOR}
                       onChange={(e) => handleColorChange(row.name, e.target.value)}
                       aria-label={t("setting.tags.background-color")}

@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </p>
 
             {this.state.error && (
-              <details className="bg-muted p-3 rounded-md text-sm">
+              <details className="bg-muted p-3 rounded-sm text-sm">
                 <summary className="cursor-pointer font-medium mb-2">Error details</summary>
                 <pre className="whitespace-pre-wrap break-words text-xs text-foreground/60">{this.state.error.message}</pre>
               </details>
@@ -87,7 +87,7 @@ export function ChunkLoadErrorFallback() {
         </p>
 
         {error?.message && (
-          <details className="bg-muted p-3 rounded-md text-sm">
+          <details className="bg-muted p-3 rounded-sm text-sm">
             <summary className="cursor-pointer font-medium mb-2">Error details</summary>
             <pre className="whitespace-pre-wrap break-words text-xs text-foreground/60">{error.message}</pre>
           </details>

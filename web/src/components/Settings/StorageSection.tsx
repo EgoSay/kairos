@@ -323,7 +323,7 @@ const StorageSection = () => {
                               key={badge}
                               variant="outline"
                               className={cn(
-                                "rounded-md px-1.5 py-0 text-[10px] font-normal",
+                                "rounded-sm px-1.5 py-0 text-[10px] font-normal",
                                 badge === "setting.storage.badge-recommended" && "border-primary/30 bg-primary/10 text-primary",
                               )}
                             >
@@ -341,7 +341,7 @@ const StorageSection = () => {
           })}
         </RadioGroup>
 
-        <SettingPanel className="rounded-md bg-muted/20 px-3 py-2.5">
+        <SettingPanel className="rounded-sm bg-muted/20 px-3 py-2.5">
           <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <SelectedStorageIcon className="size-3.5" />
             <span>{t("setting.storage.current-storage")}</span>

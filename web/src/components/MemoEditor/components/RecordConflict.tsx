@@ -23,11 +23,11 @@ export function RecordConflict({ latest, onClose }: { latest: Memo; onClose: () 
         <div className="grid gap-4 sm:grid-cols-2 overflow-y-auto">
           <section className="space-y-2">
             <h3 className="text-sm font-medium">当前编辑内容 · {files} 个附件</h3>
-            <p className="whitespace-pre-wrap break-words rounded border p-3 text-sm">{content || "媒体记录"}</p>
+            <p className="whitespace-pre-wrap break-words rounded-lg border p-3 text-sm">{content || "媒体记录"}</p>
           </section>
           <section className="space-y-2">
             <h3 className="text-sm font-medium">服务端最新内容 · {latest.attachments.length} 个附件</h3>
-            <p className="whitespace-pre-wrap break-words rounded border p-3 text-sm">{latest.content || "媒体记录"}</p>
+            <p className="whitespace-pre-wrap break-words rounded-lg border p-3 text-sm">{latest.content || "媒体记录"}</p>
             <ul className="text-xs text-muted-foreground">
               {latest.attachments.map((file) => (
                 <li key={file.name}>{file.filename}</li>

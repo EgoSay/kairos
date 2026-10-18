@@ -109,7 +109,7 @@ export default function JournalInsights() {
           <label className="block space-y-2">
             <span>服务</span>
             <select
-              className="min-h-11 w-full rounded-md border bg-background px-3"
+              className="min-h-11 w-full rounded-sm border bg-background px-3"
               value={settings.providerId}
               onChange={(e) => setConfig({ ...settings, providerId: e.target.value })}
             >

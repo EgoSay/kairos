@@ -43,7 +43,7 @@ export default function JournalExplore() {
         ))}
       </div>
       <details className="mt-10 px-1 text-sm text-muted-foreground">
-        <summary className="w-fit cursor-pointer rounded py-3 focus-visible:outline-2">回顾与日历偏好</summary>
+        <summary className="w-fit cursor-pointer rounded-lg py-3 focus-visible:outline-2">回顾与日历偏好</summary>
         <div className="space-y-4 py-3">
           {preferences.isPending && <p role="status">正在读取设置…</p>}
           {preferences.isError && (
@@ -74,7 +74,7 @@ export default function JournalExplore() {
               <label className="block space-y-2">
                 <span>记录日期时区</span>
                 <select
-                  className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-foreground"
+                  className="min-h-11 w-full rounded-sm border border-border bg-background px-3 text-foreground"
                   value={preferences.data.timezone}
                   disabled={update.isPending}
                   onChange={(event) => update.mutate({ timezone: event.target.value })}

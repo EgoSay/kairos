@@ -236,7 +236,7 @@ const AISection = () => {
       <SettingPanel className="bg-muted/30 px-4 py-3">
         <div className="flex max-w-3xl flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md border border-border bg-background px-2 py-0.5 text-xs font-medium text-foreground">
+            <span className="rounded-sm border border-border bg-background px-2 py-0.5 text-xs font-medium text-foreground">
               {t("setting.ai.byok-label")}
             </span>
             <h4 className="text-sm font-semibold text-foreground">{t("setting.ai.byok-title")}</h4>

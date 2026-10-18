@@ -51,7 +51,7 @@ const TimestampInput: FC<{
       <input
         id={id}
         type="text"
-        className="block w-full rounded-md border border-border bg-background px-2 py-1 text-sm font-mono data-[invalid=true]:border-destructive"
+        className="block w-full rounded-sm border border-border bg-background px-2 py-1 text-sm font-mono data-[invalid=true]:border-destructive"
         data-invalid={invalid}
         aria-invalid={invalid}
         placeholder={DATETIME_FORMAT}

@@ -50,7 +50,7 @@ const ReactionSelector = ({ memo, trigger }: Props) => {
               type="button"
               key={reactionType}
               className={cn(
-                "inline-flex w-auto text-base cursor-pointer rounded px-1 text-muted-foreground hover:opacity-80 transition-colors",
+                "inline-flex w-auto text-base cursor-pointer rounded-lg px-1 text-muted-foreground hover:opacity-80 transition-colors",
                 hasReacted(reactionType) && "bg-secondary text-secondary-foreground",
               )}
               onClick={() => handleReactionClick(reactionType)}

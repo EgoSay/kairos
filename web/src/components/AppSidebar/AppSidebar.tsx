@@ -411,7 +411,7 @@ const GlobalNavigation = () => {
   return (
     <TooltipProvider>
       <nav className={cn("@container flex h-7 items-center gap-1", SIDEBAR_RAIL_CLASSES)} aria-label={currentUser ? "主要导航" : "Primary"}>
-        <div ref={timelineRef} className={cn("flex shrink-0 items-center rounded-md", timelineActive && sidebarRowStateClasses("current"))}>
+        <div ref={timelineRef} className={cn("flex shrink-0 items-center rounded-sm", timelineActive && sidebarRowStateClasses("current"))}>
           <NavPill
             to={navigationPath(ROUTES.HOME)}
             label={currentUser ? t("memo.layout-list") : t("common.timeline")}
@@ -547,7 +547,7 @@ export const MobileAppHeader = () => {
             to={ROUTES.HOME}
             aria-current={!journalActive ? "page" : undefined}
             className={cn(
-              "inline-flex min-h-11 items-center rounded focus-visible:outline-2",
+              "inline-flex min-h-11 items-center rounded-lg focus-visible:outline-2",
               journalActive ? "text-muted-foreground" : "font-medium",
             )}
           >
@@ -557,7 +557,7 @@ export const MobileAppHeader = () => {
             to={ROUTES.JOURNAL}
             aria-current={journalActive ? "page" : undefined}
             className={cn(
-              "inline-flex min-h-11 items-center rounded focus-visible:outline-2",
+              "inline-flex min-h-11 items-center rounded-lg focus-visible:outline-2",
               journalActive ? "font-medium" : "text-muted-foreground",
             )}
           >

@@ -60,7 +60,7 @@ const FieldLabel = ({ label, requirementLabel, requirement }: { label: string; r
     <span>{label}</span>
     <Badge
       variant={requirement === "optional" ? "outline" : "secondary"}
-      className="rounded-md px-1.5 py-0 text-[10px] font-normal leading-4 text-muted-foreground"
+      className="rounded-sm px-1.5 py-0 text-[10px] font-normal leading-4 text-muted-foreground"
     >
       {requirementLabel}
     </Badge>

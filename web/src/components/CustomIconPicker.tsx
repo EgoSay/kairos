@@ -99,7 +99,7 @@ function CustomIconPicker({ value, onChange, disabled, label, fallback = Astroid
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[290px] max-w-[calc(100vw-2rem)] p-2" aria-label={label} initialFocus={searchRef}>
         <Tabs value={tab} onValueChange={changeTab}>
-          <TabsList className="mb-2 rounded-md bg-muted/60 p-0.5" aria-label={t("space.icon.kind")}>
+          <TabsList className="mb-2 rounded-sm bg-muted/60 p-0.5" aria-label={t("space.icon.kind")}>
             {(["icons", "emoji"] as const).map((name) => (
               <TabsTrigger
                 key={name}
@@ -164,7 +164,7 @@ function CustomIconPicker({ value, onChange, disabled, label, fallback = Astroid
                     onFocus={() => setFocusedIndex(index)}
                     onKeyDown={(event) => moveFocus(event, index)}
                     onClick={() => select(option.icon)}
-                    className={cn("rounded-md", customIconsEqual(value, option.icon) && "bg-accent ring-1 ring-inset ring-primary/40")}
+                    className={cn("rounded-sm", customIconsEqual(value, option.icon) && "bg-accent ring-1 ring-inset ring-primary/40")}
                   >
                     <CustomIcon icon={option.icon} className={tab === "emoji" ? "size-5 text-xl" : "size-4"} />
                   </Button>

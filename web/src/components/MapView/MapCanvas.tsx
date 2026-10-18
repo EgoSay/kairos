@@ -51,7 +51,7 @@ const createFaceIcon = (face: Exclude<MapPinFace, { kind: "dot" }>, selected: bo
     >
       {face.kind === "photo" ? (
         <span
-          className={cn("block rounded-md bg-primary bg-cover bg-center", FACE_EDGE)}
+          className={cn("block rounded-sm bg-primary bg-cover bg-center", FACE_EDGE)}
           style={{ width: side, height: side, backgroundImage: `url(${JSON.stringify(face.url)})` }}
         />
       ) : (

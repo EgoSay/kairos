@@ -54,7 +54,7 @@ export const markdownStyles = {
   // editor so the checkbox + text grid stays identical in both.
   taskListItem: "mt-0.5 min-w-0 leading-7 list-none grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 [&>[data-slot=checkbox]]:mt-1",
   taskItemContent: "min-w-0 [overflow-wrap:anywhere] [&>*:last-child]:mb-0",
-  inlineCode: "font-mono text-sm bg-muted px-1 py-0.5 rounded-md",
+  inlineCode: "font-mono text-sm bg-muted px-1 py-0.5 rounded-sm",
   link: "text-primary underline decoration-primary/50 underline-offset-2 transition-colors hover:decoration-primary",
   horizontalRule: "my-2 h-0 border-0 border-b border-border",
 } as const;
@@ -70,9 +70,9 @@ export const headingClass = (level: HeadingLevel): string => headingClasses[leve
  */
 export const tagStyles = {
   /** Shape, padding, and typography — always applied. */
-  base: "inline-flex items-center align-baseline px-1.5 py-0.5 text-[0.9em] leading-none font-normal rounded-full border",
+  base: "inline-flex items-center align-baseline px-1.5 py-0.5 text-[0.9em] leading-none font-normal rounded-full transition-colors",
   /** Default theme color, used when no custom tag color is set. */
-  defaultColor: "border-primary text-primary bg-primary/15",
+  defaultColor: "text-primary bg-primary/10 hover:bg-primary/15",
 } as const;
 
 /**

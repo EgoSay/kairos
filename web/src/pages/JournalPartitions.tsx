@@ -300,7 +300,7 @@ function PartitionSection({ partition }: { partition: JournalPartition }) {
         </form>
       )}
       {deleteArmed && (
-        <div className="space-y-2 rounded-md bg-muted/50 p-3">
+        <div className="space-y-2 rounded-sm bg-muted/50 p-3">
           <p className="text-sm leading-6">记录与附件会保留在全部记录中，分区的同步目标和待发送任务会停止。</p>
           <Button
             variant="outline"

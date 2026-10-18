@@ -55,12 +55,12 @@ const AttachmentThumbnails = ({ attachments }: { attachments: Attachment[] }) =>
           <img
             src={item.posterUrl}
             alt={item.filename}
-            className="w-10 h-10 rounded border border-border object-cover bg-muted/40"
+            className="w-10 h-10 rounded-lg border border-border object-cover bg-muted/40"
             loading="lazy"
             decoding="async"
           />
           {item.kind === "motion" && (
-            <span className="absolute left-1 top-1 rounded bg-black/70 px-1 py-0.5 text-[8px] font-semibold leading-none text-white">
+            <span className="absolute left-1 top-1 rounded-lg bg-black/70 px-1 py-0.5 text-[8px] font-semibold leading-none text-white">
               LIVE
             </span>
           )}

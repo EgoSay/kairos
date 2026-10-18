@@ -61,7 +61,7 @@ export default function JournalMemo({ memo }: { memo: Memo }) {
         <Link
           to={`/${memo.name}`}
           state={createMemoNavigationState(parentPage)}
-          className="rounded-md text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-4"
+          className="rounded-sm text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-4"
         >
           <time dateTime={date?.toISOString()}>{dateText || "打开原记录"}</time>
         </Link>

@@ -144,7 +144,7 @@ const MemoRelatedSettings = () => {
           header={
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium text-muted-foreground">{t("setting.memo.configured-reactions")}</span>
-              <Badge variant="outline" className="rounded-md px-2 py-0 text-xs font-normal">
+              <Badge variant="outline" className="rounded-sm px-2 py-0 text-xs font-normal">
                 {memoRelatedSetting.reactions.length}
               </Badge>
             </div>
@@ -167,7 +167,7 @@ const MemoRelatedSettings = () => {
         >
           <div className="flex min-h-16 flex-wrap gap-2 px-3 py-3">
             {memoRelatedSetting.reactions.map((reactionType) => (
-              <Badge key={reactionType} variant="outline" className="flex h-8 items-center gap-2 rounded-md px-2.5 font-normal">
+              <Badge key={reactionType} variant="outline" className="flex h-8 items-center gap-2 rounded-sm px-2.5 font-normal">
                 <span>{reactionType}</span>
                 <Button
                   variant="ghost"

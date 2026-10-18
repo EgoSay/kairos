@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * sit on a card rather than the sidebar surface.
  */
 export const METADATA_ROW_BOX_CLASSES =
-  "group/row relative flex h-7 w-full min-w-0 items-center gap-1 rounded-md px-2 text-start text-ui text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground";
+  "group/row relative flex h-7 w-full min-w-0 items-center gap-1 rounded-sm px-2 text-start text-ui text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground";
 /** A row that is itself the control: the box, the focus outline, and the quiet "on" fill while pressed or holding a popup open. */
 export const METADATA_ROW_CLASSES = cn(
   METADATA_ROW_BOX_CLASSES,
@@ -32,7 +32,7 @@ export const METADATA_ROW_DETAIL_CLASSES = "shrink-0 text-2xs tabular-nums text-
  */
 export const METADATA_ROW_SLOT_BUTTON_CLASSES = cn(
   METADATA_ROW_SLOT_CLASSES,
-  "relative cursor-pointer rounded transition-colors hover:text-foreground hover:[&>svg]:opacity-100 aria-pressed:text-primary aria-pressed:[&>svg]:opacity-100 after:absolute after:-inset-0.5 after:content-['']",
+  "relative cursor-pointer rounded-lg transition-colors hover:text-foreground hover:[&>svg]:opacity-100 aria-pressed:text-primary aria-pressed:[&>svg]:opacity-100 after:absolute after:-inset-0.5 after:content-['']",
   FOCUS_VISIBLE_OUTLINE_CLASSES,
 );
 

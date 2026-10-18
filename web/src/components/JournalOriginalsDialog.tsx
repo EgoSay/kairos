@@ -64,7 +64,7 @@ export default function JournalOriginalsDialog({
           )}
           {originals.data?.length === 0 && <p>这条记录没有附件。</p>}
           {originals.data?.map(({ attachment, info }) => (
-            <div key={attachment.name} className="rounded border p-3 space-y-2">
+            <div key={attachment.name} className="rounded-lg border p-3 space-y-2">
               <p className="break-all">{attachment.filename}</p>
               {info.available ? (
                 <>

@@ -502,7 +502,7 @@ const SpaceDetail = ({ space, viewerName, onBack }: SpaceDetailProps) => {
             <div className="overflow-hidden rounded-lg border border-border bg-background">
               <div className="grid gap-2 border-b border-border px-3 py-3 sm:grid-cols-[170px_1fr] sm:items-center">
                 <span className="text-sm font-medium">{t("space.custom-id-label")}</span>
-                <code className="min-w-0 break-all rounded-md bg-muted/35 px-3 py-2 font-mono text-xs leading-5 text-foreground/85">
+                <code className="min-w-0 break-all rounded-sm bg-muted/35 px-3 py-2 font-mono text-xs leading-5 text-foreground/85">
                   {spaceUid}
                 </code>
               </div>
@@ -647,7 +647,7 @@ const SpaceDetail = ({ space, viewerName, onBack }: SpaceDetailProps) => {
                           >
                             <SelectTrigger
                               size="sm"
-                              className="w-[126px] rounded-md"
+                              className="w-[126px] rounded-sm"
                               aria-label={t("setting.spaces.change-role", { username: extractUsernameFromName(member.user) })}
                             >
                               <SelectValue />

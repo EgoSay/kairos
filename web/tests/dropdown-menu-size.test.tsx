@@ -27,7 +27,7 @@ describe("DropdownMenu sizing", () => {
 
     const menu = await screen.findByRole("menu");
     expect(menu).toHaveAttribute("data-size", "sm");
-    expect(menu).toHaveClass("min-w-24", "rounded", "p-0.5", "shadow-sm");
+    expect(menu).toHaveClass("min-w-24", "rounded-lg", "p-0.5", "shadow-sm");
 
     for (const item of screen.getAllByRole("menuitem")) {
       expect(item).toHaveClass("min-h-7", "px-2", "py-1", "text-ui");

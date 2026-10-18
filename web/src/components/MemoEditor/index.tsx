@@ -512,13 +512,13 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
         )}
 
         {transcriptionCandidate !== undefined && (
-          <div className="w-full rounded border p-3 space-y-2">
+          <div className="w-full rounded-lg border p-3 space-y-2">
             <label htmlFor="transcription-candidate" className="text-sm">
               转写候选文字 · 原录音会保留
             </label>
             <textarea
               id="transcription-candidate"
-              className="w-full min-h-24 rounded border p-2"
+              className="w-full min-h-24 rounded-lg border p-2"
               value={transcriptionCandidate}
               onChange={(event) => setTranscriptionCandidate(event.target.value)}
             />

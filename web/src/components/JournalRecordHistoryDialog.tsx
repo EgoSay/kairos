@@ -82,7 +82,7 @@ export default function JournalRecordHistoryDialog({
           {versions.data?.revisions.map((version) => {
             const memo = fromJson(MemoSchema, version.memo);
             return (
-              <details key={version.id} className="rounded border p-3">
+              <details key={version.id} className="rounded-lg border p-3">
                 <summary className="cursor-pointer py-2">
                   {new Date(version.createdTs * 1000).toLocaleString()} · {memo.attachments.length} 个附件
                 </summary>

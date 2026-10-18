@@ -43,7 +43,7 @@ const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenuContent
               data-size={size}
               className={cn(
                 "bg-popover text-popover-foreground z-dropdown max-h-(--available-height) origin-(--transform-origin) overflow-x-hidden overflow-y-auto border outline-none",
-                size === "sm" ? "min-w-24 rounded p-0.5 shadow-sm" : "min-w-[8rem] rounded-md p-1 shadow-md",
+                size === "sm" ? "min-w-24 rounded-lg p-0.5 shadow-sm" : "min-w-[8rem] rounded-sm p-1 shadow-md",
                 popupMotionClasses,
                 className,
               )}

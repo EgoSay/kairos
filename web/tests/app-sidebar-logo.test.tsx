@@ -170,7 +170,7 @@ const render = (ui: Parameters<typeof testingLibraryRender>[0]) =>
   );
 
 const expectCollapsedNavPill = (pill: HTMLElement, label: string) => {
-  expect(pill).toHaveClass("h-7", "rounded-md", "px-1.5");
+  expect(pill).toHaveClass("h-7", "rounded-sm", "px-1.5");
   expect(pill.firstElementChild).toHaveClass("size-4");
   const labelTrack = pill.querySelector('span.grid[aria-hidden="true"]');
   expect(labelTrack).toHaveClass("grid-cols-[0fr]", "ps-0");
@@ -179,7 +179,7 @@ const expectCollapsedNavPill = (pill: HTMLElement, label: string) => {
 };
 
 const expectExpandedNavPill = (pill: HTMLElement, label: string) => {
-  expect(pill).toHaveClass("h-7", "rounded-md", "px-1.5");
+  expect(pill).toHaveClass("h-7", "rounded-sm", "px-1.5");
   expect(pill.firstElementChild).toHaveClass("size-4");
   const labelTrack = pill.querySelector("span.grid");
   // The label opens only where the row can afford it; the control's aria-label names it regardless.
@@ -291,7 +291,7 @@ describe("App sidebar logo", () => {
     expect(within(switcher).getByText("Kairos logo")).toHaveAttribute("data-logo-size", "header");
     expect(switcher.querySelector(".lucide-chevrons-up-down")).not.toBeNull();
     expect(switcher.querySelector(".lucide-chevron-down")).toBeNull();
-    expect(compose).toHaveClass("size-7", "rounded-md", "border", "bg-background", "shadow-xs");
+    expect(compose).toHaveClass("size-7", "rounded-sm", "border", "bg-background", "shadow-xs");
     expect(compose).not.toHaveClass("rounded-full");
     expect(header).not.toContainElement(search);
     expect(search).toHaveClass("h-7", "ms-auto");
@@ -475,7 +475,7 @@ describe("App sidebar logo", () => {
     expect(navigation.queryByRole("link", { name: "common.attachments" })).not.toBeInTheDocument();
     const signIn = screen.getByRole("link", { name: "common.sign-in-to-memos" });
     expect(signIn).toHaveClass("w-full", "px-5");
-    expect(signIn).not.toHaveClass("rounded-md");
+    expect(signIn).not.toHaveClass("rounded-sm");
     expect(signIn.closest("footer")).not.toBeNull();
     expect(screen.queryByRole("button", { name: "editor.new-memo" })).not.toBeInTheDocument();
   });

@@ -6,7 +6,7 @@ import { FOCUS_VISIBLE_OUTLINE_CLASSES } from "./focus";
 
 const buttonVariants = cva(
   cn(
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0",
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0",
     FOCUS_VISIBLE_OUTLINE_CLASSES,
   ),
   {
@@ -26,8 +26,8 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-8 px-3",
-        sm: "h-7 rounded-md gap-1 px-2 has-[>svg]:px-2",
-        lg: "h-9 rounded-md px-4",
+        sm: "h-7 rounded-sm gap-1 px-2 has-[>svg]:px-2",
+        lg: "h-9 rounded-sm px-4",
         icon: "size-8",
         // The 28px square: the height of `sm`, and the sidebar's compose-control square.
         "icon-compact": "size-7",

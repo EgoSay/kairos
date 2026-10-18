@@ -54,7 +54,7 @@ const MemoShareImagePreview = forwardRef<HTMLDivElement, { width: number }>(({ w
               <div
                 key={item.id}
                 className={cn(
-                  "relative overflow-hidden rounded-md border border-border/70 bg-muted/30",
+                  "relative overflow-hidden rounded-sm border border-border/70 bg-muted/30",
                   preview.visualItems.length === 1 ? "aspect-[4/3]" : "aspect-square",
                   preview.visualItems.length === 3 && index === 0 && "col-span-2 aspect-[2.2/1]",
                 )}

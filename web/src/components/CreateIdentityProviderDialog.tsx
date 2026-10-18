@@ -502,7 +502,7 @@ function CreateIdentityProviderDialog({ open, onOpenChange, identityProvider, on
           {type === IdentityProvider_Type.OAUTH2 ? (
             <>
               <FormSection title={t("setting.sso.oauth-configuration")} description={t("setting.sso.oauth-configuration-description")}>
-                <div className="rounded-md border bg-background px-3 py-3">
+                <div className="rounded-sm border bg-background px-3 py-3">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t("setting.sso.redirect-url")}</p>
                   <p className="mt-2 break-all font-mono text-xs text-foreground sm:text-sm">{absolutifyLink("/auth/callback")}</p>
                   <p className="mt-2 text-xs text-muted-foreground">{t("setting.sso.redirect-url-description")}</p>
