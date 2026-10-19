@@ -12,6 +12,7 @@ import {
   type LucideIcon,
   MailIcon,
   Settings2Icon,
+  SmartphoneIcon,
   TagsIcon,
   UserIcon,
   UsersIcon,
@@ -21,6 +22,7 @@ import { type ComponentType } from "react";
 import AccessTokenSection from "@/components/Settings/AccessTokenSection";
 import AgentSection from "@/components/Settings/AgentSection";
 import AISection from "@/components/Settings/AISection";
+import InstallAppSection from "@/components/Settings/InstallAppSection";
 import InstanceSection from "@/components/Settings/InstanceSection";
 import MemberSection from "@/components/Settings/MemberSection";
 import MemoExportSection from "@/components/Settings/MemoExportSection";
@@ -43,6 +45,7 @@ export type SettingSectionKey =
   | "access-token"
   | "agent"
   | "preference"
+  | "install-app"
   | "webhook"
   | "member"
   | "system"
@@ -66,6 +69,13 @@ export interface SettingSectionDefinition {
 }
 
 export const SETTINGS_SECTIONS: SettingSectionDefinition[] = [
+  {
+    key: "install-app",
+    scope: "basic",
+    labelKey: "setting.install-app.label",
+    icon: SmartphoneIcon,
+    component: InstallAppSection,
+  },
   {
     key: "my-account",
     scope: "basic",

@@ -1419,6 +1419,9 @@
       "review-exported": "匯出者",
       "review-memos": "檔案中的備忘錄",
       "review-new": "將建立"
+    },
+    "install-app": {
+      "label": "安裝到手機"
     }
   },
   "space": {
@@ -1487,5 +1490,30 @@
     "new-here": "在此記錄",
     "saved-outside-filter": "已儲存。此備忘錄不在目前的地圖結果中。",
     "open-memo": "開啟備忘錄"
+  },
+  "pwa": {
+    "description": "把 Kairos 放到手機主畫面，想記錄時，點開就能寫。",
+    "home-screen": "從主畫面開啟",
+    "launch-description": "點開圖示，直接進入獨立的 Kairos 應用程式視窗。",
+    "installed": "Kairos 已安裝",
+    "installed-description": "從應用程式圖示開啟 Kairos，即可開始記錄。",
+    "install": "安裝 Kairos",
+    "installing": "等待瀏覽器確認…",
+    "https-required": "請透過 HTTPS 開啟本站後安裝。區域網路中的 HTTP 位址不支援安裝應用程式。",
+    "accepted": "已請求安裝，瀏覽器完成後即可從應用程式圖示開啟 Kairos。",
+    "dismissed": "已取消安裝。之後仍可從瀏覽器選單安裝。",
+    "failed": "無法開啟安裝提示，請嘗試瀏覽器選單或重新整理此頁面。",
+    "manual-title": "加入手機",
+    "manual-description": "沒有出現安裝按鈕時，可以透過瀏覽器選單加入。",
+    "ios-open": "用 Safari 開啟目前的 Kairos 網站。",
+    "ios-share": "開啟「分享」選單，選擇「加入主畫面」。",
+    "ios-add": "如果出現「作為 Web App 開啟」，請開啟，然後點一下「加入」。",
+    "android-open": "用 Chrome 開啟目前的 Kairos 網站。",
+    "android-menu": "開啟瀏覽器選單，選擇「安裝應用程式」或「加入主畫面」。",
+    "android-add": "確認安裝後，從應用程式圖示開啟 Kairos。",
+    "browser-help": "在微信等應用程式內開啟時，請先轉到 Safari 或 Chrome。電腦端可使用瀏覽器網址列或選單中的安裝選項。具體選項取決於瀏覽器；一般分頁可能無法識別既有的安裝。",
+    "offline-title": "離線時也能記錄",
+    "offline-description": "安裝後，請先連線開啟應用程式並登入一次。離線草稿儲存在此裝置，已儲存的待同步記錄會在重新連線並登入後繼續同步。",
+    "draft-warning": "瀏覽器與已安裝應用程式可能使用不同的儲存空間，切換前請先同步既有草稿。未同步的草稿不在伺服器備份中，清除應用程式資料或解除安裝可能使其遺失。"
   }
 }

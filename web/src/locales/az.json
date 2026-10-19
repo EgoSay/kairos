@@ -1448,6 +1448,9 @@
       "last-updated": "Son yenilənmə {{ago}}",
       "refresh": "Yenilə",
       "load-error": "Statistikanı yükləmək alınmadı"
+    },
+    "install-app": {
+      "label": "Install app"
     }
   },
   "space": {
@@ -1487,5 +1490,30 @@
   },
   "tooltip": {
     "select-location": "Məkan"
+  },
+  "pwa": {
+    "description": "Keep Kairos on your home screen and open it whenever you want to record a moment.",
+    "home-screen": "Open from your home screen",
+    "launch-description": "Launch directly into Kairos, in its own app window.",
+    "installed": "Kairos is installed",
+    "installed-description": "Open Kairos from its icon to start recording.",
+    "install": "Install Kairos",
+    "installing": "Waiting for the browser…",
+    "https-required": "Open this site over HTTPS before installing. An HTTP address on your local network cannot install the app.",
+    "accepted": "Installation requested. Once the browser finishes, open Kairos from its icon.",
+    "dismissed": "Installation cancelled. You can still install from the browser menu later.",
+    "failed": "Could not open the installation prompt. Try the browser menu or reload this page.",
+    "manual-title": "Add to your phone",
+    "manual-description": "If no install button appears, use your browser’s menu.",
+    "ios-open": "Open this Kairos site in Safari.",
+    "ios-share": "Open Share and choose “Add to Home Screen”.",
+    "ios-add": "If “Open as Web App” appears, turn it on, then tap “Add”.",
+    "android-open": "Open this Kairos site in Chrome.",
+    "android-menu": "Open the browser menu and choose “Install app” or “Add to Home screen”.",
+    "android-add": "Confirm installation, then open Kairos from its icon.",
+    "browser-help": "In WeChat or another in-app browser, open the site in Safari or Chrome first. On a computer, use the install option in your browser’s address bar or menu. Available options depend on the browser; an existing installation may not be detectable from a regular tab.",
+    "offline-title": "Record while offline",
+    "offline-description": "After installing, open the app online and sign in once. Offline drafts stay on this device; saved pending records resume syncing after you reconnect and sign in.",
+    "draft-warning": "Browser tabs and the installed app may use separate storage. Sync existing drafts before switching. Unsynced drafts are not in server backups and may be lost if you clear app data or uninstall."
   }
 }
