@@ -36,7 +36,7 @@ export const SIDEBAR_ROW_LABEL_CLASSES = `flex h-full min-w-0 flex-1 items-cente
 export const SIDEBAR_ROW_SLOT_CLASSES = SIDEBAR_LEADING_SLOT_CLASSES;
 
 /** A slot that is itself a control (disclosure, row menu): same box plus the hover chip. */
-export const SIDEBAR_ROW_SLOT_BUTTON_CLASSES = `${SIDEBAR_ROW_SLOT_CLASSES} relative rounded hover:bg-sidebar-accent after:absolute after:-inset-0.5 after:content-[''] ${SIDEBAR_ROW_FOCUS_CLASSES}`;
+export const SIDEBAR_ROW_SLOT_BUTTON_CLASSES = `${SIDEBAR_ROW_SLOT_CLASSES} relative rounded-lg hover:bg-sidebar-accent after:absolute after:-inset-0.5 after:content-[''] ${SIDEBAR_ROW_FOCUS_CLASSES}`;
 
 /** Trailing rail for counts, wide enough that digits align down the list. */
 export const SIDEBAR_ROW_COUNT_RAIL_CLASSES = `${SIDEBAR_ROW_COUNT_CLASSES} min-w-[3ch] shrink-0 text-end`;

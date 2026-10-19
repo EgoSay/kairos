@@ -16,6 +16,9 @@ import { type Memo, MemoSchema } from "@/types/proto/api/v1/memo_service_pb";
 vi.mock("html-to-image", () => ({
   toBlob: vi.fn(),
 }));
+vi.mock("@/components/MemoActionMenu/memoShareImageFonts", () => ({
+  getMemoShareFontCSS: vi.fn(async () => "/* fonts selected for this preview */"),
+}));
 
 const buildMemo = (overrides: MessageInitShape<typeof MemoSchema> = {}) =>
   create(MemoSchema, {
@@ -172,6 +175,7 @@ describe("memo share image utilities", () => {
       await vi.advanceTimersByTimeAsync(5000);
       await expect(renderPromise).resolves.toBeInstanceOf(Blob);
       expect(toBlob).toHaveBeenCalledOnce();
+      expect(toBlob).toHaveBeenCalledWith(preview, expect.objectContaining({ fontEmbedCSS: "/* fonts selected for this preview */" }));
     } finally {
       vi.useRealTimers();
     }

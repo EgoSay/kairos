@@ -83,7 +83,7 @@ export const AttachmentSourceChip = ({
 
   if (!memoName) {
     return (
-      <Badge variant="warning" shape="pill" className="px-1.5 py-0.5 text-[11px]">
+      <Badge variant="warning" shape="pill" className="px-1.5 py-0.5 text-2xs">
         {t(unlinkedLabelKey)}
       </Badge>
     );
@@ -93,7 +93,7 @@ export const AttachmentSourceChip = ({
     <Link
       to={trashed ? "/journal/trash" : `/${memoName}`}
       state={createMemoNavigationState(`${location.pathname}${location.search}`)}
-      className="inline-flex max-w-full items-center truncate rounded-full border border-border/60 bg-muted/30 px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted/50"
+      className="inline-flex max-w-full items-center truncate rounded-full border border-border/60 bg-muted/30 px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted/50"
     >
       <span className="truncate">{trashed ? "所属记录在回收站" : t("attachment-library.labels.memo")}</span>
     </Link>

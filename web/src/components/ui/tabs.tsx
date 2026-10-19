@@ -35,7 +35,7 @@ const tabsTriggerVariants = cva(
   {
     variants: {
       variant: {
-        segmented: "rounded-md px-3 py-1.5",
+        segmented: "rounded-sm px-3 py-1.5",
         underline: "rounded-t-lg rounded-b-none border-b-2 px-3 py-2",
       },
       active: { true: "", false: "" },

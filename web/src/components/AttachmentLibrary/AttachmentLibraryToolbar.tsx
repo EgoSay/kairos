@@ -38,7 +38,7 @@ const AttachmentLibraryToolbar = ({ activeTab, onTabChange, stats }: AttachmentL
               type="button"
               variant="ghost"
               className={cn(
-                "h-9 rounded-md px-2.5 text-sm font-medium sm:px-3",
+                "h-9 rounded-sm px-2.5 text-sm font-medium sm:px-3",
                 isActive ? "bg-muted/60 text-foreground shadow-none" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
               )}
               onClick={() => onTabChange(tab.key)}
@@ -47,7 +47,7 @@ const AttachmentLibraryToolbar = ({ activeTab, onTabChange, stats }: AttachmentL
               <span>{t(`attachment-library.tabs.${tab.labelKey}`)}</span>
               <span
                 className={cn(
-                  "rounded-full px-1.5 py-0.5 text-[11px]",
+                  "rounded-full px-1.5 py-0.5 text-2xs",
                   isActive ? "bg-background text-muted-foreground" : "bg-muted/50 text-muted-foreground",
                 )}
               >

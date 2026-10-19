@@ -137,7 +137,7 @@ function SpaceSwitcher({ className, size = "md" }: { className?: string; size?: 
                 data-sidebar-label
                 className={cn(
                   "min-w-0 truncate tracking-[-0.01em]",
-                  size === "header" ? "text-[15px] font-semibold leading-5" : "text-[14px] font-medium leading-4",
+                  size === "header" ? "text-base font-semibold leading-5" : "text-sm font-medium leading-4",
                 )}
               >
                 {creatorUsername && selectedSpaceName ? spaceLabel : contextLabel}
@@ -174,7 +174,7 @@ function SpaceSwitcher({ className, size = "md" }: { className?: string; size?: 
                 currentUser && (
                   <>
                     <SidebarSectionHeader>{t("common.browse")}</SidebarSectionHeader>
-                    <nav aria-label={t("common.browse")} className="grid grid-cols-2 gap-0.5 rounded-md bg-muted p-0.5">
+                    <nav aria-label={t("common.browse")} className="grid grid-cols-2 gap-0.5 rounded-sm bg-muted p-0.5">
                       <BrowseLink
                         to={getCreatorSwitchPath(location, currentUser.username, currentUser.username)}
                         current={Boolean(creatorUsername)}
@@ -185,7 +185,7 @@ function SpaceSwitcher({ className, size = "md" }: { className?: string; size?: 
                         to={ROUTES.JOURNAL}
                         current={location.pathname.startsWith(ROUTES.JOURNAL)}
                         icon={CompassIcon}
-                        label="随便看看"
+                        label={t("journal.explore")}
                       />
                     </nav>
                   </>

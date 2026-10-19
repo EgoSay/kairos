@@ -132,7 +132,7 @@ const SignUp = () => {
         hideExplore
       >
         {signUpForm}
-        <div className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-accent/50 px-3 py-2 text-[13px] leading-relaxed text-muted-foreground">
+        <div className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-accent/50 px-3 py-2 text-ui leading-relaxed text-muted-foreground">
           <InfoIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {t("auth.setup-note")}
         </div>

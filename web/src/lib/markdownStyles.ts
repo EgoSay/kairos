@@ -39,22 +39,22 @@ const headingClasses: Record<HeadingLevel, string> = {
  * These are static string literals so Tailwind's JIT scanner detects them.
  */
 export const markdownStyles = {
-  paragraph: "my-0 mb-2 leading-6",
+  paragraph: "my-0 mb-2 leading-7",
   blockquote: "my-0 mb-2 border-s-4 border-primary/30 ps-3 text-muted-foreground italic",
   // Direct-child selectors keep each nested disclosure's indicator independent.
   details: "my-0 mb-2 min-w-0 ps-5 [&[open]>summary]:mb-1 [&[open]>summary>svg]:rotate-90 [&>*:last-child]:mb-0",
   summary:
-    "relative -ms-5 block cursor-pointer list-none rounded-sm ps-5 pe-1 font-normal leading-6 [overflow-wrap:anywhere] transition-colors hover:bg-muted/50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none [&::-webkit-details-marker]:hidden",
+    "relative -ms-5 block cursor-pointer list-none rounded-sm ps-5 pe-1 font-normal leading-7 [overflow-wrap:anywhere] transition-colors hover:bg-muted/50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none [&::-webkit-details-marker]:hidden",
   disclosureIcon:
     "pointer-events-none absolute start-0.5 top-1.25 size-3.5 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none rtl:rotate-180",
   bulletList: "my-0 mb-2 list-outside ps-6 list-disc",
   orderedList: "my-0 mb-2 list-outside ps-6 list-decimal",
-  listItem: "mt-0.5 leading-6",
+  listItem: "mt-0.5 leading-7",
   // Shared by the read-only task item (MemoContent/markdown/List.tsx) and the
   // editor so the checkbox + text grid stays identical in both.
-  taskListItem: "mt-0.5 min-w-0 leading-6 list-none grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 [&>[data-slot=checkbox]]:mt-1",
+  taskListItem: "mt-0.5 min-w-0 leading-7 list-none grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 [&>[data-slot=checkbox]]:mt-1",
   taskItemContent: "min-w-0 [overflow-wrap:anywhere] [&>*:last-child]:mb-0",
-  inlineCode: "font-mono text-sm bg-muted px-1 py-0.5 rounded-md",
+  inlineCode: "font-mono text-sm bg-muted px-1 py-0.5 rounded-sm",
   link: "text-primary underline decoration-primary/50 underline-offset-2 transition-colors hover:decoration-primary",
   horizontalRule: "my-2 h-0 border-0 border-b border-border",
 } as const;
@@ -70,9 +70,9 @@ export const headingClass = (level: HeadingLevel): string => headingClasses[leve
  */
 export const tagStyles = {
   /** Shape, padding, and typography — always applied. */
-  base: "inline-flex items-center align-baseline px-1.5 py-0.5 text-[0.9em] leading-none font-normal rounded-full border",
+  base: "inline-flex items-center align-baseline px-1.5 py-0.5 text-[0.9em] leading-none font-normal rounded-full transition-colors",
   /** Default theme color, used when no custom tag color is set. */
-  defaultColor: "border-primary text-primary bg-primary/15",
+  defaultColor: "text-primary bg-primary/10 hover:bg-primary/15",
 } as const;
 
 /**

@@ -44,12 +44,12 @@ describe.each([
   ["narrow viewport", 390],
 ] as const)("record menu dialog lifecycle: %s", (_viewport, width) => {
   it.each([
-    ["detail", "最近版本"],
-    ["detail", "原文件"],
-    ["archived", "最近版本"],
-    ["archived", "原文件"],
-    ["journal card", "最近版本"],
-    ["journal card", "原文件"],
+    ["detail", "journal.recent-versions"],
+    ["detail", "journal.originals"],
+    ["archived", "journal.recent-versions"],
+    ["archived", "journal.originals"],
+    ["journal card", "journal.recent-versions"],
+    ["journal card", "journal.originals"],
   ] as const)("keeps %s / %s mounted after the menu closes and returns focus on Escape", async (surface, title) => {
     vi.stubGlobal("innerWidth", width);
     const memo = create(MemoSchema, {
@@ -64,7 +64,7 @@ describe.each([
         <MemoryRouter>{surface === "journal card" ? <JournalMemo memo={memo} /> : <MemoActionMenu memo={memo} />}</MemoryRouter>
       </QueryClientProvider>,
     );
-    const trigger = screen.getByRole("button", { name: surface === "journal card" ? "记录选项" : "common.more" });
+    const trigger = screen.getByRole("button", { name: surface === "journal card" ? "journal.record-options" : "common.more" });
     trigger.focus();
     fireEvent.click(trigger);
     fireEvent.click(await screen.findByRole("menuitem", { name: title }));
@@ -72,7 +72,9 @@ describe.each([
     await waitFor(() => expect(document.querySelector('[data-slot="dropdown-menu-content"]')).toBeNull());
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     expect(dialog).toBeVisible();
-    expect(await within(dialog).findByText(title === "最近版本" ? "恢复这个版本" : "下载原文件")).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText(title === "journal.recent-versions" ? "journal.restore-version" : "journal.download-original"),
+    ).toBeInTheDocument();
     await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
     fireEvent.keyDown(document.activeElement ?? dialog, { key: "Escape", code: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog", { name: title })).not.toBeInTheDocument());

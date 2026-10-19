@@ -54,7 +54,7 @@ function ShareLinkRow({ share, memoName }: ShareLinkRowProps) {
   };
 
   return (
-    <div className="flex flex-col gap-1 rounded-md border border-border p-3">
+    <div className="flex flex-col gap-1 rounded-sm border border-border p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="truncate font-mono text-xs text-muted-foreground">{url}</span>
         <div className="flex shrink-0 items-center gap-1">

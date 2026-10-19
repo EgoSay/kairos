@@ -145,7 +145,7 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
                       aria-label={`${day.date}，${day.count} 条记录`}
                       aria-current={day.isToday ? "date" : undefined}
                       className={cn(
-                        "flex aspect-square min-h-8 items-center justify-center rounded-md text-xs tabular-nums hover:ring-1 hover:ring-ring focus-visible:outline-2 focus-visible:outline-offset-1",
+                        "flex aspect-square min-h-8 items-center justify-center rounded-sm text-xs tabular-nums hover:ring-1 hover:ring-ring focus-visible:outline-2 focus-visible:outline-offset-1",
                         preferences.data?.calendarColor && fills[getActivityLevel(day.count, maxCount)],
                         day.isToday && "font-bold underline underline-offset-4",
                       )}
@@ -167,7 +167,7 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
               type="button"
               disabled={update.isPending}
               onClick={() => update.mutate({ calendarVisible: false })}
-              className="min-h-11 rounded px-2 hover:text-foreground focus-visible:outline-2"
+              className="min-h-11 rounded-lg px-2 hover:text-foreground focus-visible:outline-2"
             >
               隐藏
             </button>

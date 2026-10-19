@@ -234,7 +234,7 @@ const MemoViewGuide = ({ onUseExample }: MemoViewGuideProps) => {
               <button
                 type="button"
                 key={example.filter}
-                className="group w-full cursor-pointer rounded-md border border-transparent p-2 text-left transition-colors hover:border-border hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                className="group w-full cursor-pointer rounded-sm border border-transparent p-2 text-left transition-colors hover:border-border hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 onClick={() => onUseExample(example)}
               >
                 <span className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -587,7 +587,7 @@ const MemoViews = () => {
                         </div>
                         <div className="mt-1 font-mono text-xs text-muted-foreground">{getMemoViewId(memoView.name)}</div>
                       </div>
-                      <pre className="min-w-0 overflow-x-auto rounded-md bg-muted/50 px-3 py-2 font-mono text-xs leading-5 text-muted-foreground">
+                      <pre className="min-w-0 overflow-x-auto rounded-sm bg-muted/50 px-3 py-2 font-mono text-xs leading-5 text-muted-foreground">
                         {memoView.filter}
                       </pre>
                       <DropdownMenu>

@@ -132,7 +132,7 @@ function CreateSpaceDialog({ open, onOpenChange, onCreated, note }: Props) {
               {t("space.custom-id-toggle")}
             </Button>
             {showCustomId && (
-              <div id="space-custom-uid" className="mt-2 grid gap-2 rounded-md border bg-muted/30 p-3">
+              <div id="space-custom-uid" className="mt-2 grid gap-2 rounded-sm border bg-muted/30 p-3">
                 <Label htmlFor="space-uid">{t("space.custom-id-label")}</Label>
                 <Input
                   id="space-uid"

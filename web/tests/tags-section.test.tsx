@@ -71,7 +71,7 @@ describe("TagsSection", () => {
     expect(heading.parentElement).toHaveTextContent(/^common.tags$/);
 
     const trigger = screen.getByRole("button", { name: "common.tags: common.more" });
-    expect(trigger).toHaveClass("size-6", "rounded-md", "text-muted-foreground/70", "hover:bg-muted/60", "hover:text-foreground");
+    expect(trigger).toHaveClass("size-6", "rounded-sm", "text-muted-foreground/70", "hover:bg-muted/60", "hover:text-foreground");
     expect(trigger.querySelector("svg")).toHaveClass(SIDEBAR_SECTION_ACTION_ICON_CLASSES);
     expect(screen.queryByRole("button", { name: "common.tags: memo.layout-list" })).not.toBeInTheDocument();
     expect(screen.queryByRole("menuitemcheckbox")).not.toBeInTheDocument();

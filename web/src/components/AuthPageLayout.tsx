@@ -16,7 +16,7 @@ interface Props {
 }
 
 export const AuthChip = ({ children }: { children: React.ReactNode }) => (
-  <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-border bg-accent/50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+  <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-border bg-accent/50 px-2.5 py-0.5 text-3xs font-semibold uppercase tracking-widest text-muted-foreground">
     {children}
   </span>
 );
@@ -51,7 +51,7 @@ export const AuthLinkPrompt = ({ prompt, to, label }: { prompt: string; to: stri
   </p>
 );
 
-export const AuthOptionsLoading = () => <div className="h-9 w-full animate-pulse rounded-md bg-muted/60" aria-hidden="true" />;
+export const AuthOptionsLoading = () => <div className="h-9 w-full animate-pulse rounded-sm bg-muted/60" aria-hidden="true" />;
 
 const AuthPageLayout = ({ chip, title, subtitle, hideExplore, children }: Props) => {
   const t = useTranslate();
@@ -74,7 +74,7 @@ const AuthPageLayout = ({ chip, title, subtitle, hideExplore, children }: Props)
             <div className="-mx-7 -mb-7 mt-6 rounded-b-xl border-t border-border bg-background/60">
               <Link
                 to={ROUTES.EXPLORE}
-                className="group flex items-center justify-center gap-2 px-7 py-3 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+                className="group flex items-center justify-center gap-2 px-7 py-3 text-ui text-muted-foreground transition-colors hover:text-foreground"
                 viewTransition
               >
                 <CompassIcon className="h-3.5 w-3.5" />

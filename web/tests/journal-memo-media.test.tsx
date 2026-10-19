@@ -72,8 +72,8 @@ describe("journal original Markdown and media", () => {
     expect(screen.getAllByRole("img")).toHaveLength(1);
     const clamp = image.closest("[data-memo-content]")?.parentElement?.parentElement;
     expect(clamp).toHaveStyle({ maxHeight: `${CLAMP_PREVIEW_HEIGHT_PX}px` });
-    fireEvent.click(screen.getByRole("button", { name: "展开全文" }));
-    expect(screen.getByRole("button", { name: "收起" })).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(screen.getByRole("button", { name: "journal.expand-full" }));
+    expect(screen.getByRole("button", { name: "journal.collapse" })).toHaveAttribute("aria-expanded", "true");
     expect(clamp?.getAttribute("style")).not.toContain("max-height");
     expect(screen.getByText("原来的重点").tagName).toBe("STRONG");
   });

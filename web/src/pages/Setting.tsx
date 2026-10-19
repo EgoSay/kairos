@@ -59,7 +59,7 @@ const Setting = () => {
 
   return (
     <section className="w-full min-h-full">
-      <div className="mx-auto w-full max-w-4xl px-4 pb-12 pt-4 sm:px-6 md:pt-8">
+      <div className="mx-auto w-full max-w-5xl px-4 pb-12 pt-4 sm:px-6 md:pt-8">
         <div className="min-w-0">
           <ActiveSection />
         </div>

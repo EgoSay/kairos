@@ -170,7 +170,7 @@ const render = (ui: Parameters<typeof testingLibraryRender>[0]) =>
   );
 
 const expectCollapsedNavPill = (pill: HTMLElement, label: string) => {
-  expect(pill).toHaveClass("h-7", "rounded-md", "px-1.5");
+  expect(pill).toHaveClass("h-7", "rounded-sm", "px-1.5");
   expect(pill.firstElementChild).toHaveClass("size-4");
   const labelTrack = pill.querySelector('span.grid[aria-hidden="true"]');
   expect(labelTrack).toHaveClass("grid-cols-[0fr]", "ps-0");
@@ -179,7 +179,7 @@ const expectCollapsedNavPill = (pill: HTMLElement, label: string) => {
 };
 
 const expectExpandedNavPill = (pill: HTMLElement, label: string) => {
-  expect(pill).toHaveClass("h-7", "rounded-md", "px-1.5");
+  expect(pill).toHaveClass("h-7", "rounded-sm", "px-1.5");
   expect(pill.firstElementChild).toHaveClass("size-4");
   const labelTrack = pill.querySelector("span.grid");
   // The label opens only where the row can afford it; the control's aria-label names it regardless.
@@ -228,7 +228,7 @@ describe("App sidebar logo", () => {
       "href",
       "/spaces/product?filter=tagSearch%3Awork&creator=alice",
     );
-    expect(screen.getByRole("link", { name: "随便看看" })).toHaveAttribute("href", "/journal");
+    expect(screen.getByRole("link", { name: "journal.explore" })).toHaveAttribute("href", "/journal");
     expect(screen.queryByRole("link", { name: "common.explore" })).not.toBeInTheDocument();
   });
 
@@ -242,7 +242,7 @@ describe("App sidebar logo", () => {
         <AppSidebar />
       </MemoryRouter>,
     );
-    const navigation = within(screen.getByRole("navigation", { name: "主要导航" }));
+    const navigation = within(screen.getByRole("navigation", { name: "journal.primary-nav" }));
     expectActiveNavPill(navigation.getByRole("link", { name: activeLabel }), activeLabel);
     for (const [label, pathname] of [
       ["memo.layout-list", "/spaces/product"],
@@ -280,8 +280,8 @@ describe("App sidebar logo", () => {
     const switcher = screen.getByRole("button", { name: "space.switch: common.memos" });
     const header = switcher.closest("[data-sidebar-header]");
     const compose = screen.getByRole("button", { name: "editor.new-memo" });
-    const primaryNavigation = screen.getByRole("navigation", { name: "主要导航" });
-    const search = within(primaryNavigation).getByRole("button", { name: "查找记录" });
+    const primaryNavigation = screen.getByRole("navigation", { name: "journal.primary-nav" });
+    const search = within(primaryNavigation).getByRole("button", { name: "journal.find-records" });
 
     expect(header).toHaveClass("h-13", "px-3");
     expect(switcher).toHaveTextContent("Kairos logo");
@@ -291,7 +291,7 @@ describe("App sidebar logo", () => {
     expect(within(switcher).getByText("Kairos logo")).toHaveAttribute("data-logo-size", "header");
     expect(switcher.querySelector(".lucide-chevrons-up-down")).not.toBeNull();
     expect(switcher.querySelector(".lucide-chevron-down")).toBeNull();
-    expect(compose).toHaveClass("size-7", "rounded-md", "border", "bg-background", "shadow-xs");
+    expect(compose).toHaveClass("size-7", "rounded-sm", "border", "bg-background", "shadow-xs");
     expect(compose).not.toHaveClass("rounded-full");
     expect(header).not.toContainElement(search);
     expect(search).toHaveClass("h-7", "ms-auto");
@@ -304,7 +304,7 @@ describe("App sidebar logo", () => {
     fireEvent.click(compose);
     expect(globalEditorState.openEditor).toHaveBeenCalledOnce();
     // The Calendar destination is a nav pill; the statistics calendar stays off this route.
-    expect(screen.getByRole("link", { name: "随便看看" })).toHaveAttribute("href", "/journal");
+    expect(screen.getByRole("link", { name: "journal.explore" })).toHaveAttribute("href", "/journal");
     expect(screen.queryByText("Calendar")).not.toBeInTheDocument();
   });
 
@@ -446,7 +446,7 @@ describe("App sidebar logo", () => {
     );
 
     expect(screen.queryByRole("button", { name: "editor.new-memo" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "查找记录" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "journal.find-records" })).toBeInTheDocument();
   });
 
   it("shows the compact public navigation for a guest", () => {
@@ -475,7 +475,7 @@ describe("App sidebar logo", () => {
     expect(navigation.queryByRole("link", { name: "common.attachments" })).not.toBeInTheDocument();
     const signIn = screen.getByRole("link", { name: "common.sign-in-to-memos" });
     expect(signIn).toHaveClass("w-full", "px-5");
-    expect(signIn).not.toHaveClass("rounded-md");
+    expect(signIn).not.toHaveClass("rounded-sm");
     expect(signIn.closest("footer")).not.toBeNull();
     expect(screen.queryByRole("button", { name: "editor.new-memo" })).not.toBeInTheDocument();
   });
@@ -537,9 +537,9 @@ describe("App sidebar logo", () => {
     expect(screen.queryByText("common.views")).not.toBeInTheDocument();
     expect(screen.queryByText("Tags")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "space.switch: common.memos" })).toBeInTheDocument();
-    const navigation = within(screen.getByRole("navigation", { name: "主要导航" }));
+    const navigation = within(screen.getByRole("navigation", { name: "journal.primary-nav" }));
     expect(navigation.getByRole("link", { name: "memo.layout-list" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "随便看看" })).toHaveAttribute("href", "/journal");
+    expect(screen.getByRole("link", { name: "journal.explore" })).toHaveAttribute("href", "/journal");
     expect(screen.queryByRole("link", { name: "common.inbox" })).not.toBeInTheDocument();
     expect(screen.getByRole("contentinfo")).toBeInTheDocument();
   });
@@ -554,9 +554,9 @@ describe("App sidebar logo", () => {
     expect(screen.getByRole("link", { name: "common.about" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("heading", { name: "common.resources", level: 2 })).toBeInTheDocument();
 
-    const navigation = within(screen.getByRole("navigation", { name: "主要导航" }));
+    const navigation = within(screen.getByRole("navigation", { name: "journal.primary-nav" }));
     expect(navigation.getByRole("link", { name: "memo.layout-list" })).not.toHaveAttribute("aria-current");
-    expect(screen.getByRole("link", { name: "随便看看" })).toHaveAttribute("href", "/journal");
+    expect(screen.getByRole("link", { name: "journal.explore" })).toHaveAttribute("href", "/journal");
   });
 
   it("uses a visitor sidebar for a guest on a route without contextual content", () => {
@@ -603,9 +603,9 @@ describe("App sidebar logo", () => {
     const calendar = screen.getByText("Calendar");
     const views = screen.getByText("common.views");
     expect(calendar.compareDocumentPosition(views) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    const navigation = within(screen.getByRole("navigation", { name: "主要导航" }));
+    const navigation = within(screen.getByRole("navigation", { name: "journal.primary-nav" }));
     expect(navigation.getByRole("link", { name: "memo.layout-list" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "随便看看" })).toHaveAttribute("href", "/journal");
+    expect(screen.getByRole("link", { name: "journal.explore" })).toHaveAttribute("href", "/journal");
     expect(navigation.getByRole("button", { name: "memo.view-options" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "common.tasks" })).not.toBeInTheDocument();
   });
@@ -621,7 +621,7 @@ describe("App sidebar logo", () => {
         <AppSidebar />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("link", { name: "随便看看" })).toHaveAttribute("href", "/journal");
+    expect(screen.getByRole("link", { name: "journal.explore" })).toHaveAttribute("href", "/journal");
   });
 
   it.each([
@@ -682,13 +682,13 @@ describe("App sidebar logo", () => {
         <AppSidebar />
       </MemoryRouter>,
     );
-    const navigation = within(screen.getByRole("navigation", { name: "主要导航" }));
+    const navigation = within(screen.getByRole("navigation", { name: "journal.primary-nav" }));
     expect(navigation.getAllByRole("link")).toHaveLength(4);
     expect(navigation.getByRole("link", { name: "memo.layout-list" })).toHaveAttribute("href", "/explore");
     expect(navigation.getByRole("link", { name: "common.calendar" })).toHaveAttribute("href", "/calendar");
     expect(navigation.getByRole("link", { name: "common.map" })).toHaveAttribute("href", "/map");
-    expect(screen.getByRole("link", { name: "我的分享" })).toHaveAttribute("href", "/journal/shares");
-    expect(screen.getByRole("link", { name: "最近删除" })).toHaveAttribute("href", "/journal/trash");
+    expect(screen.getByRole("link", { name: "journal.my-shares" })).toHaveAttribute("href", "/journal/shares");
+    expect(screen.getByRole("link", { name: "journal.trash" })).toHaveAttribute("href", "/journal/trash");
   });
 
   it.each([
@@ -724,9 +724,9 @@ describe("App sidebar logo", () => {
         <MobileAppHeader />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("button", { name: "打开导航" })).toHaveAttribute("data-mobile-navigation-trigger");
-    expect(screen.getByRole("link", { name: "记录" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "随便看看" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("button", { name: "journal.open-nav" })).toHaveAttribute("data-mobile-navigation-trigger");
+    expect(screen.getByRole("link", { name: "journal.records" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "journal.explore" })).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("button", { name: "editor.new-memo" })).not.toBeInTheDocument();
   });
 
@@ -738,7 +738,7 @@ describe("App sidebar logo", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("button", { name: "查找记录" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "journal.find-records" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "editor.new-memo" }));
     expect(globalEditorState.openEditor).toHaveBeenCalledOnce();
   });

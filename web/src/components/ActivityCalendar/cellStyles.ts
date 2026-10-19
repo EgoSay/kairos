@@ -8,7 +8,7 @@ import { type ActivityLevel, getActivityLevel } from "./utils";
  * columns sit below the cap and are unaffected.
  */
 const CHIP_BASE =
-  "relative flex aspect-square w-full max-w-[30px] items-center justify-center rounded-md text-center text-xs font-normal leading-none tracking-[-0.01em] tabular-nums transition-[background-color,color,filter,box-shadow] duration-150 ease-out";
+  "relative flex aspect-square w-full max-w-[30px] items-center justify-center rounded-sm text-center text-xs font-normal leading-none tracking-[-0.01em] tabular-nums transition-[background-color,color,filter,box-shadow] duration-150 ease-out";
 
 /** Hover reads off the cell (`group/day`), not the chip, so the whole column responds to the pointer. */
 const INTERACTIVE_CHIP =

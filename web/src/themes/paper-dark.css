@@ -1,0 +1,59 @@
+:root {
+  /* Paper finish at night: same graphite depth as default-dark, shifted warm —
+     like ink on aged paper under lamplight. */
+  --background: oklch(0.25 0.014 80);
+  --foreground: oklch(0.89 0.014 85);
+
+  --card: oklch(0.285 0.016 78);
+  --card-foreground: oklch(0.89 0.014 85);
+
+  --popover: oklch(0.325 0.018 76);
+  --popover-foreground: oklch(0.91 0.014 85);
+
+  /* Primary - pine green lifted for dark surfaces */
+  --primary: oklch(0.72 0.06 163);
+  --primary-foreground: oklch(0.2 0.02 165);
+
+  --secondary: oklch(0.34 0.02 75);
+  --secondary-foreground: oklch(0.87 0.014 85);
+
+  --muted: oklch(0.355 0.02 75);
+  --muted-foreground: oklch(0.71 0.018 80);
+
+  /* Accent - warm hover wash rather than the cool pine-tinted default-dark one */
+  --accent: oklch(0.4 0.025 90);
+  --accent-foreground: oklch(0.93 0.014 85);
+
+  --destructive: oklch(0.64 0.18 24);
+  --destructive-foreground: oklch(0.98 0.01 90);
+
+  --success: oklch(0.7 0.15 155);
+  --success-foreground: oklch(0.2 0.03 155);
+  --warning: oklch(0.78 0.14 75);
+  --warning-foreground: oklch(0.25 0.03 75);
+
+  /* Warm-tinted depth, matching paper.css's shadow hue in a dark range. */
+  --shadow-xs: 0 1px 3px 0px hsl(34 15% 8% / 0.08);
+  --shadow-sm: 0 1px 3px 0px hsl(34 15% 8% / 0.14), 0 1px 2px -1px hsl(34 15% 8% / 0.14);
+  --shadow: 0 1px 3px 0px hsl(34 15% 8% / 0.14), 0 1px 2px -1px hsl(34 15% 8% / 0.14);
+  --shadow-md: 0 1px 3px 0px hsl(34 15% 8% / 0.14), 0 2px 4px -1px hsl(34 15% 8% / 0.14);
+  --shadow-lg: 0 1px 3px 0px hsl(34 15% 8% / 0.14), 0 4px 6px -1px hsl(34 15% 8% / 0.14);
+  --shadow-xl: 0 1px 3px 0px hsl(34 15% 8% / 0.14), 0 8px 10px -1px hsl(34 15% 8% / 0.14);
+  --shadow-2xl: 0 1px 3px 0px hsl(34 15% 8% / 0.3);
+  --shadow-float: 0 1px 2px hsl(34 15% 8% / 0.3), 0 8px 24px -6px hsl(34 15% 8% / 0.4), 0 24px 56px -16px hsl(34 15% 8% / 0.5);
+
+  --border: oklch(0.39 0.02 78);
+  --input: oklch(0.43 0.02 80);
+  --ring: oklch(0.72 0.06 163);
+
+  /* "Moment" accent — amber dot, identity positions only (see default.css) */
+  --moment: oklch(0.78 0.11 75);
+  --moment-ink: oklch(0.25 0.03 70);
+
+  --overlay: oklch(0 0 0);
+
+  --sidebar: oklch(0.225 0.016 78);
+  --sidebar-foreground: oklch(0.75 0.016 82);
+  --sidebar-accent: oklch(0.315 0.024 90);
+  --sidebar-accent-foreground: oklch(0.89 0.014 85);
+}

@@ -23,12 +23,12 @@ export const SIDEBAR_NAV_LEADING_SLOT_CLASSES = "flex size-4 shrink-0 items-cent
 export const sidebarSurfaceVariants = cva("min-w-0 items-center", {
   variants: {
     role: {
-      row: "flex h-7 w-full gap-1 rounded-md px-2 text-ui",
-      navPill: "relative flex h-7 shrink-0 rounded-md px-1.5",
-      headerBrand: "flex h-9 max-w-full gap-2 rounded-md px-2",
-      mobileBrand: "flex h-9 max-w-full gap-1.5 rounded-md px-1",
+      row: "flex h-7 w-full gap-1 rounded-sm px-2 text-ui",
+      navPill: "relative flex h-7 shrink-0 rounded-sm px-1.5",
+      headerBrand: "flex h-9 max-w-full gap-2 rounded-sm px-2",
+      mobileBrand: "flex h-9 max-w-full gap-1.5 rounded-sm px-1",
       account: "flex h-9 w-full gap-1 rounded-none px-5",
-      accountCollapsed: "ms-3 flex size-9 rounded-md p-2",
+      accountCollapsed: "ms-3 flex size-9 rounded-sm p-2",
     },
   },
   defaultVariants: {

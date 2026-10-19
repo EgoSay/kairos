@@ -59,7 +59,7 @@ const AgentSection = () => {
         <Button variant="outline" size="sm" onClick={() => copyText(endpoint)}>
           复制地址
         </Button>
-        <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
+        <pre className="overflow-x-auto rounded-lg bg-muted p-3 text-xs">
           <code>{config}</code>
         </pre>
         <Button variant="outline" size="sm" onClick={() => copyText(config)}>
@@ -87,7 +87,7 @@ const AgentSection = () => {
               aria-label="有效期"
               value={days}
               onChange={(event) => setDays(Number(event.target.value))}
-              className="block h-9 rounded-md border bg-background px-3"
+              className="block h-9 rounded-sm border bg-background px-3"
             >
               {[7, 30, 90, 365].map((value) => (
                 <option key={value} value={value}>

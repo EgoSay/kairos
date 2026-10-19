@@ -1,14 +1,27 @@
 import defaultDarkThemeContent from "../themes/default-dark.css?raw";
 import paperThemeContent from "../themes/paper.css?raw";
+import paperDarkThemeContent from "../themes/paper-dark.css?raw";
 
 // ============================================================================
 // Types and Constants
 // ============================================================================
+//
+// Theme preference = two axes serialized into one string: `mode[:paper]`.
+//   mode    — "system" | "light" | "dark"   (brightness axis)
+//   surface — "plain" | "paper"             (finish axis; only "paper" serializes)
+// Canonical values: system | system:paper | light | light:paper | dark | dark:paper
+// Legacy values still parse: system, default, default-dark, paper.
 
-const VALID_THEMES = ["system", "default", "default-dark", "paper"] as const;
+type ThemeMode = "system" | "light" | "dark";
+export type ThemeSurface = "plain" | "paper";
 
-export type Theme = (typeof VALID_THEMES)[number];
-export type ResolvedTheme = Exclude<Theme, "system">;
+export interface ThemePreference {
+  mode: ThemeMode;
+  surface: ThemeSurface;
+}
+
+export type Theme = "system" | "system:paper" | "light" | "light:paper" | "dark" | "dark:paper";
+export type ResolvedTheme = "default" | "default-dark" | "paper" | "paper-dark";
 
 export interface ThemeOption {
   value: string;
@@ -22,73 +35,106 @@ const THEME_CONTENT: Record<ResolvedTheme, string | null> = {
   default: null,
   "default-dark": defaultDarkThemeContent,
   paper: paperThemeContent,
+  "paper-dark": paperDarkThemeContent,
 };
 
 const THEME_COLORS: Record<ResolvedTheme, string> = {
   default: "#faf9f5",
   "default-dark": "#1d1f23",
   paper: "#f5ede4",
+  "paper-dark": "#352c22",
 };
 
-export const THEME_OPTIONS: ThemeOption[] = [
-  { value: "system", label: "Sync with system" },
-  { value: "default", label: "Light" },
-  { value: "default-dark", label: "Dark" },
-  { value: "paper", label: "Paper" },
-];
+/** i18n keys for each axis option — labels resolve through useTranslate at render time. */
+export const THEME_MODE_OPTIONS = [
+  { value: "system", labelKey: "setting.preference.theme-mode-system" },
+  { value: "light", labelKey: "setting.preference.theme-mode-light" },
+  { value: "dark", labelKey: "setting.preference.theme-mode-dark" },
+] as const;
+
+export const THEME_SURFACE_OPTIONS = [
+  { value: "plain", labelKey: "setting.preference.theme-surface-plain" },
+  { value: "paper", labelKey: "setting.preference.theme-surface-paper" },
+] as const;
+
+// ============================================================================
+// Parsing and Serialization
+// ============================================================================
+
+const LEGACY_MAP: Record<string, ThemePreference> = {
+  system: { mode: "system", surface: "plain" },
+  default: { mode: "light", surface: "plain" },
+  "default-dark": { mode: "dark", surface: "plain" },
+  paper: { mode: "light", surface: "paper" },
+};
+
+const VALID_MODES: readonly string[] = ["system", "light", "dark"];
+
+export const serializeThemePreference = (pref: ThemePreference): Theme => {
+  return (pref.surface === "paper" ? `${pref.mode}:paper` : pref.mode) as Theme;
+};
+
+/**
+ * Parses a stored theme string into its preference axes.
+ * Accepts both the canonical `mode[:paper]` form and legacy flat values.
+ * Returns null for anything unrecognized.
+ */
+export const parseThemePreference = (value: string | null | undefined): ThemePreference | null => {
+  if (!value) return null;
+  if (value in LEGACY_MAP) return LEGACY_MAP[value];
+  const [mode, surface] = value.split(":");
+  if (!VALID_MODES.includes(mode)) return null;
+  if (surface !== undefined && surface !== "paper") return null;
+  return { mode: mode as ThemeMode, surface: surface === "paper" ? "paper" : "plain" };
+};
+
+const SURFACE_FILES: Record<ThemeSurface, { light: ResolvedTheme; dark: ResolvedTheme }> = {
+  plain: { light: "default", dark: "default-dark" },
+  paper: { light: "paper", dark: "paper-dark" },
+};
 
 // ============================================================================
 // Theme Validation and Detection
 // ============================================================================
 
 /**
- * Validates and normalizes a theme string to a valid theme.
- * Falls back to "default" for invalid themes.
+ * Detects the system's preferred brightness.
  */
-const validateTheme = (theme: string): Theme => {
-  return VALID_THEMES.includes(theme as Theme) ? (theme as Theme) : "default";
-};
-
-/**
- * Detects the system's preferred color scheme.
- * @returns "default-dark" for dark mode, "default" for light mode
- */
-export const getSystemTheme = (): ResolvedTheme => {
+export const getSystemMode = (): "light" | "dark" => {
   if (typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
-    return "default-dark";
+    return "dark";
   }
-  return "default";
+  return "light";
+};
+
+/** Kept for API compatibility: resolves the OS brightness to a plain-surface file. */
+export const getSystemTheme = (): ResolvedTheme => {
+  return SURFACE_FILES.plain[getSystemMode()];
 };
 
 /**
- * Resolves "system" theme to the actual theme based on OS preference.
- * Other themes are returned as-is after validation.
+ * Resolves a preference string to the concrete theme file in effect.
+ * "system" mode reads the OS scheme at call time; surface rides along.
  */
 export const resolveTheme = (theme: string): ResolvedTheme => {
-  const validTheme = validateTheme(theme);
-  return validTheme === "system" ? getSystemTheme() : validTheme;
+  const pref = parseThemePreference(theme) ?? LEGACY_MAP.system;
+  const brightness = pref.mode === "system" ? getSystemMode() : pref.mode;
+  return SURFACE_FILES[pref.surface][brightness];
 };
 
 // ============================================================================
 // LocalStorage Helpers
 // ============================================================================
 
-/**
- * Safely reads the theme from localStorage.
- * @returns The stored theme, or null if not found or unavailable
- */
 const getStoredTheme = (): Theme | null => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored && VALID_THEMES.includes(stored as Theme) ? (stored as Theme) : null;
+    const pref = parseThemePreference(localStorage.getItem(STORAGE_KEY));
+    return pref ? serializeThemePreference(pref) : null;
   } catch {
     return null;
   }
 };
 
-/**
- * Safely stores the theme to localStorage.
- */
 const setStoredTheme = (theme: Theme): void => {
   try {
     localStorage.setItem(STORAGE_KEY, theme);
@@ -111,42 +157,22 @@ export const getInitialTheme = (): Theme => {
 
 /**
  * Gets the theme with full fallback chain.
- * Priority:
- * 1. User setting (if logged in and has preference)
- * 2. localStorage (from previous session)
- * 3. System preference
+ * Priority: user setting -> localStorage -> system
  */
 export const getThemeWithFallback = (userTheme?: string): Theme => {
-  // Priority 1: User setting
-  if (userTheme && VALID_THEMES.includes(userTheme as Theme)) {
-    return userTheme as Theme;
-  }
-
-  // Priority 2: localStorage
-  const stored = getStoredTheme();
-  if (stored) {
-    return stored;
-  }
-
-  // Priority 3: System preference
-  return "system";
+  const userPref = parseThemePreference(userTheme);
+  if (userPref) return serializeThemePreference(userPref);
+  return getStoredTheme() ?? "system";
 };
 
 // ============================================================================
 // DOM Manipulation
 // ============================================================================
 
-/**
- * Removes the existing theme style element from the DOM.
- */
 const removeThemeStyle = (): void => {
   document.getElementById(STYLE_ELEMENT_ID)?.remove();
 };
 
-/**
- * Injects theme CSS into the document head.
- * Skips injection for the default theme (uses base CSS).
- */
 const injectThemeStyle = (theme: ResolvedTheme): void => {
   removeThemeStyle();
 
@@ -163,34 +189,26 @@ const injectThemeStyle = (theme: ResolvedTheme): void => {
   }
 };
 
-/**
- * Sets the data-theme attribute on the document element.
- * This allows CSS to react to the current theme.
- */
 const setThemeAttribute = (theme: ResolvedTheme): void => {
   document.documentElement.setAttribute("data-theme", theme);
 };
 
-/**
- * Updates the theme-color meta tag to match the current theme background.
- * This colors the browser/status bar on mobile devices.
- */
 const updateThemeColorMeta = (theme: Theme): void => {
   const lightMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"][media*="light"]');
   const darkMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"][media*="dark"]');
 
-  if (theme === "system") {
+  const pref = parseThemePreference(theme) ?? { mode: "system" as const, surface: "plain" as const };
+  if (pref.mode === "system") {
     if (lightMeta) {
-      lightMeta.content = THEME_COLORS.default;
+      lightMeta.content = THEME_COLORS[SURFACE_FILES[pref.surface].light];
     }
     if (darkMeta) {
-      darkMeta.content = THEME_COLORS["default-dark"];
+      darkMeta.content = THEME_COLORS[SURFACE_FILES[pref.surface].dark];
     }
     return;
   }
 
-  const resolvedTheme = resolveTheme(theme);
-  const color = THEME_COLORS[resolvedTheme];
+  const color = THEME_COLORS[resolveTheme(theme)];
   if (lightMeta) {
     lightMeta.content = color;
   }
@@ -200,12 +218,9 @@ const updateThemeColorMeta = (theme: Theme): void => {
 };
 
 export const isDarkTheme = (theme: ResolvedTheme): boolean => {
-  return theme.endsWith("-dark") || theme.endsWith(".dark");
+  return theme.endsWith("-dark");
 };
 
-/**
- * Updates the browser native control color scheme to match the current theme.
- */
 const updateColorScheme = (theme: ResolvedTheme): void => {
   document.documentElement.style.colorScheme = isDarkTheme(theme) ? "dark" : "light";
 };
@@ -215,33 +230,24 @@ const updateColorScheme = (theme: ResolvedTheme): void => {
 // ============================================================================
 
 /**
- * Loads and applies a theme.
- * This function:
- * 1. Validates the theme
- * 2. Resolves "system" to actual theme
- * 3. Injects theme CSS
- * 4. Sets data-theme attribute
- * 5. Updates browser native UI colors
- * 6. Persists to localStorage
+ * Loads and applies a theme preference: parses both axes, resolves "system"
+ * through the OS scheme, injects theme CSS, updates chrome hints, and persists
+ * the canonical string.
  */
 export const loadTheme = (themeName: string): void => {
-  const validTheme = validateTheme(themeName);
-  const resolvedTheme = resolveTheme(validTheme);
+  const pref = parseThemePreference(themeName) ?? LEGACY_MAP.system;
+  const canonical = serializeThemePreference(pref);
+  const resolvedTheme = resolveTheme(canonical);
 
   injectThemeStyle(resolvedTheme);
   setThemeAttribute(resolvedTheme);
-  updateThemeColorMeta(validTheme);
+  updateThemeColorMeta(canonical);
   updateColorScheme(resolvedTheme);
-  setStoredTheme(validTheme); // Store original theme preference (not resolved)
+  setStoredTheme(canonical);
 };
 
-/**
- * Applies theme early during initial page load to prevent FOUC.
- * Uses only localStorage and system preference (no user settings yet).
- */
 export const applyThemeEarly = (): void => {
-  const theme = getInitialTheme();
-  loadTheme(theme);
+  loadTheme(getInitialTheme());
 };
 
 // ============================================================================
@@ -249,27 +255,21 @@ export const applyThemeEarly = (): void => {
 // ============================================================================
 
 /**
- * Sets up a listener for OS-level theme preference changes.
- * Supports both modern (addEventListener) and legacy (addListener) APIs.
- *
- * @param onThemeChange - Callback invoked when system theme changes
- * @returns Cleanup function to remove the listener
+ * Sets up a listener for OS-level brightness preference changes.
+ * Callers re-run loadTheme when the active mode is "system".
  */
 export const setupSystemThemeListener = (onThemeChange: () => void): (() => void) => {
-  // Guard against SSR
   if (typeof window === "undefined" || !window.matchMedia) {
     return () => {};
   }
 
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-  // Modern API (preferred)
   if (mediaQuery.addEventListener) {
     mediaQuery.addEventListener("change", onThemeChange);
     return () => mediaQuery.removeEventListener("change", onThemeChange);
   }
 
-  // Legacy API (Safari < 14)
   if (mediaQuery.addListener) {
     mediaQuery.addListener(onThemeChange);
     return () => mediaQuery.removeListener(onThemeChange);

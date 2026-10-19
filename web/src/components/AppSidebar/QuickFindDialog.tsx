@@ -442,7 +442,7 @@ const QuickFindDialog = () => {
                     搜索范围
                     <select
                       aria-label="搜索范围"
-                      className="min-h-11 max-w-48 rounded border bg-background px-2 text-foreground"
+                      className="min-h-11 max-w-48 rounded-lg border bg-background px-2 text-foreground"
                       value={allOwn ? "own" : "current"}
                       onChange={(event) => setAllOwn(event.target.value === "own")}
                     >

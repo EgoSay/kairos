@@ -58,7 +58,7 @@ describe("calendar daily snapshot cell", () => {
     const link = screen.getByRole("link");
     expect(screen.queryByText("2")).toBeNull();
     // Today's badge is a 22px rounded square that starts on the text axis, not a centred disc.
-    expect(screen.getByText("7")).toHaveClass("text-primary-foreground", "bg-primary", "rounded-md", "h-[22px]", "text-ui");
+    expect(screen.getByText("7")).toHaveClass("text-primary-foreground", "bg-primary", "rounded-sm", "h-[22px]", "text-ui");
     expect(screen.getByText("7")).not.toHaveClass("size-6", "before:rounded-full");
     expect(link).toHaveAccessibleName("2 memos in 2026-08-07");
     expect(link).toHaveAttribute("href", "/spaces/work/calendar/2026/08/07?filter=test");
@@ -83,7 +83,7 @@ describe("calendar daily snapshot cell", () => {
     cell(summary, { isToday: false });
     expect(screen.getByRole("link")).toHaveClass("bg-primary/16");
     expect(screen.getByRole("link")).not.toHaveClass("bg-accent");
-    expect(screen.getByText("7")).toHaveClass("font-medium", "bg-foreground/10", "text-foreground", "rounded-md");
+    expect(screen.getByText("7")).toHaveClass("font-medium", "bg-foreground/10", "text-foreground", "rounded-sm");
     expect(screen.getByText("7").parentElement).not.toHaveClass("bg-foreground/10");
   });
   it("marks today with the solid primary badge and no weight change", () => {
@@ -105,7 +105,7 @@ describe("calendar daily snapshot cell", () => {
   it("keeps a thumbnail under a clamped excerpt in the 117px cell that previously hid it", () => {
     cell(summary, { width: 106, height: 117 });
     expect(document.querySelector("img")).toHaveAttribute("src", "/photo.jpg");
-    expect(document.querySelector("img")).toHaveClass("size-9", "rounded-md");
+    expect(document.querySelector("img")).toHaveClass("size-9", "rounded-sm");
     expect(screen.getByText("A memorable afternoon")).toHaveStyle({ WebkitLineClamp: "1" });
     expect(screen.getByText("A memorable afternoon")).toHaveClass("text-ui", "leading-[18px]");
   });

@@ -98,7 +98,7 @@ describe("SpaceSwitcher", () => {
     renderAt();
     openSwitcher();
     const userButton = screen.getByRole("link", { name: "common.home" });
-    const exploreButton = screen.getByRole("link", { name: "随便看看" });
+    const exploreButton = screen.getByRole("link", { name: "journal.explore" });
     expect(screen.getByRole("navigation", { name: "common.browse" })).toBeInTheDocument();
     expect(exploreButton).not.toHaveAttribute("aria-current");
     expect(userButton).toHaveAttribute("aria-current", "page");
@@ -112,10 +112,10 @@ describe("SpaceSwitcher", () => {
   it("opens private journal exploration without closing the menu", () => {
     const router = renderAt("/");
     openSwitcher();
-    fireEvent.click(screen.getByRole("link", { name: "随便看看" }));
+    fireEvent.click(screen.getByRole("link", { name: "journal.explore" }));
     expect(router.state.location.pathname).toBe("/journal");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "随便看看" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "journal.explore" })).toHaveAttribute("aria-current", "page");
     fireEvent.click(screen.getByRole("link", { name: "common.home" }));
     expect(router.state.location.pathname).toBe("/");
     expect(router.state.location.search).toBe("");
@@ -134,12 +134,12 @@ describe("SpaceSwitcher", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "common.home" })).toHaveAttribute("aria-current", "page");
 
-    fireEvent.click(screen.getByRole("link", { name: "随便看看" }));
+    fireEvent.click(screen.getByRole("link", { name: "journal.explore" }));
     expect(router.state.location.pathname).toBe("/journal");
     expect(new URLSearchParams(router.state.location.search).get("creator")).toBeNull();
     expect(new URLSearchParams(router.state.location.search).get("filter")).toBeNull();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "随便看看" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "journal.explore" })).toHaveAttribute("aria-current", "page");
   });
 
   it("opens Space choices on demand and preserves creator when choosing one", async () => {

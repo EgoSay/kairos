@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getRequestToken, memoServiceClient } from "@/connect";
 import { journalRequest } from "@/hooks/useJournalQueries";
+import { useTranslate } from "@/utils/i18n";
 
 export default function JournalOriginalsDialog({
   name,
@@ -16,6 +17,7 @@ export default function JournalOriginalsDialog({
   onOpenChange: (open: boolean) => void;
   finalFocus?: RefObject<HTMLElement | null>;
 }) {
+  const t = useTranslate();
   const [error, setError] = useState("");
   const originals = useQuery({
     queryKey: ["journal", "originals", name],
@@ -37,7 +39,7 @@ export default function JournalOriginalsDialog({
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         credentials: "same-origin",
       });
-      if (!response.ok) throw new Error("原文件暂时无法读取，请重试。");
+      if (!response.ok) throw new Error(t("journal.originals-error"));
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement("a");
       link.href = url;
@@ -45,36 +47,36 @@ export default function JournalOriginalsDialog({
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "下载未完成");
+      setError(failure instanceof Error ? failure.message : t("journal.download-incomplete"));
     }
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="xl" initialFocus finalFocus={finalFocus}>
         <DialogHeader>
-          <DialogTitle>原文件</DialogTitle>
-          <DialogDescription>只有你可以下载原始字节；分享使用独立的显示副本。旧记录可能没有保留原文件。</DialogDescription>
+          <DialogTitle>{t("journal.originals")}</DialogTitle>
+          <DialogDescription>{t("journal.originals-description")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 overflow-y-auto">
-          {originals.isPending && <p role="status">正在读取…</p>}
+          {originals.isPending && <p role="status">{t("journal.loading")}</p>}
           {(originals.isError || error) && (
             <p role="alert" className="text-sm text-destructive">
               {error || originals.error?.message}
             </p>
           )}
-          {originals.data?.length === 0 && <p>这条记录没有附件。</p>}
+          {originals.data?.length === 0 && <p>{t("journal.no-attachments")}</p>}
           {originals.data?.map(({ attachment, info }) => (
-            <div key={attachment.name} className="rounded border p-3 space-y-2">
+            <div key={attachment.name} className="rounded-lg border p-3 space-y-2">
               <p className="break-all">{attachment.filename}</p>
               {info.available ? (
                 <>
                   <p className="text-xs text-muted-foreground break-all">SHA-256：{info.sha256}</p>
                   <Button variant="outline" onClick={() => void download(attachment.name, attachment.filename)}>
-                    下载原文件
+                    {t("journal.download-original")}
                   </Button>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">未保留原文件，已有显示版本仍可使用。</p>
+                <p className="text-sm text-muted-foreground">{t("journal.originals-missing")}</p>
               )}
             </div>
           ))}

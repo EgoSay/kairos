@@ -28,11 +28,11 @@ it.each([
       <JournalRecordHistoryDialog name="memos/record" open onOpenChange={onOpenChange} />
     </QueryClientProvider>,
   );
-  expect(await screen.findByRole("alert")).toHaveTextContent("无法读取版本");
-  const emptyMessage = "这条记录还没有最近的修改版本。";
+  expect(await screen.findByRole("alert")).toHaveTextContent("Could not load versions");
+  const emptyMessage = "No recent versions of this record yet.";
   expect(screen.queryByText(emptyMessage)).not.toBeInTheDocument();
   expect(request).toHaveBeenCalledTimes(1);
-  fireEvent.click(screen.getByRole("button", { name: "重试" }));
+  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
   await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
   expect(screen.queryByText(emptyMessage)).not.toBeInTheDocument();
   await act(async () => {
@@ -48,9 +48,9 @@ it.each([
     expect(screen.queryByText(emptyMessage)).not.toBeInTheDocument();
   } else {
     expect(await screen.findByText(emptyMessage)).toBeVisible();
-    expect(screen.queryByText("恢复这个版本")).not.toBeInTheDocument();
+    expect(screen.queryByText("Restore this version")).not.toBeInTheDocument();
   }
-  expect(screen.getByRole("dialog", { name: "最近版本" })).toBeVisible();
+  expect(screen.getByRole("dialog", { name: "Recent versions" })).toBeVisible();
   expect(onOpenChange).not.toHaveBeenCalled();
   expect(request).toHaveBeenCalledTimes(2);
   expect(request).toHaveBeenLastCalledWith("/memos/record/revisions");
@@ -79,8 +79,8 @@ it.each([true, false])("refreshes derived authorization caches only after a succ
       <JournalRecordHistoryDialog name="memos/record" open onOpenChange={onOpenChange} />
     </QueryClientProvider>,
   );
-  expect(screen.getByText(/旧分享撤回，同步暂停/)).toBeVisible();
-  const restore = await screen.findByText("恢复这个版本");
+  expect(screen.getByText(/old shares are withdrawn/)).toBeVisible();
+  const restore = await screen.findByText("Restore this version");
   const details = restore.closest("details");
   if (!details) throw new Error("revision details were not rendered");
   fireEvent.click(details.querySelector("summary")!);

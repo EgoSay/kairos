@@ -5,8 +5,8 @@
   --card-foreground: oklch(0.1908 0.002 106.5859);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2671 0.0196 98.939);
-  --primary: oklch(0.45 0.08 250);
-  --primary-foreground: oklch(0.9818 0.0054 95.0986);
+  --primary: oklch(0.4 0.062 162);
+  --primary-foreground: oklch(0.96 0.018 95);
   --secondary: oklch(0.9245 0.0138 92.9892);
   --secondary-foreground: oklch(0.4334 0.0177 98.6048);
   --muted: oklch(0.9341 0.0153 90.239);
@@ -21,7 +21,12 @@
   --warning-foreground: oklch(0.25 0.03 75);
   --border: oklch(0.8847 0.0069 97.3627);
   --input: oklch(0.7621 0.0156 98.3528);
-  --ring: oklch(0.45 0.08 250);
+  --ring: oklch(0.4 0.062 162);
+  /* "Moment" accent — the amber dot from the Kairos mark. Reserved for
+     identity/marking positions (logo, avatar dot, opt-in moment markers);
+     never a general action color. */
+  --moment: oklch(0.72 0.1 72);
+  --moment-ink: oklch(0.28 0.05 70);
   /* Overlay - neutral scrim base behind dialogs, sheets, and focus mode.
      Alpha comes from the utility (bg-overlay/50, bg-overlay/20), so every
      theme dims rather than tinting with --foreground. */
@@ -31,11 +36,19 @@
   --sidebar-accent: oklch(0.9245 0.0138 92.9892);
   --sidebar-accent-foreground: oklch(0.325 0 0);
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro", "PingFang SC", "MiSans", "HarmonyOS Sans SC",
+    "Source Han Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  /* Content-layer typeface: user writing gets the handwritten voice, chrome
+     stays on --font-sans. Falls back to the OS kai face when the self-hosted
+     subset is unavailable. */
+  --font-kai: "LXGW WenKai Screen", "LXGW WenKai", "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", serif;
+  /* Active content face — resolved by data-content-font (utils/contentFont.ts). */
+  --font-content: var(--font-kai);
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --radius: 0.5rem;
+  /* Radius tiers: ctl=6px (sm) · card=10px (lg) · popover=12px (xl). */
+  --radius: 0.625rem;
   --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
   --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
   --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
@@ -45,6 +58,12 @@
   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
   /* A surface floating over page content: a soft contact edge plus a wide, faint ambient fall. */
   --shadow-float: 0 1px 2px hsl(0 0% 0% / 0.05), 0 8px 24px -6px hsl(0 0% 0% / 0.1), 0 24px 56px -16px hsl(0 0% 0% / 0.14);
+}
+
+/* Content-font preference: "sans" drops writing surfaces back to the UI face.
+   "kai" needs no rule — :root already resolves --font-content to --font-kai. */
+:root[data-content-font="sans"] {
+  --font-content: var(--font-sans);
 }
 
 /* Tailwind v4 token mappings — compiled once at build time, shared by all themes.
@@ -82,8 +101,15 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
+  --font-kai: var(--font-kai);
+  --font-content: var(--font-content);
 
-  /* Compact application chrome: captions and dense navigation rows. */
+  --color-moment: var(--moment);
+  --color-moment-ink: var(--moment-ink);
+
+  /* Compact application chrome: micro badges, captions and dense navigation rows. */
+  --text-3xs: 0.625rem;
+  --text-3xs--line-height: 1rem;
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1rem;
   --text-ui: 0.8125rem;
@@ -92,7 +118,8 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Popover tier is fixed at 12px, decoupled from the card-tier calc chain. */
+  --radius-xl: 0.75rem;
 
   --shadow-xs: var(--shadow-xs);
   --shadow-sm: var(--shadow-sm);

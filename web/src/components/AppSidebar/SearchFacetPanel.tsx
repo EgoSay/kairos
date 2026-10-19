@@ -132,7 +132,7 @@ export default function SearchFacetPanel({ filters, onChange, scopeFilter, state
         <div className="flex flex-wrap items-center gap-2">
           <select
             aria-label="标签操作"
-            className="h-9 rounded-md border bg-background px-2"
+            className="h-9 rounded-sm border bg-background px-2"
             value={tagAction}
             onChange={(e) => setTagAction(e.target.value as typeof tagAction)}
           >
@@ -187,7 +187,7 @@ export default function SearchFacetPanel({ filters, onChange, scopeFilter, state
         <div className="flex flex-wrap items-center gap-3">
           <select
             aria-label="标签匹配方式"
-            className="h-9 rounded-md border bg-background px-2"
+            className="h-9 rounded-sm border bg-background px-2"
             value={value("tagMatch") || "all"}
             onChange={(e) => setValue("tagMatch", e.target.value === "all" ? undefined : "any")}
           >
@@ -224,7 +224,7 @@ export default function SearchFacetPanel({ filters, onChange, scopeFilter, state
         分区
         <select
           aria-label="分区筛选"
-          className="h-9 min-w-0 flex-1 rounded-md border bg-background px-2"
+          className="h-9 min-w-0 flex-1 rounded-sm border bg-background px-2"
           value={filters.some((filter) => filter.factor === "partition") ? value("partition") || "__none" : "__all"}
           onChange={(e) =>
             setValue("partition", e.target.value === "__all" ? undefined : e.target.value === "__none" ? "" : e.target.value)

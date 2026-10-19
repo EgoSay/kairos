@@ -8,6 +8,7 @@ import useCurrentUser from "@/hooks/useCurrentUser";
 import { type JournalPreferences, useJournalMemoDetails, useJournalPreferences, useJournalReview } from "@/hooks/useJournalQueries";
 import { isJournalCandidate, journalDate } from "@/lib/journal";
 import { ROUTES } from "@/router/routes";
+import { useTranslate } from "@/utils/i18n";
 
 function DailyRecords({ preferences }: { preferences: JournalPreferences }) {
   const user = useCurrentUser();
@@ -59,17 +60,18 @@ function DailyRecords({ preferences }: { preferences: JournalPreferences }) {
 }
 
 export default function JournalReview() {
+  const t = useTranslate();
   const preferences = useJournalPreferences();
   return (
     <div className="mx-auto max-w-2xl pb-12 pt-2 sm:pt-7">
       <Link
         to={ROUTES.JOURNAL}
-        className="mb-7 inline-flex min-h-11 items-center gap-2 rounded text-sm text-muted-foreground hover:text-foreground"
+        className="mb-7 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeftIcon className="size-4" />
-        随便看看
+        {t("journal.explore")}
       </Link>
-      <h1 className="mb-8 font-serif text-3xl font-medium tracking-tight">每日回顾</h1>
+      <h1 className="mb-8 font-content text-3xl font-medium">{t("journal.daily-review")}</h1>
       {preferences.isPending && (
         <p role="status" className="text-sm text-muted-foreground">
           正在翻开记录…

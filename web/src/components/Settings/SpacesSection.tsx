@@ -198,7 +198,7 @@ const SpacesSection = () => {
                             <SpaceRoleBadge role={invitation.role} />
                           </div>
                           {uid ? (
-                            <p className="mt-0.5 flex min-w-0 items-baseline gap-1 text-[11px] text-muted-foreground">
+                            <p className="mt-0.5 flex min-w-0 items-baseline gap-1 text-2xs text-muted-foreground">
                               <span className="shrink-0">{t("space.custom-id-label")}:</span>
                               <span title={uid} className="min-w-0 break-all font-mono">
                                 {uid}
@@ -287,7 +287,7 @@ const SpacesSection = () => {
                           <p className="truncate text-sm font-medium">{space.title}</p>
                           <SpaceRoleBadge role={space.currentUserRole} />
                         </div>
-                        <p className="mt-0.5 flex min-w-0 items-baseline gap-1 text-[11px] text-muted-foreground">
+                        <p className="mt-0.5 flex min-w-0 items-baseline gap-1 text-2xs text-muted-foreground">
                           <span className="shrink-0">{t("space.custom-id-label")}:</span>
                           <span title={uid} className="min-w-0 break-all font-mono">
                             {uid}
@@ -502,7 +502,7 @@ const SpaceDetail = ({ space, viewerName, onBack }: SpaceDetailProps) => {
             <div className="overflow-hidden rounded-lg border border-border bg-background">
               <div className="grid gap-2 border-b border-border px-3 py-3 sm:grid-cols-[170px_1fr] sm:items-center">
                 <span className="text-sm font-medium">{t("space.custom-id-label")}</span>
-                <code className="min-w-0 break-all rounded-md bg-muted/35 px-3 py-2 font-mono text-xs leading-5 text-foreground/85">
+                <code className="min-w-0 break-all rounded-sm bg-muted/35 px-3 py-2 font-mono text-xs leading-5 text-foreground/85">
                   {spaceUid}
                 </code>
               </div>
@@ -647,7 +647,7 @@ const SpaceDetail = ({ space, viewerName, onBack }: SpaceDetailProps) => {
                           >
                             <SelectTrigger
                               size="sm"
-                              className="w-[126px] rounded-md"
+                              className="w-[126px] rounded-sm"
                               aria-label={t("setting.spaces.change-role", { username: extractUsernameFromName(member.user) })}
                             >
                               <SelectValue />

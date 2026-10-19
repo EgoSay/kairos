@@ -139,7 +139,7 @@ export default function JournalSourcePicker({
           .flatMap((page) => page.memos)
           .filter((memo) => memo.creator === user?.name && !memo.parent)
           .map((memo) => (
-            <label key={memo.name} className="flex cursor-pointer items-start gap-3 rounded-md p-3 hover:bg-muted/40">
+            <label key={memo.name} className="flex cursor-pointer items-start gap-3 rounded-sm p-3 hover:bg-muted/40">
               <input
                 className="mt-1 size-4"
                 type="checkbox"

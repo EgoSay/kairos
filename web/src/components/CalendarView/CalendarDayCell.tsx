@@ -88,7 +88,7 @@ const CORNER_CLASSES = { ss: "rounded-ss-lg", se: "rounded-se-lg", es: "rounded-
  * primary fill, the open day a quiet foreground wash, and when today is open the primary
  * badge sits inside a grey halo rather than stacking a second shape.
  */
-const BADGE = "inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-md px-[5px]";
+const BADGE = "inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-sm px-[5px]";
 const TODAY_BADGE = `${BADGE} bg-primary text-primary-foreground`;
 const OPEN_BADGE = `${BADGE} bg-foreground/10 text-foreground`;
 /** Negative margin keeps the badge where it was; only the halo grows outward. */
@@ -261,7 +261,7 @@ export const CalendarDayCell = memo(
                     alt=""
                     loading="lazy"
                     decoding="async"
-                    className="size-9 shrink-0 rounded-md object-cover"
+                    className="size-9 shrink-0 rounded-sm object-cover"
                     onError={() => setFailedImages((failed) => [...failed, image.thumbnailUrl])}
                   />
                 ))}

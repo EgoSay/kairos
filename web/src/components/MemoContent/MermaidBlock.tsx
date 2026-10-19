@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import { cn } from "@/lib/utils";
-import { getThemeWithFallback, resolveTheme, setupSystemThemeListener } from "@/utils/theme";
 import { extractCodeContent } from "./utils";
 
 interface MermaidBlockProps {
@@ -11,7 +10,7 @@ interface MermaidBlockProps {
 
 type MermaidTheme = "default" | "dark";
 
-const toMermaidTheme = (appTheme: string): MermaidTheme => (appTheme === "default-dark" ? "dark" : "default");
+const toMermaidTheme = (appTheme: string): MermaidTheme => (appTheme.endsWith("-dark") ? "dark" : "default");
 
 const formatErrorMessage = (err: unknown): string => {
   const msg = err instanceof Error ? err.message : "Failed to render diagram";
@@ -22,20 +21,11 @@ const formatErrorMessage = (err: unknown): string => {
 };
 
 export const MermaidBlock = ({ children, className }: MermaidBlockProps) => {
-  const { userGeneralSetting } = useAuth();
+  const currentTheme = useResolvedTheme();
   const [svg, setSvg] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const [systemThemeChange, setSystemThemeChange] = useState(0);
 
   const codeContent = extractCodeContent(children);
-  const themePreference = getThemeWithFallback(userGeneralSetting?.theme);
-  const currentTheme = useMemo(() => resolveTheme(themePreference), [themePreference, systemThemeChange]);
-
-  // Re-resolve theme when OS preference changes (only relevant when using "system" theme)
-  useEffect(() => {
-    if (themePreference !== "system") return;
-    return setupSystemThemeListener(() => setSystemThemeChange((n) => n + 1));
-  }, [themePreference]);
 
   // Render diagram when content or theme changes
   useEffect(() => {

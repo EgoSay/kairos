@@ -20,7 +20,7 @@ const DEFAULT_LOGO = "/logo.webp";
 const isCommitSha = (commit: string) => /^[0-9a-f]{7,40}$/i.test(commit);
 
 const Chip = ({ href, children }: { href?: string; children: React.ReactNode }) => {
-  const className = "inline-flex max-w-full items-center rounded-md bg-muted px-2 py-1 font-mono text-xs break-all text-foreground";
+  const className = "inline-flex max-w-full items-center rounded-sm bg-muted px-2 py-1 font-mono text-xs break-all text-foreground";
   if (href) {
     return (
       <a
@@ -63,7 +63,7 @@ const About = () => {
   if (isCustomBranded) {
     buildRows.push({
       label: t("about.distribution"),
-      value: <span className="text-[13px] text-muted-foreground">{t("about.powered-by")}</span>,
+      value: <span className="text-ui text-muted-foreground">{t("about.powered-by")}</span>,
     });
   }
 

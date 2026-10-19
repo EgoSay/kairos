@@ -106,7 +106,7 @@ describe("MemoHeader navigation", () => {
     // The header shows the picker only while the card is engaged or the picker is open, and its
     // trigger is the same 24px quiet square as the other header actions.
     expect(reaction.parentElement).toHaveClass("sm:group-focus-within:flex", "sm:has-[[data-popup-open]]:flex");
-    expect(reaction).toHaveClass("size-6", "rounded-md", "text-muted-foreground/70");
+    expect(reaction).toHaveClass("size-6", "rounded-sm", "text-muted-foreground/70");
     expect(reaction.className).not.toMatch(/border-none|rounded-full|ring-/);
   });
 

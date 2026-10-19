@@ -41,12 +41,12 @@ const LinkMetadataCard = ({ url, fallback, enabled = true }: LinkMetadataCardPro
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group my-0 mb-2 flex w-full max-w-full overflow-hidden rounded-md border border-border bg-muted/20 text-foreground no-underline transition-colors",
+        "group my-0 mb-2 flex w-full max-w-full overflow-hidden rounded-sm border border-border bg-muted/20 text-foreground no-underline transition-colors",
         "hover:border-primary/35 hover:bg-accent/20",
       )}
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5 px-2.5 py-2 sm:gap-1 sm:px-3 sm:py-2.5">
-        {hostname && <span className="truncate text-[11px] leading-4 text-muted-foreground sm:text-xs">{hostname}</span>}
+        {hostname && <span className="truncate text-2xs text-muted-foreground sm:text-xs">{hostname}</span>}
         {title && <span className="line-clamp-2 text-sm font-medium leading-5 text-foreground">{title}</span>}
         {description && <span className="line-clamp-1 text-xs leading-4 text-muted-foreground sm:line-clamp-2">{description}</span>}
       </span>

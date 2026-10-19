@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kairos · 设计方向原型</title>
+<link rel="stylesheet" href="shared.css" />
+<!-- 文楷演示字体（仅原型走 CDN；正式实现时自托管子集，无网时回退系统楷体） -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/style.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+<script>
+  /* 无闪烁地应用 ?v= 指定方向；默认 pine（已选定） */
+  document.documentElement.dataset.variant =
+    new URLSearchParams(location.search).get("v") || "pine";
+</script>
+</head>
+<body>
+
+<!-- lucide 风格线性图标集（16px / stroke 1.8） -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M14.1 5.6 9 3 3.7 5.3a1 1 0 0 0-.7 1v13.4a1 1 0 0 0 1.3.9L9 18.5l5.1 2.6 5.3-2.2a1 1 0 0 0 .7-1V4.5a1 1 0 0 0-1.3-.9Z"/><path d="M9 3v15.5"/><path d="M14.1 5.6V21"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.4 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></symbol>
+  <symbol id="i-hash" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></symbol>
+  <symbol id="i-img" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></symbol>
+  <symbol id="i-moreh" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+  <symbol id="i-morev" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+</svg>
+
+<div class="dock">
+  <div class="seg" role="group" aria-label="配色方向">
+    <button data-v="blue">A 墨蓝</button>
+    <button data-v="pine">B 松绿</button>
+    <button data-v="ink">C 青墨</button>
+    <button data-v="night">D 夜读</button>
+  </div>
+  <div class="seg" role="group" aria-label="字体模式">
+    <button data-f="kai" aria-pressed="true">文楷</button>
+    <button data-f="sans" aria-pressed="false">系统黑体</button>
+    <button data-f="serif" aria-pressed="false">宋体标题</button>
+  </div>
+</div>
+
+<div class="shell">
+  <!-- ================= 侧栏 ================= -->
+  <aside class="sidebar">
+    <div class="side-head">
+      <div class="account">
+        <span class="avatar">虚</span>
+        <span class="name">虚构演示账户</span>
+        <svg class="i i-xs caret"><use href="#i-down"/></svg>
+      </div>
+      <span class="compose" role="button" aria-label="写一条" tabindex="0"><svg class="i"><use href="#i-pen"/></svg></span>
+    </div>
+
+    <nav class="navrail" aria-label="主要导航">
+      <span class="navpill active" aria-current="page"><svg class="i"><use href="#i-list"/></svg>列表<svg class="i i-xs"><use href="#i-down"/></svg></span>
+      <span class="navpill" role="button" aria-label="日历" tabindex="0"><svg class="i"><use href="#i-cal"/></svg></span>
+      <span class="navpill" role="button" aria-label="地图" tabindex="0"><svg class="i"><use href="#i-map"/></svg></span>
+      <span class="navpill" role="button" aria-label="附件" tabindex="0"><svg class="i"><use href="#i-clip"/></svg></span>
+      <span class="navpill push" role="button" aria-label="查找记录" tabindex="0"><svg class="i"><use href="#i-search"/></svg></span>
+    </nav>
+
+    <div style="padding:0 12px;margin-top:8px">
+      <div class="srow accent" style="margin:0"><svg class="i"><use href="#i-compass"/></svg><span class="lbl">随便看看</span></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="side-scroll">
+      <!-- 迷你日历：热力格颜色 = 各方向差异面 -->
+      <div class="minical">
+        <div class="minical-head">
+          <span class="stepper"><svg class="i i-xs"><use href="#i-left"/></svg></span>
+          <span>2026 年 10 月</span>
+          <span class="stepper"><svg class="i i-xs"><use href="#i-right"/></svg></span>
+        </div>
+        <div class="minical-grid">
+          <span class="wd">一</span><span class="wd">二</span><span class="wd">三</span><span class="wd">四</span><span class="wd">五</span><span class="wd">六</span><span class="wd">日</span>
+          <span class="day dim">28</span><span class="day dim">29</span><span class="day dim">30</span>
+          <span class="day l3">1</span><span class="day l2">2</span><span class="day l3">3</span><span class="day">4</span>
+          <span class="day l1">5</span><span class="day">6</span><span class="day l1">7</span><span class="day">8</span>
+          <span class="day l2">9</span><span class="day today">10</span><span class="day">11</span>
+          <span class="day">12</span><span class="day">13</span><span class="day">14</span><span class="day">15</span><span class="day">16</span><span class="day">17</span><span class="day">18</span>
+          <span class="day">19</span><span class="day">20</span><span class="day">21</span><span class="day">22</span><span class="day">23</span><span class="day">24</span><span class="day">25</span>
+          <span class="day">26</span><span class="day">27</span><span class="day">28</span><span class="day">29</span><span class="day">30</span><span class="day">31</span>
+          <span class="day dim">1</span>
+        </div>
+      </div>
+
+      <div class="scope-row"><span>全部记录 · 含归档</span><span class="link">隐藏</span></div>
+
+      <div class="side-h"><span>视图</span></div>
+      <div class="srow"><svg class="i"><use href="#i-plus"/></svg><span class="lbl">创建视图</span></div>
+
+      <div class="side-h"><span>标签</span><svg class="i i-xs"><use href="#i-moreh"/></svg></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">生活</span><span class="n">13</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">dev</span><span class="n">5</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">books</span><span class="n">4</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">travel</span><span class="n">4</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">生活 / 散步</span><span class="n">3</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">生活 / 回头看</span><span class="n">2</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">生活 / 清晨</span><span class="n">2</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">生活 / 日常</span><span class="n">2</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">生活 / 声音</span><span class="n">2</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">books / 随记</span><span class="n">2</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">dev / git</span><span class="n">2</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">travel / 国内</span><span class="n">2</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">旧时光</span><span class="n">1</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">生活 / 片刻</span><span class="n">1</span></div>
+      <div class="srow"><svg class="i"><use href="#i-hash"/></svg><span class="lbl">生活 / 运动</span><span class="n">1</span></div>
+    </div>
+
+    <div class="side-foot">
+      <div class="srow"><svg class="i"><use href="#i-layers"/></svg><span class="lbl">分区与同步</span></div>
+      <div class="srow"><svg class="i"><use href="#i-share"/></svg><span class="lbl">我的分享</span></div>
+      <div class="srow"><svg class="i"><use href="#i-trash"/></svg><span class="lbl">最近删除</span></div>
+      <div class="srow"><svg class="i"><use href="#i-db"/></svg><span class="lbl">数据与备份</span></div>
+      <div class="srow"><svg class="i"><use href="#i-gear"/></svg><span class="lbl">设置</span></div>
+    </div>
+  </aside>
+
+  <!-- ================= 主栏 ================= -->
+  <main class="main">
+    <div class="col">
+      <header class="page-head">
+        <h1 class="page-title">记录</h1>
+        <p class="page-sub">给此刻，留一点位置。</p>
+      </header>
+
+      <section class="composer" aria-label="写一条">
+        <div class="ph" contenteditable="true" data-ph="写点什么……（这里可以直接输入，感受字体）"></div>
+        <div class="composer-foot">
+          <div class="toolgroup">
+            <span class="toolbtn" role="button" aria-label="插入图片" tabindex="0"><svg class="i"><use href="#i-img"/></svg></span>
+            <span class="toolbtn" role="button" aria-label="录音" tabindex="0"><svg class="i"><use href="#i-mic"/></svg></span>
+            <span class="toolbtn" role="button" aria-label="更多" tabindex="0"><svg class="i"><use href="#i-moreh"/></svg></span>
+          </div>
+          <button class="btn btn-primary">保存</button>
+        </div>
+      </section>
+
+      <!-- 卡片 1：纯文字 + 标签 -->
+      <article class="memo">
+        <div class="memo-head">
+          <span class="memo-time">3 小时前</span>
+          <span class="memo-kebab" role="button" aria-label="更多操作" tabindex="0"><svg class="i"><use href="#i-morev"/></svg></span>
+        </div>
+        <div class="memo-body">
+          <p>【演示】早晨出门时闻到了桂花香。绕了十分钟远路，没有什么特别的事，只是想多走一会儿。</p>
+          <p><span class="tag">#生活/散步</span></p>
+        </div>
+      </article>
+
+      <!-- 卡片 2：纯文字 -->
+      <article class="memo">
+        <div class="memo-head">
+          <span class="memo-time">15 小时前</span>
+          <span class="memo-kebab" role="button" aria-label="更多操作" tabindex="0"><svg class="i"><use href="#i-morev"/></svg></span>
+        </div>
+        <div class="memo-body">
+          <p>【演示】和朋友聊了很久。后来已经记不清具体说了什么，但回家路上一直觉得轻松。</p>
+        </div>
+      </article>
+
+      <!-- 卡片 3：引用 + 标签 -->
+      <article class="memo">
+        <div class="memo-head">
+          <span class="memo-time">10月7日 周三</span>
+          <span class="memo-kebab" role="button" aria-label="更多操作" tabindex="0"><svg class="i"><use href="#i-morev"/></svg></span>
+        </div>
+        <div class="memo-body">
+          <p>【演示】翻到几年前写下的一句话：</p>
+          <blockquote>也许不必每件事都有答案。</blockquote>
+          <p>现在的自己，似乎比那时更能读懂它了。</p>
+          <p><span class="tag">#旧时光</span></p>
+        </div>
+      </article>
+
+      <!-- 卡片 4：标题 + 列表 + 行内代码（阅读层级演示） -->
+      <article class="memo">
+        <div class="memo-head">
+          <span class="memo-time">10月5日 周六</span>
+          <span class="memo-kebab" role="button" aria-label="更多操作" tabindex="0"><svg class="i"><use href="#i-morev"/></svg></span>
+        </div>
+        <div class="memo-body">
+          <h1>【虚构演示】一次很小的 Git 练习</h1>
+          <p>今天只是试着把想法写清楚，不要求一次做好。</p>
+          <ol>
+            <li>先看工作区。</li>
+            <li>再读一遍提交历史。</li>
+            <li>最后跑一次测试。</li>
+          </ol>
+          <p>卡住的地方记在 <code>git-notes</code> 里，明天继续。</p>
+          <p><span class="tag">#dev/git</span></p>
+        </div>
+      </article>
+
+      <!-- 卡片 5：图文 + 位置（媒体与元信息演示） -->
+      <article class="memo">
+        <div class="memo-head">
+          <span class="memo-time">10月2日 周五</span>
+          <span class="memo-kebab" role="button" aria-label="更多操作" tabindex="0"><svg class="i"><use href="#i-morev"/></svg></span>
+        </div>
+        <div class="memo-body">
+          <p><strong>【虚构演示】没有目的地的小旅行</strong></p>
+          <p>这些不是旅行照片，只是两张测试卡片。今天暂且想象在一座安静的城里散步。</p>
+          <ul>
+            <li>路边的树</li>
+            <li>拐角的椅子</li>
+            <li>还没打开的地图</li>
+          </ul>
+          <p><span class="tag">#travel/国内</span><span class="tag">#生活/散步</span></p>
+          <div class="imggrid">
+            <span class="ph">
+              <svg viewBox="0 0 320 208" role="img" aria-label="演示图 1">
+                <rect width="320" height="208" fill="#e9ecdd"/>
+                <rect y="28" width="320" height="14" fill="#d4d9c4"/>
+                <text x="24" y="64" font-size="28" font-weight="700" fill="#3f4a3a" font-family="sans-serif">DEMO 01</text>
+                <rect x="24" y="96" width="88" height="44" fill="#a9b39b"/>
+                <rect x="128" y="104" width="70" height="36" fill="#c4a98d"/>
+                <rect y="176" width="320" height="32" fill="#d4d9c4"/>
+              </svg>
+            </span>
+            <span class="ph">
+              <svg viewBox="0 0 320 208" role="img" aria-label="演示图 2">
+                <rect width="320" height="208" fill="#eef0f3"/>
+                <rect width="320" height="18" fill="#c3cad6"/>
+                <text x="24" y="66" font-size="20" font-weight="600" fill="#44505f" font-family="sans-serif">虚构演示 · 旅行</text>
+                <text x="24" y="90" font-size="11" fill="#8a94a3" font-family="sans-serif">DEMO 02 / 不是真实生活轨迹</text>
+                <rect x="24" y="112" width="80" height="40" fill="#aab4c4"/>
+                <circle cx="200" cy="132" r="22" fill="#c3ccd9"/>
+                <rect y="176" width="320" height="32" fill="#c3cad6"/>
+              </svg>
+            </span>
+          </div>
+          <div class="loc"><svg class="i"><use href="#i-pin"/></svg>虚构演示地点 · 城市 A（非真实活动轨迹）</div>
+        </div>
+      </article>
+    </div>
+  </main>
+</div>
+
+<script>
+  /* ---------- 方向切换：同页即时对比 ---------- */
+  const root = document.documentElement;
+  const vBtns = document.querySelectorAll("[data-v]");
+  const syncV = () => vBtns.forEach(b =>
+    b.getAttribute("data-v") === root.dataset.variant
+      ? b.setAttribute("aria-current", "")
+      : b.removeAttribute("aria-current"));
+  const setV = v => {
+    root.dataset.variant = v;
+    history.replaceState(null, "", "?v=" + v);
+    syncV();
+  };
+  vBtns.forEach(b => b.addEventListener("click", () => setV(b.dataset.v)));
+  syncV();
+  addEventListener("keydown", e => {
+    const map = { "1": "blue", "2": "pine", "3": "ink", "4": "night" };
+    if (map[e.key] && !e.metaKey && !e.ctrlKey) setV(map[e.key]);
+  });
+
+  /* ---------- 字体模式：kai（默认）/ sans / serif ---------- */
+  const fBtns = document.querySelectorAll("[data-f]");
+  root.dataset.font = "kai";
+  const syncF = () => fBtns.forEach(b =>
+    b.setAttribute("aria-pressed", b.dataset.f === root.dataset.font));
+  fBtns.forEach(b => b.addEventListener("click", () => {
+    root.dataset.font = b.dataset.f;
+    syncF();
+  }));
+  syncF();
+
+  /* 书写区：清空后移除残留 <br>，让占位符回来 */
+  const ph = document.querySelector(".ph");
+  ph.addEventListener("blur", () => {
+    if (!ph.textContent.trim()) ph.innerHTML = "";
+  });
+</script>
+</body>
+</html>

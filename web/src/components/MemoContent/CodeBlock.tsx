@@ -121,7 +121,7 @@ const HighlightedCodeBlock = ({ codeContent, language }: HighlightedCodeBlockPro
         <button
           onClick={handleCopy}
           className={cn(
-            "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs",
+            "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-xs",
             "transition-colors duration-200",
             "hover:bg-accent active:scale-95",
             copied ? "text-primary" : "text-muted-foreground hover:text-foreground",

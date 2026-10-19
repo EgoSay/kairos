@@ -178,13 +178,13 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
       data-focus-mode={isFocusMode || undefined}
       data-source-mode={sourceMode || undefined}
     >
-      <div ref={hostRef} className={cn("w-full text-base", isFocusMode && "min-h-0 flex flex-col flex-1")} />
+      <div ref={hostRef} className={cn("w-full font-content text-base", isFocusMode && "min-h-0 flex flex-col flex-1")} />
       {pasteAlternative && (
         <div className="mt-2 flex shrink-0 items-center gap-2 text-xs text-muted-foreground" role="status">
           <span>已保留内容格式</span>
           <button
             type="button"
-            className="min-h-11 rounded px-2 underline underline-offset-4 hover:bg-accent"
+            className="min-h-11 rounded-lg px-2 underline underline-offset-4 hover:bg-accent"
             onMouseDown={(event) => event.preventDefault()}
             onClick={pasteAlternative}
           >
@@ -197,7 +197,7 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
           <span>这是 Kairos 中的一条记录</span>
           <button
             type="button"
-            className="min-h-11 rounded px-2 underline underline-offset-4 hover:bg-accent"
+            className="min-h-11 rounded-lg px-2 underline underline-offset-4 hover:bg-accent"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onLinkRequest({ memoName: pastedMemo, onLinked: () => setPastedMemo(undefined) })}
           >

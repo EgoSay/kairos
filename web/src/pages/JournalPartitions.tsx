@@ -11,6 +11,7 @@ import {
   useJournalPartitions,
   useJournalPartitionTargets,
 } from "@/hooks/useJournalPartitionQueries";
+import { useTranslate } from "@/utils/i18n";
 
 const statusText: Record<string, string> = {
   pending: "等待发送",
@@ -300,7 +301,7 @@ function PartitionSection({ partition }: { partition: JournalPartition }) {
         </form>
       )}
       {deleteArmed && (
-        <div className="space-y-2 rounded-md bg-muted/50 p-3">
+        <div className="space-y-2 rounded-sm bg-muted/50 p-3">
           <p className="text-sm leading-6">记录与附件会保留在全部记录中，分区的同步目标和待发送任务会停止。</p>
           <Button
             variant="outline"
@@ -390,14 +391,15 @@ function PartitionSection({ partition }: { partition: JournalPartition }) {
 }
 
 export default function JournalPartitions() {
+  const t = useTranslate();
   const partitions = useJournalPartitions();
   const deliveries = useJournalDeliveries();
   const action = useJournalPartitionAction();
   const [name, setName] = useState("");
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-7 pb-12 pt-5 sm:pt-10">
+    <div className="mx-auto w-full max-w-5xl space-y-7 pb-12 pt-5 sm:pt-10">
       <header>
-        <h1 className="font-serif text-3xl font-medium tracking-tight">分区与同步</h1>
+        <h1 className="font-content text-3xl font-medium">{t("journal.partitions")}</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">想分类的时候，再放进一个分区。所有记录仍留在一起。</p>
       </header>
       <form

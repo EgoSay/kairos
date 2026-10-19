@@ -141,7 +141,7 @@ export const useMemoActionHandlers = ({ memo, parentPage, onEdit, setDeleteDialo
       handleError(error, toast.error, { context: "Delete memo", fallbackMessage: "An error occurred" });
       return;
     }
-    toast.success(memo.parent ? t("message.deleted-successfully") : "已移到最近删除，30 天内可以恢复。");
+    toast.success(memo.parent ? t("message.deleted-successfully") : t("journal.moved-to-trash"));
     if (memo.parent) {
       queryClient.invalidateQueries({ queryKey: memoKeys.comments(memo.parent) });
       queryClient.invalidateQueries({ queryKey: memoKeys.detail(memo.parent) });

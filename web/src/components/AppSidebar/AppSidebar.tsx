@@ -301,14 +301,15 @@ const RouteSidebarContent = () => {
 };
 
 const JournalSidebarContent = () => {
+  const t = useTranslate();
   const location = useLocation();
   const { setMobileOpen } = useAppSidebar();
   return (
-    <SidebarSection ariaLabel="随便看看">
+    <SidebarSection ariaLabel={t("journal.explore")}>
       {[
-        { to: ROUTES.JOURNAL_REVIEW, label: "每日回顾", icon: BookOpenIcon },
-        { to: ROUTES.JOURNAL_WANDER, label: "随机漫步", icon: ShuffleIcon },
-        { to: ROUTES.JOURNAL_INSIGHTS, label: "AI 洞察", icon: SparklesIcon },
+        { to: ROUTES.JOURNAL_REVIEW, label: t("journal.daily-review"), icon: BookOpenIcon },
+        { to: ROUTES.JOURNAL_WANDER, label: t("journal.random-walk"), icon: ShuffleIcon },
+        { to: ROUTES.JOURNAL_INSIGHTS, label: t("journal.ai-insights"), icon: SparklesIcon },
       ].map(({ to, label, icon: Icon }) => (
         <Link
           key={to}
@@ -384,7 +385,7 @@ const NavPill = ({ label, icon: Icon, to, onClick, active = false, expanded = fa
           )}
         >
           <span className="flex min-w-0 items-center overflow-hidden">
-            <span data-sidebar-label className="shrink-0 truncate text-[12px] leading-5">
+            <span data-sidebar-label className="shrink-0 truncate text-xs leading-5">
               {label}
             </span>
           </span>
@@ -410,8 +411,11 @@ const GlobalNavigation = () => {
 
   return (
     <TooltipProvider>
-      <nav className={cn("@container flex h-7 items-center gap-1", SIDEBAR_RAIL_CLASSES)} aria-label={currentUser ? "主要导航" : "Primary"}>
-        <div ref={timelineRef} className={cn("flex shrink-0 items-center rounded-md", timelineActive && sidebarRowStateClasses("current"))}>
+      <nav
+        className={cn("@container flex h-7 items-center gap-1", SIDEBAR_RAIL_CLASSES)}
+        aria-label={currentUser ? t("journal.primary-nav") : "Primary"}
+      >
+        <div ref={timelineRef} className={cn("flex shrink-0 items-center rounded-sm", timelineActive && sidebarRowStateClasses("current"))}>
           <NavPill
             to={navigationPath(ROUTES.HOME)}
             label={currentUser ? t("memo.layout-list") : t("common.timeline")}
@@ -433,7 +437,7 @@ const GlobalNavigation = () => {
           />
         ))}
         <NavPill
-          label={currentUser ? "查找记录" : t("common.search")}
+          label={currentUser ? t("journal.find-records") : t("common.search")}
           icon={SearchIcon}
           onClick={() => setQuickFindOpen(true)}
           className="ms-auto"
@@ -451,7 +455,7 @@ const GlobalNavigation = () => {
             )}
           >
             <SidebarRowIconSlot icon={CompassIcon} />
-            <span>随便看看</span>
+            <span>{t("journal.explore")}</span>
           </Link>
         </div>
       )}
@@ -478,11 +482,11 @@ const AppSidebar = ({ className }: { className?: string }) => {
       {currentUser && (
         <footer className="shrink-0 border-t border-border/60 p-3">
           {[
-            { to: ROUTES.JOURNAL_PARTITIONS, label: "分区与同步", icon: LibraryIcon },
-            { to: ROUTES.JOURNAL_SHARES, label: "我的分享", icon: Share2Icon },
-            { to: ROUTES.JOURNAL_TRASH, label: "最近删除", icon: Trash2Icon },
-            { to: ROUTES.JOURNAL_BACKUP, label: "数据与备份", icon: DatabaseIcon },
-            { to: ROUTES.SETTING, label: "设置", icon: SettingsIcon },
+            { to: ROUTES.JOURNAL_PARTITIONS, label: t("journal.partitions"), icon: LibraryIcon },
+            { to: ROUTES.JOURNAL_SHARES, label: t("journal.my-shares"), icon: Share2Icon },
+            { to: ROUTES.JOURNAL_TRASH, label: t("journal.trash"), icon: Trash2Icon },
+            { to: ROUTES.JOURNAL_BACKUP, label: t("journal.backup"), icon: DatabaseIcon },
+            { to: ROUTES.SETTING, label: t("common.settings"), icon: SettingsIcon },
           ].map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
@@ -503,7 +507,7 @@ const AppSidebar = ({ className }: { className?: string }) => {
             onClick={() => setMobileOpen(false)}
             className={cn(
               sidebarSurfaceVariants({ role: "account" }),
-              "group text-[13px] font-medium text-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50",
+              "group text-ui font-medium text-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50",
             )}
           >
             <span className={SIDEBAR_LEADING_SLOT_CLASSES}>
@@ -525,6 +529,7 @@ const AppSidebar = ({ className }: { className?: string }) => {
 };
 
 export const MobileAppHeader = () => {
+  const t = useTranslate();
   const { setMobileOpen } = useAppSidebar();
   const user = useCurrentUser();
   const location = useLocation();
@@ -536,32 +541,32 @@ export const MobileAppHeader = () => {
         size="icon"
         className="min-h-11 min-w-11"
         onClick={() => setMobileOpen(true)}
-        aria-label="打开导航"
+        aria-label={t("journal.open-nav")}
         data-mobile-navigation-trigger
       >
         <MenuIcon className="size-[18px]" />
       </Button>
       {user ? (
-        <nav aria-label="主要导航" className="flex items-center gap-5 px-3 text-sm">
+        <nav aria-label={t("journal.primary-nav")} className="flex items-center gap-5 px-3 text-sm">
           <Link
             to={ROUTES.HOME}
             aria-current={!journalActive ? "page" : undefined}
             className={cn(
-              "inline-flex min-h-11 items-center rounded focus-visible:outline-2",
+              "inline-flex min-h-11 items-center rounded-lg focus-visible:outline-2",
               journalActive ? "text-muted-foreground" : "font-medium",
             )}
           >
-            记录
+            {t("journal.records")}
           </Link>
           <Link
             to={ROUTES.JOURNAL}
             aria-current={journalActive ? "page" : undefined}
             className={cn(
-              "inline-flex min-h-11 items-center rounded focus-visible:outline-2",
+              "inline-flex min-h-11 items-center rounded-lg focus-visible:outline-2",
               journalActive ? "font-medium" : "text-muted-foreground",
             )}
           >
-            随便看看
+            {t("journal.explore")}
           </Link>
         </nav>
       ) : (
