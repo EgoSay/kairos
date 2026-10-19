@@ -138,10 +138,9 @@ func existsBodyEnd(filter string, bodyStart int, literalStart map[int]int) int {
 			i = end - 1
 			continue
 		}
-		switch filter[i] {
-		case '(':
+		if filter[i] == '(' {
 			depth++
-		case ')':
+		} else if filter[i] == ')' {
 			depth--
 			if depth == 0 {
 				return i
@@ -216,6 +215,7 @@ func rewrittenLiteral(value string, context literalContext, tag, renamed string,
 			if subtree || !descendantsExist {
 				return replacement, true
 			}
+		default:
 		}
 		// A bare-prefix argument like t.startsWith("a") intentionally keeps
 		// matching sibling names such as "ab"; it is not a tag reference.

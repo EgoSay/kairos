@@ -1137,9 +1137,9 @@ func TestRemoveTags(t *testing.T) {
 			expected:           "#ab #a2",
 		},
 		{
-			name:    "no descendants without flag",
-			content: "#a #a/b #ab",
-			tags:    []string{"a"},
+			name:     "no descendants without flag",
+			content:  "#a #a/b #ab",
+			tags:     []string{"a"},
 			expected: "#a/b #ab",
 		},
 		{name: "crlf line endings", content: "text #a\r\nmore", tags: []string{"a"}, expected: "text\r\nmore"},

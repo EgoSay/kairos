@@ -142,7 +142,7 @@ func TestBatchUpdateMemoTagsKeepsQueuedDeliveryAlive(t *testing.T) {
 
 	p, err := ps.SavePartition(ctx, owner.ID, &partition.Partition{Name: "outbox"})
 	require.NoError(t, err)
-	receiver := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	receiver := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer receiver.Close()
