@@ -60,11 +60,11 @@ describe("sharing publication boundaries", () => {
       path === "/shares/preview" ? { items: [item], previewDigest: "reviewed-digest" } : [],
     );
     ownerPage();
-    fireEvent.click(screen.getByRole("button", { name: "新建" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
     fireEvent.click(screen.getByRole("button", { name: "选择一条原文" }));
-    expect(screen.queryByRole("button", { name: "创建分享链接" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "预览访客会看到的内容" }));
-    fireEvent.click(await screen.findByRole("button", { name: "创建分享链接" }));
+    expect(screen.queryByRole("button", { name: "Create share link" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Preview what visitors will see" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Create share link" }));
     await waitFor(() => expect(request.mock.calls.some(([path, options]) => path === "/shares" && options?.method === "POST")).toBe(true));
     const [, options] = request.mock.calls.find(([path, options]) => path === "/shares" && options?.method === "POST")!;
     expect(JSON.parse(options.body)).toMatchObject({ mode: "fixed", previewDigest: "reviewed-digest", filter: { memoNames: ["memos/a"] } });
@@ -72,18 +72,18 @@ describe("sharing publication boundaries", () => {
   it("invalidates the publication preview when selection settings change", async () => {
     request.mockImplementation(async (path: string) => (path === "/shares/preview" ? { items: [item], previewDigest: "old" } : []));
     ownerPage();
-    fireEvent.click(screen.getByRole("button", { name: "新建" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
     fireEvent.click(screen.getByRole("button", { name: "选择一条原文" }));
-    fireEvent.click(screen.getByRole("button", { name: "预览访客会看到的内容" }));
-    await screen.findByRole("button", { name: "创建分享链接" });
-    fireEvent.click(screen.getByRole("radio", { name: "跟随范围更新" }));
-    expect(screen.queryByRole("button", { name: "创建分享链接" })).not.toBeInTheDocument();
-    expect(screen.getByText("范围已修改，请重新预览")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Preview what visitors will see" }));
+    await screen.findByRole("button", { name: "Create share link" });
+    fireEvent.click(screen.getByRole("radio", { name: "Follow the scope" }));
+    expect(screen.queryByRole("button", { name: "Create share link" })).not.toBeInTheDocument();
+    expect(screen.getByText("Scope changed; preview again")).toBeInTheDocument();
   });
   it("pauses access without updating snapshot text or members", async () => {
     request.mockResolvedValue([share]);
     ownerPage();
-    fireEvent.click(await screen.findByRole("button", { name: "停用" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Pause" }));
     await waitFor(() =>
       expect(request).toHaveBeenCalledWith("/shares/one", { method: "PATCH", body: JSON.stringify({ version: 4, paused: true }) }),
     );
@@ -109,9 +109,9 @@ describe("visitor content isolation", () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ title: "秋日", items: [item] }), { status: 200 }));
     vi.stubGlobal("fetch", fetch);
     publicPage();
-    fireEvent.change(await screen.findByLabelText("提取码"), { target: { value: "test-code" } });
+    fireEvent.change(await screen.findByLabelText("Passcode"), { target: { value: "test-code" } });
     expect(fetch).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole("button", { name: "打开分享" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open share" }));
     expect(await screen.findByText("今天散了步。")).toBeInTheDocument();
     expect(fetch.mock.calls[1][1].body).toBe(JSON.stringify({ passcode: "test-code" }));
     expect(fetch.mock.calls[1][1].credentials).toBe("omit");
@@ -155,7 +155,7 @@ describe("visitor content isolation", () => {
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
     fireEvent(document, new Event("visibilitychange"));
     await waitFor(() => expect(screen.queryByText("今天散了步。")).not.toBeInTheDocument());
-    expect(await screen.findByLabelText("提取码")).toBeInTheDocument();
+    expect(await screen.findByLabelText("Passcode")).toBeInTheDocument();
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
   });
 });

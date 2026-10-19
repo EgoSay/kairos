@@ -11,6 +11,7 @@ import { ROUTES } from "@/router/routes";
 import { useTranslate } from "@/utils/i18n";
 
 function DailyRecords({ preferences }: { preferences: JournalPreferences }) {
+  const t = useTranslate();
   const user = useCurrentUser();
   const { reviewDay, setReviewDay } = useJournalSession();
   // Freeze the reader's day on entry; crossing midnight must never replace their page.
@@ -30,12 +31,12 @@ function DailyRecords({ preferences }: { preferences: JournalPreferences }) {
     <>
       {pending && (
         <p role="status" className="py-10 text-sm text-muted-foreground">
-          正在翻开记录…
+          {t("journal.opening-records")}
         </p>
       )}
       {failed && (
         <div role="alert" className="space-y-3 py-6">
-          <p className="text-sm text-muted-foreground">暂时没能打开记录。</p>
+          <p className="text-sm text-muted-foreground">{t("journal.open-error")}</p>
           <Button
             variant="outline"
             onClick={() => {
@@ -45,11 +46,11 @@ function DailyRecords({ preferences }: { preferences: JournalPreferences }) {
               });
             }}
           >
-            重试
+            {t("journal.retry")}
           </Button>
         </div>
       )}
-      {!pending && !failed && memos.length === 0 && <p className="py-12 text-sm text-muted-foreground">这里暂时没有过去的记录。</p>}
+      {!pending && !failed && memos.length === 0 && <p className="py-12 text-sm text-muted-foreground">{t("journal.review-empty")}</p>}
       <div className="space-y-5">
         {memos.map((memo) => (
           <JournalMemo key={memo.name} memo={memo} />
@@ -74,12 +75,12 @@ export default function JournalReview() {
       <h1 className="mb-8 font-content text-3xl font-medium">{t("journal.daily-review")}</h1>
       {preferences.isPending && (
         <p role="status" className="text-sm text-muted-foreground">
-          正在翻开记录…
+          {t("journal.opening-records")}
         </p>
       )}
       {preferences.isError && (
         <Button variant="outline" onClick={() => preferences.refetch()}>
-          重试
+          {t("journal.retry")}
         </Button>
       )}
       {preferences.data && <DailyRecords preferences={preferences.data} />}

@@ -42,7 +42,7 @@ function WanderRecords({ preferences }: { preferences: JournalPreferences }) {
     <>
       {failed ? (
         <div role="alert" className="space-y-3 py-8">
-          <p className="text-sm text-muted-foreground">暂时没能打开记录。</p>
+          <p className="text-sm text-muted-foreground">{t("journal.open-error")}</p>
           <Button
             variant="outline"
             onClick={() => {
@@ -50,12 +50,12 @@ function WanderRecords({ preferences }: { preferences: JournalPreferences }) {
               void current?.refetch();
             }}
           >
-            重试
+            {t("journal.retry")}
           </Button>
         </div>
       ) : loading ? (
         <p role="status" className="py-10 text-sm text-muted-foreground">
-          正在翻开记录…
+          {t("journal.opening-records")}
         </p>
       ) : available ? (
         <JournalMemo key={memo.name} memo={memo} />
@@ -72,7 +72,7 @@ function WanderRecords({ preferences }: { preferences: JournalPreferences }) {
             disabled={wander.index === 0}
             onClick={() => setWander({ ...wander, index: wander.index - 1 })}
           >
-            上一条
+            {t("journal.wander-prev")}
           </Button>
           {exhausted ? (
             <Button
@@ -81,7 +81,7 @@ function WanderRecords({ preferences }: { preferences: JournalPreferences }) {
               disabled={!candidates.isSuccess}
               onClick={() => setWander(startJournalWander([...eligibleNames], day.date, day.timezone))}
             >
-              重新随便看看
+              {t("journal.wander-restart")}
             </Button>
           ) : (
             <Button
@@ -90,7 +90,7 @@ function WanderRecords({ preferences }: { preferences: JournalPreferences }) {
               disabled={Boolean(loading || failed)}
               onClick={() => setWander(advanceJournalWander(wander, eligibleNames))}
             >
-              换一条
+              {t("journal.wander-next")}
             </Button>
           )}
         </div>
@@ -116,12 +116,12 @@ export default function JournalWander() {
       <h1 className="mb-8 font-content text-3xl font-medium">{t("journal.random-walk")}</h1>
       {preferences.isPending && (
         <p role="status" className="text-sm text-muted-foreground">
-          正在翻开记录…
+          {t("journal.opening-records")}
         </p>
       )}
       {preferences.isError && (
         <Button variant="outline" onClick={() => preferences.refetch()}>
-          重试
+          {t("journal.retry")}
         </Button>
       )}
       {preferences.data && <WanderRecords preferences={preferences.data} />}

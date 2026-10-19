@@ -110,7 +110,7 @@ describe("persisted pin failure feedback and cache recovery", () => {
       await waitFor(() => expect(result.current.pin.pending).toBe(false));
       await waitFor(() => expect(result.current.memo).toEqual(serverSaved));
       expectEveryCache(serverSaved);
-      expect(notifications.success).toHaveBeenCalledExactlyOnceWith(pinned ? "已取消置顶" : "已置顶");
+      expect(notifications.success).toHaveBeenCalledExactlyOnceWith(pinned ? "Unpinned" : "Pinned");
       expect(notifications.error).toHaveBeenCalledOnce();
       expect(api.updateMemo).toHaveBeenCalledTimes(2);
       for (const [request] of api.updateMemo.mock.calls) {

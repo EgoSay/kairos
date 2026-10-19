@@ -48,7 +48,7 @@ describe("explicit source selection", () => {
         <JournalSourcePicker selected={[]} onChange={onChange} />
       </QueryClientProvider>,
     );
-    await screen.findByText("没有找到记录。");
+    await screen.findByText("No records found.");
     await act(async () => {
       await client.invalidateQueries({ queryKey: ["memos", "list"] });
     });
@@ -59,28 +59,28 @@ describe("explicit source selection", () => {
   it("applies both ends of the selected local day across daylight saving without changing the selection", async () => {
     const onChange = renderPicker();
     await screen.findByText("这一天的记录");
-    fireEvent.click(screen.getByText("按日期范围查找"));
-    fireEvent.change(screen.getByLabelText("从哪一天"), { target: { value: "2026-03-08" } });
-    fireEvent.change(screen.getByLabelText("到哪一天（含当天）"), { target: { value: "2026-03-08" } });
+    fireEvent.click(screen.getByText("Search by date range"));
+    fireEvent.change(screen.getByLabelText("From which day"), { target: { value: "2026-03-08" } });
+    fireEvent.change(screen.getByLabelText("To which day (inclusive)"), { target: { value: "2026-03-08" } });
     expect(listMemos).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole("button", { name: "查找" }));
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
     await waitFor(() => expect(listMemos).toHaveBeenCalledTimes(2));
     const filter = listMemos.mock.calls[1][0].filter;
     expect(filter).toContain(`created_ts >= timestamp(${Date.parse("2026-03-08T05:00:00Z") / 1000})`);
     expect(filter).toContain(`created_ts < timestamp(${Date.parse("2026-03-09T04:00:00Z") / 1000})`);
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByText("已选 1 条")).toBeInTheDocument();
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
   });
 
   it.each([
-    ["从哪一天", "2026-03-08", ">=", "2026-03-08T05:00:00Z"],
-    ["到哪一天（含当天）", "2026-03-08", "<", "2026-03-09T04:00:00Z"],
+    ["From which day", "2026-03-08", ">=", "2026-03-08T05:00:00Z"],
+    ["To which day (inclusive)", "2026-03-08", "<", "2026-03-09T04:00:00Z"],
   ])("supports a range with only %s using the CEL timestamp contract", async (label, date, operator, instant) => {
     renderPicker();
     await screen.findByText("这一天的记录");
-    fireEvent.click(screen.getByText("按日期范围查找"));
+    fireEvent.click(screen.getByText("Search by date range"));
     fireEvent.change(screen.getByLabelText(label), { target: { value: date } });
-    fireEvent.click(screen.getByRole("button", { name: "查找" }));
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
     await waitFor(() => expect(listMemos).toHaveBeenCalledTimes(2));
     expect(listMemos.mock.calls[1][0].filter).toBe(
       `(creator == "users/me") && (created_ts ${operator} timestamp(${Date.parse(instant) / 1000}))`,
@@ -90,11 +90,11 @@ describe("explicit source selection", () => {
   it("rejects a reversed date interval before issuing another request", async () => {
     renderPicker();
     await screen.findByText("这一天的记录");
-    fireEvent.click(screen.getByText("按日期范围查找"));
-    fireEvent.change(screen.getByLabelText("从哪一天"), { target: { value: "2026-10-04" } });
-    fireEvent.change(screen.getByLabelText("到哪一天（含当天）"), { target: { value: "2026-10-03" } });
-    fireEvent.click(screen.getByRole("button", { name: "查找" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("结束日期不能早于开始日期。");
+    fireEvent.click(screen.getByText("Search by date range"));
+    fireEvent.change(screen.getByLabelText("From which day"), { target: { value: "2026-10-04" } });
+    fireEvent.change(screen.getByLabelText("To which day (inclusive)"), { target: { value: "2026-10-03" } });
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("The end date can't be before the start date.");
     expect(listMemos).toHaveBeenCalledTimes(1);
   });
 });
@@ -117,23 +117,23 @@ async function renderActions() {
     </MemoryRouter>,
   );
   fireEvent.click(screen.getByRole("button", { name: "记录选项" }));
-  await screen.findByRole("menuitem", { name: "用 AI 看看这条" });
+  await screen.findByRole("menuitem", { name: "Look at this with AI" });
 }
 
 describe("optional original record actions", () => {
   it("adds a review exclusion without removing other exclusions", async () => {
     await renderActions();
-    fireEvent.click(screen.getByRole("menuitem", { name: "暂不在回顾与漫步中出现" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Hide from Review and Wander" }));
     expect(mutate).toHaveBeenCalledWith({ excludedMemoNames: ["memos/other", "memos/one"] }, expect.any(Object));
   });
 
   it("restores only this record and opens AI with only this explicit source", async () => {
     preferences.excludedMemoNames = ["memos/other", "memos/one"];
     await renderActions();
-    fireEvent.click(screen.getByRole("menuitem", { name: "恢复在回顾与漫步中出现" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Show again in Review and Wander" }));
     expect(mutate).toHaveBeenCalledWith({ excludedMemoNames: ["memos/other"] }, expect.any(Object));
     fireEvent.click(screen.getByRole("button", { name: "记录选项" }));
-    fireEvent.click(await screen.findByRole("menuitem", { name: "用 AI 看看这条" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Look at this with AI" }));
     expect(screen.getByRole("status")).toHaveTextContent("/journal/insights?memo=memos%2Fone");
   });
 });

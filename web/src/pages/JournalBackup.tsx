@@ -22,10 +22,11 @@ async function request(path: string, options: RequestInit = {}) {
   return fetch(`/api/v1/journal/backups${path}`, { ...options, headers, credentials: "same-origin" });
 }
 function Warnings({ warnings }: { warnings: string[] }) {
+  const t = useTranslate();
   if (!warnings.length) return null;
   return (
     <details>
-      <summary className="min-h-11 cursor-pointer py-3 text-sm">恢复说明与媒体缺口（{warnings.length}）</summary>
+      <summary className="min-h-11 cursor-pointer py-3 text-sm">{t("journal.backup-warnings", { count: warnings.length })}</summary>
       <ul className="list-disc space-y-2 pl-5 text-xs leading-5 text-muted-foreground">
         {warnings.map((warning, index) => (
           <li key={`${index}-${warning}`}>{warning}</li>
@@ -50,7 +51,7 @@ export default function JournalBackup() {
     try {
       await work();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "操作未完成，请重试。");
+      setError(cause instanceof Error ? cause.message : t("journal.backup-op-error"));
     } finally {
       setBusy("");
     }
@@ -71,7 +72,7 @@ export default function JournalBackup() {
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(href), 60_000);
-      setMessage("档案已准备下载。请检查浏览器下载结果，并保存到你选择的独立备份位置。");
+      setMessage(t("journal.backup-exported"));
     });
   const inspect = () =>
     run("preview", async () => {
@@ -94,7 +95,7 @@ export default function JournalBackup() {
       const value = await response.json();
       if (!response.ok) {
         if (value.report) setReport(value.report);
-        throw new Error(value.message ?? "恢复未完成；重试同一档案不会重复导入。");
+        throw new Error(value.message ?? t("journal.backup-restore-error"));
       }
       setReport(value);
     });
@@ -102,33 +103,26 @@ export default function JournalBackup() {
     <div className="mx-auto w-full max-w-2xl space-y-8 pb-12 pt-5 sm:pt-10">
       <header>
         <h1 className="font-content text-3xl font-medium">{t("journal.backup")}</h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">把自己的日子带走，也能在另一处接着保存。</p>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("journal.backup-tagline")}</p>
       </header>
       <CloudBackupConfiguration />
       <section className="space-y-4 rounded-xl border border-border/70 bg-card p-5">
-        <h2 className="text-lg font-medium">下载可迁移档案</h2>
-        <p className="text-sm leading-6 text-muted-foreground">
-          包含本人记录、日期、标签、关系、管理中的媒体与可用原件，以及主动保存的 AI 洞察。解压后可以直接阅读 Markdown 和媒体文件。
-        </p>
+        <h2 className="text-lg font-medium">{t("journal.backup-export-title")}</h2>
+        <p className="text-sm leading-6 text-muted-foreground">{t("journal.backup-export-desc")}</p>
         <label className="flex min-h-11 items-center gap-3 text-sm">
           <input type="checkbox" checked={history} disabled={Boolean(busy)} onChange={(event) => setHistory(event.target.checked)} />
-          同时包含最近 30 天的编辑历史
+          {t("journal.backup-export-history")}
         </label>
-        <p className="text-xs leading-5 text-muted-foreground">
-          不包含草稿或最近删除。分享与同步只保留脱敏规则和历史映射；访问令牌、链接密钥、Webhook
-          地址与签名密钥不会导出。原件与外链缺口会列入报告。
-        </p>
+        <p className="text-xs leading-5 text-muted-foreground">{t("journal.backup-export-note")}</p>
         <Button className="min-h-11" disabled={Boolean(busy)} onClick={() => void download()}>
-          {busy === "export" ? "正在整理档案…" : "下载 ZIP 档案"}
+          {busy === "export" ? t("journal.backup-exporting") : t("journal.backup-export-action")}
         </Button>
       </section>
       <section className="space-y-4 rounded-xl border border-border/70 bg-card p-5">
-        <h2 className="text-lg font-medium">从档案恢复</h2>
-        <p className="text-sm leading-6 text-muted-foreground">
-          先检查文件和媒体校验和，再决定恢复。不会覆盖已有记录；同一档案重复恢复不会产生重复副本。
-        </p>
+        <h2 className="text-lg font-medium">{t("journal.backup-restore-title")}</h2>
+        <p className="text-sm leading-6 text-muted-foreground">{t("journal.backup-restore-desc")}</p>
         <Input
-          aria-label="选择要检查的 ZIP 备份"
+          aria-label={t("journal.backup-file-label")}
           className="min-h-11 py-2"
           type="file"
           accept=".zip,application/zip"
@@ -140,31 +134,29 @@ export default function JournalBackup() {
             setError("");
           }}
         />
-        <p className="text-xs text-muted-foreground">单份档案最大 1 GiB；检查阶段不会导入内容。</p>
+        <p className="text-xs text-muted-foreground">{t("journal.backup-file-note")}</p>
         <Button variant="outline" className="min-h-11" disabled={!file || Boolean(busy)} onClick={() => void inspect()}>
-          {busy === "preview" ? "正在核对文件…" : "检查备份"}
+          {busy === "preview" ? t("journal.backup-inspecting") : t("journal.backup-inspect")}
         </Button>
         {preview && !report?.complete && (
           <div className="space-y-4 border-t border-border pt-4">
-            <p className="text-sm">档案日期：{new Date(preview.createdTs * 1000).toLocaleString()}</p>
+            <p className="text-sm">{t("journal.backup-archive-date", { date: new Date(preview.createdTs * 1000).toLocaleString() })}</p>
             <p className="text-sm">
-              {preview.memos} 条记录 · {preview.attachments} 个附件 · {preview.originals} 个原始文件
+              {t("journal.backup-archive-stats", { memos: preview.memos, attachments: preview.attachments, originals: preview.originals })}
             </p>
             <p className="break-all text-xs text-muted-foreground">SHA-256：{preview.digest}</p>
             <Warnings warnings={preview.warnings} />
-            <p className="text-sm leading-6">
-              恢复会暂停本账户现有分享与同步。恢复内容保持私密，旧链接不会复活，历史任务不会重发；需要重新确认分享范围并填写同步地址。
-            </p>
+            <p className="text-sm leading-6">{t("journal.backup-restore-note")}</p>
             <Button className="min-h-11 h-auto whitespace-normal py-3" disabled={Boolean(busy)} onClick={() => void restore()}>
-              {busy === "restore" ? "正在恢复，原件较多时需要稍等…" : "暂停分享与同步，并恢复为私密记录"}
+              {busy === "restore" ? t("journal.backup-restoring") : t("journal.backup-restore-action")}
             </Button>
           </div>
         )}
         {report && (
           <div role="status" className="space-y-2 border-t border-border pt-4">
-            <p className="font-medium">{report.complete ? "档案恢复完成" : "已保留部分恢复结果"}</p>
+            <p className="font-medium">{report.complete ? t("journal.backup-report-complete") : t("journal.backup-report-partial")}</p>
             <p className="text-sm">
-              {report.memos} 条记录 · {report.attachments} 个附件 · {report.originals} 个原件
+              {t("journal.backup-report-stats", { memos: report.memos, attachments: report.attachments, originals: report.originals })}
             </p>
             <Warnings warnings={report.warnings} />
           </div>
@@ -180,9 +172,7 @@ export default function JournalBackup() {
           {error}
         </p>
       )}
-      <p className="text-xs leading-6 text-muted-foreground">
-        这是可迁移的个人资料档案；整实例数据库与媒体备份由部署运维另行保存。重要副本应放到独立设备或你选择的存储位置，同盘副本无法应对磁盘损坏。自托管不等于端到端加密，已下载副本也不会随应用内删除自动消失。
-      </p>
+      <p className="text-xs leading-6 text-muted-foreground">{t("journal.backup-footer-note")}</p>
     </div>
   );
 }

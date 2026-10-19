@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { journalRequest } from "@/hooks/useJournalQueries";
+import i18n from "@/i18n";
 import { User_Role } from "@/types/proto/api/v1/user_service_pb";
+import type { Translations } from "@/utils/i18n";
 
 export interface BackupReceipt {
   status: string;
@@ -96,13 +98,16 @@ export function useCloudBackupAction() {
   });
 }
 export function backupTime(timestamp?: number) {
-  return timestamp ? new Date(timestamp * 1000).toLocaleString() : "暂无可核验记录";
+  return timestamp ? new Date(timestamp * 1000).toLocaleString(i18n.language || "en") : i18n.t("journal.backup-no-record");
 }
-export const backupStateLabel: Record<string, string> = {
-  success: "备份成功",
-  failed: "备份失败",
-  running: "正在执行",
-  paused: "已暂停",
-  stale: "保护时间已过期",
-  unknown: "状态未知",
+const backupStateKeys: Record<string, Translations> = {
+  success: "journal.state-success",
+  failed: "journal.state-failed",
+  running: "journal.state-running",
+  paused: "journal.state-paused",
+  stale: "journal.state-stale",
+  unknown: "journal.status-unknown",
 };
+export function backupStateLabel(state: string): Translations {
+  return backupStateKeys[state] ?? "journal.status-unknown";
+}
