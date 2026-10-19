@@ -1,6 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import { isEqual } from "lodash-es";
-import { EyeOffIcon, PaletteIcon, PlusIcon, TagIcon, TrashIcon } from "lucide-react";
+import { EyeOffIcon, PaletteIcon, PlusIcon, Settings2Icon, TagIcon, TrashIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import {
 } from "@/types/proto/api/v1/user_service_pb";
 import { ColorSchema } from "@/types/proto/google/type/color_pb";
 import { useTranslate } from "@/utils/i18n";
+import { TagManagerDialog } from "../TagOrganization";
 import SettingGroup from "./SettingGroup";
 import { SettingList, SettingPanel } from "./SettingList";
 import SettingSection from "./SettingSection";
@@ -62,6 +63,7 @@ const TagsSection = () => {
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState<string | undefined>(undefined);
   const [newTagBlur, setNewTagBlur] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
 
   // Sync local state when the fetched setting arrives (the fetch is async and
   // completes after mount, so localTags would be empty without this sync).
@@ -277,11 +279,16 @@ const TagsSection = () => {
         </SettingList>
       </SettingGroup>
 
-      <div className="w-full flex justify-end">
+      <div className="w-full flex justify-between gap-2">
+        <Button variant="outline" onClick={() => setManageOpen(true)}>
+          <Settings2Icon className="w-4 h-4 mr-1.5" />
+          {t("tagOps.manage-entry")}
+        </Button>
         <Button disabled={!hasChanges || !currentUser} onClick={handleSave}>
           {t("common.save")}
         </Button>
       </div>
+      {manageOpen && <TagManagerDialog onClose={() => setManageOpen(false)} />}
     </SettingSection>
   );
 };

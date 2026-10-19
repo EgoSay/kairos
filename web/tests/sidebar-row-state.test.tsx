@@ -52,10 +52,12 @@ describe("sidebar selected grammar", () => {
     );
 
     const row = screen.getByRole("button", { name: "#work, setting.tags.used-count" });
-    expect(row).not.toHaveAttribute("data-checked");
+    // Split-row grammar: the state marker lives on the box, focus on the label inside.
+    const box = row.parentElement as HTMLElement;
+    expect(box).not.toHaveAttribute("data-checked");
     fireEvent.click(row);
-    expect(row).toHaveAttribute("data-checked");
-    expect(row).not.toHaveClass("bg-sidebar-accent");
+    expect(box).toHaveAttribute("data-checked");
+    expect(box).not.toHaveClass("bg-sidebar-accent");
   });
 });
 

@@ -20,6 +20,8 @@ export interface UseMemoFiltersOptions {
   includeMemoViews?: boolean;
   includePinned?: boolean;
   visibilities?: Visibility[];
+  /** Interactive factors to drop — e.g. tag stats ignore the tag dimension itself. */
+  excludeFactors?: readonly MemoFilter["factor"][];
 }
 
 interface BuildMemoFilterOptions {
@@ -28,6 +30,8 @@ interface BuildMemoFilterOptions {
   includePinned: boolean;
   selectedMemoViewFilter?: string;
   visibilities?: Visibility[];
+  /** Interactive factors to drop before serialization. */
+  excludeFactors?: readonly MemoFilter["factor"][];
   /** Which timestamp a `displayTime` day filter selects on; defaults to creation time. */
   timeBasis?: MemoTimeBasis;
   timezone?: string;
@@ -39,10 +43,12 @@ export const buildMemoFilter = ({
   includePinned,
   selectedMemoViewFilter,
   visibilities,
+  excludeFactors,
   timeBasis = "create_time",
   timezone = "Asia/Shanghai",
 }: BuildMemoFilterOptions): string | undefined => {
   const conditions: string[] = [];
+  const effectiveFilters = excludeFactors?.length ? filters.filter((filter) => !excludeFactors.includes(filter.factor)) : filters;
 
   if (creatorName) {
     const creatorFilter = buildMemoCreatorFilter(creatorName);
@@ -55,7 +61,7 @@ export const buildMemoFilter = ({
     conditions.push(selectedMemoViewFilter);
   }
 
-  for (const filter of filters) {
+  for (const filter of effectiveFilters) {
     if (filter.factor === "contentSearch") {
       conditions.push(`content.contains(${escapeFilterValue(filter.value)})`);
     } else if (filter.factor === "celSearch") {
@@ -83,7 +89,7 @@ export const buildMemoFilter = ({
     }
   }
 
-  conditions.push(...buildSearchFacetConditions(filters, timezone));
+  conditions.push(...buildSearchFacetConditions(effectiveFilters, timezone));
 
   if (visibilities && visibilities.length > 0) {
     const visibilityValues = visibilities.map((visibility) => `"${getVisibilityName(visibility)}"`).join(", ");
@@ -104,7 +110,7 @@ export const useSelectedMemoViewFilter = (): string | undefined => {
 };
 
 export const useMemoFilters = (options: UseMemoFiltersOptions = {}): string | undefined => {
-  const { creatorName, includeMemoViews = false, includePinned = false, visibilities } = options;
+  const { creatorName, includeMemoViews = false, includePinned = false, visibilities, excludeFactors } = options;
 
   const { filters } = useMemoFilterContext();
   const selectedMemoViewFilter = useSelectedMemoViewFilter();
@@ -120,9 +126,20 @@ export const useMemoFilters = (options: UseMemoFiltersOptions = {}): string | un
         includePinned,
         selectedMemoViewFilter: includeMemoViews ? selectedMemoViewFilter : undefined,
         visibilities,
+        excludeFactors,
         timeBasis,
         timezone: preferences?.timezone,
       }),
-    [creatorName, filters, includePinned, includeMemoViews, selectedMemoViewFilter, visibilities, timeBasis, preferences?.timezone],
+    [
+      creatorName,
+      filters,
+      includePinned,
+      includeMemoViews,
+      selectedMemoViewFilter,
+      visibilities,
+      excludeFactors,
+      timeBasis,
+      preferences?.timezone,
+    ],
   );
 };

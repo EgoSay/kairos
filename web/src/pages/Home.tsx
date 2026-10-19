@@ -4,9 +4,11 @@ import MemoEditor from "@/components/MemoEditor";
 import { deriveDefaultCreateTimeFromFilters } from "@/components/MemoEditor/utils/deriveDefaultCreateTime";
 import MemoView from "@/components/MemoView";
 import PagedMemoList, { getMemoKey } from "@/components/PagedMemoList";
+import { MemoSelectionBar, SelectableMemo } from "@/components/TagOrganization";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGlobalMemoEditor } from "@/contexts/GlobalMemoEditorContext";
 import { useMemoFilterContext } from "@/contexts/MemoFilterContext";
+import { MemoSelectionProvider } from "@/contexts/MemoSelectionContext";
 import { NewMemoProvider } from "@/contexts/NewMemoContext";
 import { useSpaceContext } from "@/contexts/SpaceContext";
 import { useMemoFilters, useMemoSorting } from "@/hooks";
@@ -38,6 +40,8 @@ const Home = () => {
     includePinned: true,
   });
   const canComposeInScope = Boolean(user && (!creatorUsername || creatorUsername === user.username));
+  // Multi-select organizes only the user's own records, matching the server scope.
+  const selectionEnabled = canComposeInScope;
   // Pinning is the owner's arrangement of their own memos, so it only shapes a single
   // creator's feed; a mixed-author feed like Explore stays purely chronological.
   const honorPinned = Boolean(creatorUsername);
@@ -50,51 +54,55 @@ const Home = () => {
   return (
     <div className="w-full min-h-full bg-background text-foreground">
       <NewMemoProvider>
-        <PagedMemoList
-          renderer={(memo: Memo, { compact }) => (
-            <MemoView
-              key={getMemoKey(memo)}
-              memo={memo}
-              showCreator={!creatorUsername}
-              showVisibility
-              showPinned={honorPinned}
-              showSpace={!selectedSpaceName}
-              compact={compact}
-              privateDiary={Boolean(user && canComposeInScope)}
-            />
-          )}
-          listSort={listSort}
-          orderBy={orderBy}
-          filter={memoFilter}
-          contextFilter={contextFilter}
-          emptyMessage={t("journal.empty-feed")}
-          renderHeader={() =>
-            user && canComposeInScope ? (
-              <header className="mb-6 px-1 pt-3">
-                <h1 className="font-content text-2xl font-medium">{t("journal.records")}</h1>
-                <p className="mt-2 text-sm text-muted-foreground">{t("journal.tagline")}</p>
-              </header>
-            ) : null
-          }
-          renderLeading={({ useGrid }) => {
-            if (!isUserSettingsInitialized || !canComposeInScope) return null;
-
-            return (
-              <>
-                <MemoEditor
-                  key={editorCacheKey}
-                  autoFocus={desktop ? claimHomeAutoFocus : false}
-                  className={useGrid ? undefined : "mb-2"}
-                  cacheKey={editorCacheKey}
-                  placeholder={t("journal.compose-placeholder")}
-                  defaultCreateTime={defaultCreateTime}
-                  defaultSpace={selectedSpaceName}
+        <MemoSelectionProvider>
+          <PagedMemoList
+            renderer={(memo: Memo, { compact }) => (
+              <SelectableMemo key={getMemoKey(memo)} memo={memo}>
+                <MemoView
+                  memo={memo}
+                  showCreator={!creatorUsername}
+                  showVisibility
+                  showPinned={honorPinned}
+                  showSpace={!selectedSpaceName}
+                  compact={compact}
+                  privateDiary={Boolean(user && canComposeInScope)}
                 />
-                {!desktop && <JournalCalendar mobile />}
-              </>
-            );
-          }}
-        />
+              </SelectableMemo>
+            )}
+            listSort={listSort}
+            orderBy={orderBy}
+            filter={memoFilter}
+            contextFilter={contextFilter}
+            emptyMessage={t("journal.empty-feed")}
+            renderHeader={() =>
+              user && canComposeInScope ? (
+                <header className="mb-6 px-1 pt-3">
+                  <h1 className="font-content text-2xl font-medium">{t("journal.records")}</h1>
+                  <p className="mt-2 text-sm text-muted-foreground">{t("journal.tagline")}</p>
+                </header>
+              ) : null
+            }
+            renderLeading={({ useGrid }) => {
+              if (!isUserSettingsInitialized || !canComposeInScope) return null;
+
+              return (
+                <>
+                  <MemoEditor
+                    key={editorCacheKey}
+                    autoFocus={desktop ? claimHomeAutoFocus : false}
+                    className={useGrid ? undefined : "mb-2"}
+                    cacheKey={editorCacheKey}
+                    placeholder={t("journal.compose-placeholder")}
+                    defaultCreateTime={defaultCreateTime}
+                    defaultSpace={selectedSpaceName}
+                  />
+                  {!desktop && <JournalCalendar mobile />}
+                </>
+              );
+            }}
+          />
+          {selectionEnabled && <MemoSelectionBar />}
+        </MemoSelectionProvider>
       </NewMemoProvider>
     </div>
   );

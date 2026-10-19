@@ -1088,3 +1088,112 @@ func TestExplicitTagsPreserveAuthoredParentAndIgnoreCode(t *testing.T) {
 	require.Equal(t, []string{"人生修行", "人生修行/阅读"}, data.Tags)
 	require.Equal(t, []string{"人生修行/阅读", "人生修行"}, data.ExplicitTags)
 }
+
+func TestRenameTagTreeRewritesDescendantPaths(t *testing.T) {
+	svc := NewService(WithTagExtension())
+
+	result, err := svc.RenameTagTree([]byte("#a #a/b #a/b/c #ab #a2 [#a/x](url)"), "a", "p/a")
+	require.NoError(t, err)
+	assert.Equal(t, "#p/a #p/a/b #p/a/b/c #ab #a2 [#a/x](url)", result)
+}
+
+func TestRenameTagTreeMergesIntoExistingTag(t *testing.T) {
+	svc := NewService(WithTagExtension())
+
+	result, err := svc.RenameTagTree([]byte("note #a body #b"), "a", "b")
+	require.NoError(t, err)
+	assert.Equal(t, "note #b body #b", result)
+}
+
+func TestRemoveTags(t *testing.T) {
+	svc := NewService(WithTagExtension())
+
+	tests := []struct {
+		name               string
+		content            string
+		tags               []string
+		includeDescendants bool
+		expected           string
+	}{
+		{name: "middle of line", content: "text #a more", tags: []string{"a"}, expected: "text more"},
+		{name: "end of line", content: "text #a", tags: []string{"a"}, expected: "text"},
+		{name: "start of line", content: "#a text", tags: []string{"a"}, expected: "text"},
+		{name: "tag-only line", content: "a\n#t\nb", tags: []string{"t"}, expected: "a\nb"},
+		{name: "tag-only first line", content: "#t\nb", tags: []string{"t"}, expected: "b"},
+		{name: "tag-only last line", content: "a\n#t", tags: []string{"t"}, expected: "a"},
+		{name: "only content", content: "#a", tags: []string{"a"}, expected: ""},
+		{name: "multiple on one line", content: "text\n#a #b #c\nmore", tags: []string{"a", "b", "c"}, expected: "text\nmore"},
+		{name: "subset of a tag line", content: "text\n#a #b\nmore", tags: []string{"b"}, expected: "text\n#a\nmore"},
+		{name: "first of a tag line", content: "text\n#a #b\nmore", tags: []string{"a"}, expected: "text\n#b\nmore"},
+		{name: "no match", content: "text #a", tags: []string{"zzz"}, expected: "text #a"},
+		{name: "inside code fence untouched", content: "```\n#a\n```", tags: []string{"a"}, expected: "```\n#a\n```"},
+		{name: "inside link untouched", content: "[#a](https://example.com) #a", tags: []string{"a"}, expected: "[#a](https://example.com)"},
+		{name: "quoted spelling", content: "note #\"a(b)\" more", tags: []string{"a(b)"}, expected: "note more"},
+		{
+			name:               "descendants",
+			content:            "#a #a/b #a/b/c #ab #a2",
+			tags:               []string{"a"},
+			includeDescendants: true,
+			expected:           "#ab #a2",
+		},
+		{
+			name:     "no descendants without flag",
+			content:  "#a #a/b #ab",
+			tags:     []string{"a"},
+			expected: "#a/b #ab",
+		},
+		{name: "crlf line endings", content: "text #a\r\nmore", tags: []string{"a"}, expected: "text\r\nmore"},
+		{name: "list item marker survives", content: "- #a x", tags: []string{"a"}, expected: "- x"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := svc.RemoveTags([]byte(tt.content), tt.tags, tt.includeDescendants)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestAppendTags(t *testing.T) {
+	svc := NewService(WithTagExtension())
+
+	tests := []struct {
+		name     string
+		content  string
+		tags     []string
+		expected string
+	}{
+		{name: "plain content", content: "text", tags: []string{"a", "b"}, expected: "text\n#a #b"},
+		{name: "trailing newline", content: "text\n", tags: []string{"a"}, expected: "text\n#a"},
+		{name: "trailing spaces trimmed", content: "text  ", tags: []string{"a"}, expected: "text\n#a"},
+		{name: "empty content", content: "", tags: []string{"a"}, expected: "#a"},
+		{name: "blank lines preserved", content: "text\n\n", tags: []string{"a"}, expected: "text\n\n#a"},
+		{name: "quoted tag", content: "text", tags: []string{"a(b)"}, expected: "text\n#\"a(b)\""},
+		{name: "no tags", content: "text", tags: nil, expected: "text"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := svc.AppendTags([]byte(tt.content), tt.tags)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
+
+			data, err := svc.ExtractAll([]byte(result))
+			require.NoError(t, err)
+			for _, tag := range tt.tags {
+				assert.Contains(t, data.ExplicitTags, tag)
+			}
+		})
+	}
+}
+
+func TestAppendTagsRejectsUnclosableContent(t *testing.T) {
+	svc := NewService(WithTagExtension())
+
+	_, err := svc.AppendTags([]byte("```\ncode without a closing fence"), []string{"a"})
+	require.Error(t, err)
+
+	_, err = svc.AppendTags([]byte("text"), []string{"a/b/"})
+	require.Error(t, err)
+}

@@ -177,7 +177,7 @@ func local_request_AttachmentService_GetAttachment_0(ctx context.Context, marsha
 	return msg, metadata, err
 }
 
-var filter_AttachmentService_UpdateAttachment_0 = &utilities.DoubleArray{Encoding: map[string]int{"attachment": 0, "name": 1}, Base: []int{1, 2, 1, 0, 0}, Check: []int{0, 1, 2, 3, 2}}
+var filter_AttachmentService_UpdateAttachment_0 = &utilities.DoubleArray{Encoding: map[string]int{"attachment": 0, "name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3}}
 
 func request_AttachmentService_UpdateAttachment_0(ctx context.Context, marshaler runtime.Marshaler, client AttachmentServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
