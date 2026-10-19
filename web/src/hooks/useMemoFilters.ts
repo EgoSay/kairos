@@ -9,6 +9,7 @@ import { journalDayRange } from "@/lib/journal";
 import { buildSearchFacetConditions } from "@/lib/memo-search";
 import { getMemoViewId } from "@/lib/memo-views";
 import { buildMemoCreatorFilter, getVisibilityName } from "@/lib/resource-names";
+import { dynamicRangePreset } from "@/lib/view-scope";
 import { Visibility } from "@/types/proto/api/v1/memo_service_pb";
 import { useJournalPreferences } from "./useJournalQueries";
 
@@ -71,6 +72,9 @@ export const buildMemoFilter = ({
       conditions.push(`has_code`);
     } else if (filter.factor === "property.hasLocation") {
       conditions.push(`has_location`);
+    } else if (filter.factor === "dateRange") {
+      const preset = dynamicRangePreset(filter.value);
+      if (preset) conditions.push(preset.cel);
     } else if (filter.factor === "displayTime") {
       const range = journalDayRange(filter.value, timezone);
       if (range) {

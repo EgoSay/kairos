@@ -8,6 +8,10 @@ vi.mock("@/hooks/useMemoSuggestions", () => ({ useMemoSuggestions: () => [] }));
 const authState = vi.hoisted(() => ({ currentUser: { name: "users/test" } as { name: string } | undefined }));
 const instanceState = vi.hoisted(() => ({ accessMode: 2, instanceUrl: "https://example.com", demo: true }));
 
+vi.mock("@/components/ViewComposer", () => ({
+  default: () => null,
+}));
+
 vi.mock("@/components/AppSidebar", () => ({
   default: () => <aside data-testid="desktop-sidebar">Desktop sidebar</aside>,
   MobileAppHeader: () => <header data-testid="mobile-header">Mobile header</header>,

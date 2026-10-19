@@ -8,6 +8,7 @@ behavior. New and unimplemented designs may still be added or revised.
 Active design specifications (decided direction, not yet implemented):
 
 - [Kairos 设计系统规范](kairos-design-system-2026-10-16.md) — 配色（松绿）、字体分层（文楷内容层）、圆角/阴影/空间/文案/Token/组件状态的完整规范与迁移优先级；视觉依据为 `prototypes/` 方向 B。
+- [Kairos 视图编排器](kairos-view-composer-2026-10-19.md) — #25（R14）的设计方案：规范 CEL 语法 + 分句识别器双向桥、单一 ViewComposerDialog 四入口、动态/固定时间语义边界与 residual 旧表达式保留机制。
 
 Explorations (not yet decided, free to change):
 

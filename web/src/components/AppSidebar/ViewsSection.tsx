@@ -15,7 +15,7 @@ import { useMemoViews, userKeys } from "@/hooks/useUserQueries";
 import { handleError } from "@/lib/error";
 import { getMemoViewId, isMemoCollectionRoute } from "@/lib/memo-views";
 import { cn } from "@/lib/utils";
-import { getCollectionHomePath, ROUTES } from "@/router/routes";
+import { getCollectionHomePath } from "@/router/routes";
 import type { MemoView } from "@/types/proto/api/v1/user_service_pb";
 import { useTranslate } from "@/utils/i18n";
 import SidebarRow, {
@@ -42,7 +42,7 @@ const ViewsSection = ({ manageActive = false }: { manageActive?: boolean }) => {
   const queryClient = useQueryClient();
   const { data: memoViews = [], isPending, isError } = useMemoViews(currentUser?.name);
   const { memoView: selectedMemoView, setMemoView } = useMemoFilterContext();
-  const { setMobileOpen } = useAppSidebar();
+  const { setMobileOpen, setViewComposer } = useAppSidebar();
   const [deleteTarget, setDeleteTarget] = useState<MemoView>();
   const location = useLocation();
 
@@ -53,7 +53,7 @@ const ViewsSection = ({ manageActive = false }: { manageActive?: boolean }) => {
   };
 
   const handleCreate = () => {
-    navigate(ROUTES.VIEWS, { state: { openCreate: true } });
+    setViewComposer({});
     setMobileOpen(false);
   };
 
@@ -119,7 +119,7 @@ const ViewsSection = ({ manageActive = false }: { manageActive?: boolean }) => {
               <DropdownMenuContent align="end" sideOffset={2} size="sm">
                 <DropdownMenuItem
                   onClick={() => {
-                    navigate(ROUTES.VIEWS, { state: { memoView } });
+                    setViewComposer({ editing: memoView });
                     setMobileOpen(false);
                   }}
                 >

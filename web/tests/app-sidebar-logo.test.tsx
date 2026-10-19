@@ -17,6 +17,7 @@ const sidebarState = vi.hoisted(() => ({
   mobileOpen: false,
   setMobileOpen: vi.fn(),
   setQuickFindOpen: vi.fn(),
+  setViewComposer: vi.fn(),
 }));
 const globalEditorState = vi.hoisted(() => ({
   canOpen: true,
@@ -83,6 +84,8 @@ vi.mock("@/contexts/AppSidebarContext", () => ({
     setMobileOpen: sidebarState.setMobileOpen,
     quickFindOpen: false,
     setQuickFindOpen: sidebarState.setQuickFindOpen,
+    viewComposer: undefined,
+    setViewComposer: sidebarState.setViewComposer,
   }),
 }));
 
@@ -681,7 +684,7 @@ describe("App sidebar logo", () => {
     expect(screen.queryByRole("button", { name: "memo.view-options" })).not.toBeInTheDocument();
   });
 
-  it("opens the create form from the empty Views section and closes the mobile sidebar", () => {
+  it("opens the view composer from the empty Views section and closes the mobile sidebar", () => {
     const LocationProbe = () => {
       const location = useLocation();
       return <output data-testid="view-destination">{JSON.stringify({ pathname: location.pathname, state: location.state })}</output>;
@@ -694,7 +697,9 @@ describe("App sidebar logo", () => {
     );
     expect(screen.getAllByRole("button", { name: "setting.memo-view.create" })).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "setting.memo-view.create" }));
-    expect(screen.getByTestId("view-destination")).toHaveTextContent(JSON.stringify({ pathname: "/views", state: { openCreate: true } }));
+    // Creation happens in the shared composer dialog now — no navigation away.
+    expect(sidebarState.setViewComposer).toHaveBeenCalledWith({});
+    expect(screen.getByTestId("view-destination")).toHaveTextContent(JSON.stringify({ pathname: "/", state: null }));
     expect(sidebarState.setMobileOpen).toHaveBeenCalledWith(false);
   });
 

@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import { isEqual } from "lodash-es";
 import {
   BookmarkIcon,
+  BookmarkPlusIcon,
   CalendarIcon,
   CheckCircleIcon,
   CodeIcon,
@@ -20,9 +21,11 @@ import { Button } from "@/components/ui/button";
 import { useAppSidebar } from "@/contexts/AppSidebarContext";
 import { type FilterFactor, getMemoFilterKey, type MemoFilter, useMemoFilterContext } from "@/contexts/MemoFilterContext";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { useJournalPreferences } from "@/hooks/useJournalQueries";
 import { useMemoViews } from "@/hooks/useUserQueries";
 import { getMemoViewId, isMemoCollectionRoute } from "@/lib/memo-views";
 import { cn } from "@/lib/utils";
+import { DYNAMIC_RANGE_LABEL_KEYS, emptyViewScope, mergeScopes, parseViewFilter, scopeFromFilters } from "@/lib/view-scope";
 import { useTranslate } from "@/utils/i18n";
 
 const DATE_FILTER_FORMAT = "MMM D, YYYY";
@@ -41,6 +44,7 @@ const FILTER_CONFIGS: Record<FilterFactor, FilterConfig> = {
   tagExact: { icon: HashIcon, getLabel: () => "仅标签本身" },
   dateStart: { icon: CalendarIcon, getLabel: (value) => `从 ${value}` },
   dateEnd: { icon: CalendarIcon, getLabel: (value) => `至 ${value}` },
+  dateRange: { icon: CalendarIcon, getLabel: (value, t) => t(DYNAMIC_RANGE_LABEL_KEYS[value] ?? "view.range.custom") },
   partition: { icon: BookmarkIcon, getLabel: (value) => (value ? "指定分区" : "未分区") },
   includeArchived: { icon: BookmarkIcon, getLabel: () => "包含归档" },
   "property.hasImage": { icon: BookmarkIcon, getLabel: () => "有图片" },
@@ -72,7 +76,7 @@ const FILTER_CONFIGS: Record<FilterFactor, FilterConfig> = {
   },
   pinned: {
     icon: BookmarkIcon,
-    getLabel: (value) => value,
+    getLabel: () => "已置顶",
   },
   "property.hasLink": {
     icon: LinkIcon,
@@ -143,10 +147,21 @@ const MemoFilters = ({ className }: { className?: string }) => {
   const location = useLocation();
   const currentUser = useCurrentUser();
   const { filters, memoView, removeFilter, setMemoView, setFilters } = useMemoFilterContext();
-  const { setQuickFindOpen } = useAppSidebar();
+  const { setQuickFindOpen, setViewComposer } = useAppSidebar();
+  const { data: preferences } = useJournalPreferences();
+  const timezone = preferences?.timezone ?? "Asia/Shanghai";
   // A remembered view only narrows the collection routes; elsewhere it is dormant and must not be echoed.
   const viewApplies = memoView !== undefined && isMemoCollectionRoute(location.pathname);
   const { data: memoViews = [] } = useMemoViews(viewApplies ? currentUser?.name : undefined);
+  const activeView = viewApplies ? memoViews.find((item) => getMemoViewId(item.name) === memoView) : undefined;
+
+  // Saving captures the live conditions plus the selected view's own scope, so
+  // "save as view" means "everything I am looking at right now".
+  const handleSaveAsView = () => {
+    setViewComposer({
+      scope: mergeScopes(scopeFromFilters(filters), activeView ? parseViewFilter(activeView.filter, timezone) : emptyViewScope()),
+    });
+  };
 
   const handleRemoveFilter = (filter: MemoFilter) => {
     removeFilter((f: MemoFilter) => isEqual(f, filter));
@@ -191,6 +206,12 @@ const MemoFilters = ({ className }: { className?: string }) => {
           }
         />
       ))}
+      {currentUser && filters.length > 0 && (
+        <Button variant="ghost" size="sm" onClick={handleSaveAsView}>
+          <BookmarkPlusIcon className="size-3.5" />
+          {t("view.save-as")}
+        </Button>
+      )}
       <Button
         variant="ghost"
         size="sm"

@@ -36,9 +36,11 @@ interface Props {
   disabled?: boolean;
   label: string;
   fallback?: LucideIcon;
+  /** Merges into the trigger button's classes so hosts can blend it into a field row. */
+  triggerClassName?: string;
 }
 
-function CustomIconPicker({ value, onChange, disabled, label, fallback = AstroidIcon }: Props) {
+function CustomIconPicker({ value, onChange, disabled, label, fallback = AstroidIcon, triggerClassName }: Props) {
   const t = useTranslate();
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -92,7 +94,15 @@ function CustomIconPicker({ value, onChange, disabled, label, fallback = Astroid
     >
       <PopoverTrigger
         render={
-          <Button type="button" variant="outline" size="icon" className="size-8 p-0" disabled={disabled} aria-label={label} title={label} />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn("size-8 p-0", triggerClassName)}
+            disabled={disabled}
+            aria-label={label}
+            title={label}
+          />
         }
       >
         <CustomIcon icon={value} fallback={fallback} className="size-5 text-xl" />
