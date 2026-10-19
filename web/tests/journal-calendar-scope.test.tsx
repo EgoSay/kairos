@@ -31,7 +31,7 @@ describe("activity calendar collection scope", () => {
       { state: State.ARCHIVED, filter: 'content.contains("历史")', includeArchived: false },
       expect.anything(),
     );
-    const link = screen.getByRole("link", { name: "2026-10-01，1 条记录" });
+    const link = screen.getByRole("link", { name: "1 records on 2026-10-01" });
     const query = new URL(link.getAttribute("href")!, "https://kairos.test").searchParams;
     expect(query.get("state")).toBe("archived");
     expect(query.get("scope")).toBe('content.contains("历史")');
@@ -44,7 +44,7 @@ describe("activity calendar collection scope", () => {
         <JournalCalendar />
       </MemoryRouter>,
     );
-    const link = screen.getByRole("link", { name: "2026-10-01，1 条记录" });
+    const link = screen.getByRole("link", { name: "1 records on 2026-10-01" });
     const query = new URL(link.getAttribute("href")!, "https://kairos.test").searchParams;
     expect(query.get("scope")).toContain('creator == "users/other"');
     expect(query.get("from")).toBe("/?creator=other");

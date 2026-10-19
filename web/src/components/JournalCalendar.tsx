@@ -11,12 +11,14 @@ import { useSpaceContext } from "@/contexts/SpaceContext";
 import { useJournalPreferences, useUpdateJournalPreferences } from "@/hooks/useJournalQueries";
 import { useMemoFilters } from "@/hooks/useMemoFilters";
 import { useAllUserStats } from "@/hooks/useUserQueries";
+import i18n from "@/i18n";
 import { combineCELFilters } from "@/lib/cel-filter";
 import { journalDate } from "@/lib/journal";
 import { searchIncludesArchived } from "@/lib/memo-search";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/router/routes";
 import { State } from "@/types/proto/api/v1/common_pb";
+import { useTranslate } from "@/utils/i18n";
 
 const fills = ["", "bg-primary/12", "bg-primary/22", "bg-primary/34", "bg-primary/48"];
 
@@ -28,6 +30,7 @@ interface JournalCalendarProps {
 }
 
 export default function JournalCalendar({ mobile = false, onDateSelect, scope }: JournalCalendarProps) {
+  const t = useTranslate();
   const preferences = useJournalPreferences();
   const update = useUpdateJournalPreferences();
   const timezone = preferences.data?.timezone || "Asia/Shanghai";
@@ -43,6 +46,12 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
   const filter = scope ? scope.filter : combineCELFilters(memoFilter, activeFilter);
   const state = scope?.state ?? State.NORMAL;
   const includeArchived = state !== State.ARCHIVED && (scope?.includeArchived ?? searchIncludesArchived(filters));
+  const locale = i18n.language || "en";
+  const monthLabel = new Intl.DateTimeFormat(locale, { year: "numeric", month: "long" }).format(dayjs(`${month}-01`).toDate());
+  // 2024-01-01 is a Monday — anchor weekday names to a Monday-start week.
+  const weekdays = Array.from({ length: 7 }, (_, i) =>
+    new Intl.DateTimeFormat(locale, { weekday: "short" }).format(new Date(2024, 0, 1 + i)),
+  );
   const calendar = useAllUserStats({ filter, state, includeArchived }, { enabled: visible && expanded });
   const counts: Record<string, number> = {};
   for (const stats of calendar.data ?? []) {
@@ -65,7 +74,7 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
   if (preferences.isError)
     return (
       <Button variant="ghost" onClick={() => preferences.refetch()}>
-        重试读取日历
+        {t("journal.calendar-retry")}
       </Button>
     );
   if (!visible)
@@ -76,12 +85,12 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
         className="min-h-11 text-sm text-muted-foreground"
         onClick={() => update.mutate({ calendarVisible: true })}
       >
-        显示活动日历
+        {t("journal.calendar-show")}
       </Button>
     );
 
   return (
-    <section aria-label="活动日历" className={cn("w-full", mobile && "mb-5 rounded-lg border border-border/60 px-3")}>
+    <section aria-label={t("journal.activity-calendar")} className={cn("w-full", mobile && "mb-5 rounded-lg border border-border/60 px-3")}>
       {mobile && (
         <button
           type="button"
@@ -89,7 +98,8 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
           onClick={() => setExpanded(!expanded)}
           className="flex min-h-11 w-full items-center justify-between text-sm text-muted-foreground"
         >
-          活动日历<span>{expanded ? "收起" : "展开"}</span>
+          {t("journal.activity-calendar")}
+          <span>{expanded ? t("journal.collapse") : t("journal.expand")}</span>
         </button>
       )}
       {expanded && (
@@ -99,17 +109,17 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
               variant="ghost"
               size="icon"
               className="min-h-11 min-w-11"
-              aria-label="上个月"
+              aria-label={t("journal.prev-month")}
               onClick={() => setSelectedMonth(dayjs(month).subtract(1, "month").format("YYYY-MM"))}
             >
               <ChevronLeftIcon className="size-4" />
             </Button>
-            <span className="text-sm tabular-nums">{month.replace("-", " 年 ")} 月</span>
+            <span className="text-sm tabular-nums">{monthLabel}</span>
             <Button
               variant="ghost"
               size="icon"
               className="min-h-11 min-w-11"
-              aria-label="下个月"
+              aria-label={t("journal.next-month")}
               onClick={() => setSelectedMonth(dayjs(month).add(1, "month").format("YYYY-MM"))}
             >
               <ChevronRightIcon className="size-4" />
@@ -117,20 +127,20 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
           </div>
           {calendar.isError ? (
             <div className="py-3 text-sm text-muted-foreground">
-              <p>日历暂时无法读取。</p>
+              <p>{t("journal.calendar-error")}</p>
               <Button variant="ghost" onClick={() => calendar.refetch()}>
-                重试
+                {t("journal.retry")}
               </Button>
             </div>
           ) : (
             <>
               {calendar.isPending && (
                 <p role="status" className="py-2 text-xs text-muted-foreground">
-                  正在读取日历…
+                  {t("journal.calendar-loading")}
                 </p>
               )}
-              <div className="grid grid-cols-7 gap-1" aria-label={`${month} 当前范围记录`}>
-                {["一", "二", "三", "四", "五", "六", "日"].map((label) => (
+              <div className="grid grid-cols-7 gap-1" aria-label={t("journal.calendar-current-range", { month: monthLabel })}>
+                {weekdays.map((label) => (
                   <span key={label} aria-hidden="true" className="pb-2 text-center text-xs text-muted-foreground">
                     {label}
                   </span>
@@ -141,8 +151,8 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
                       key={day.date}
                       to={`${ROUTES.JOURNAL}/day/${day.date}?${dayQuery}`}
                       onClick={onDateSelect}
-                      title={`${day.date}，${day.count} 条记录`}
-                      aria-label={`${day.date}，${day.count} 条记录`}
+                      title={t("journal.calendar-day-count", { date: day.date, count: day.count })}
+                      aria-label={t("journal.calendar-day-count", { date: day.date, count: day.count })}
                       aria-current={day.isToday ? "date" : undefined}
                       className={cn(
                         "flex aspect-square min-h-8 items-center justify-center rounded-sm text-xs tabular-nums hover:ring-1 hover:ring-ring focus-visible:outline-2 focus-visible:outline-offset-1",
@@ -160,8 +170,9 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
             </>
           )}
           <div className="mt-3 flex items-center justify-between gap-2 pb-2 text-xs text-muted-foreground">
-            <span title={`按记录原始日期统计 · ${timezone}`}>
-              当前范围{state === State.ARCHIVED ? " · 已归档" : includeArchived ? " · 含归档" : ""}
+            <span title={t("journal.calendar-scope-note", { timezone })}>
+              {t("journal.current-scope")}
+              {state === State.ARCHIVED ? t("journal.scope-archived") : includeArchived ? t("journal.scope-includes-archived") : ""}
             </span>
             <button
               type="button"
@@ -169,12 +180,12 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
               onClick={() => update.mutate({ calendarVisible: false })}
               className="min-h-11 rounded-lg px-2 hover:text-foreground focus-visible:outline-2"
             >
-              隐藏
+              {t("journal.hide")}
             </button>
           </div>
           {update.isError && (
             <p role="alert" className="pb-3 text-sm text-destructive">
-              设置未保存，请重试。
+              {t("journal.preference-save-error")}
             </p>
           )}
         </>
