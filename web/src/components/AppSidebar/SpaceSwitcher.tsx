@@ -137,7 +137,7 @@ function SpaceSwitcher({ className, size = "md" }: { className?: string; size?: 
                 data-sidebar-label
                 className={cn(
                   "min-w-0 truncate tracking-[-0.01em]",
-                  size === "header" ? "text-[15px] font-semibold leading-5" : "text-[14px] font-medium leading-4",
+                  size === "header" ? "text-base font-semibold leading-5" : "text-sm font-medium leading-4",
                 )}
               >
                 {creatorUsername && selectedSpaceName ? spaceLabel : contextLabel}

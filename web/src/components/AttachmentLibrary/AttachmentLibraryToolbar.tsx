@@ -47,7 +47,7 @@ const AttachmentLibraryToolbar = ({ activeTab, onTabChange, stats }: AttachmentL
               <span>{t(`attachment-library.tabs.${tab.labelKey}`)}</span>
               <span
                 className={cn(
-                  "rounded-full px-1.5 py-0.5 text-[11px]",
+                  "rounded-full px-1.5 py-0.5 text-2xs",
                   isActive ? "bg-background text-muted-foreground" : "bg-muted/50 text-muted-foreground",
                 )}
               >

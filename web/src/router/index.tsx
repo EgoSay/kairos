@@ -38,6 +38,7 @@ const JournalShares = lazyWithReload(() => import("@/pages/JournalShares"));
 const JournalShared = lazyWithReload(() => import("@/pages/JournalShared"));
 const JournalBackup = lazyWithReload(() => import("@/pages/JournalBackup"));
 const JournalBackupStatus = lazyWithReload(() => import("@/pages/JournalBackupStatus"));
+const DevComponents = import.meta.env.DEV ? lazyWithReload(() => import("@/pages/DevComponents")) : null;
 
 const HomeRoute = () => {
   const { isIdentityInitialized } = useAuth();
@@ -73,6 +74,9 @@ export const routeConfig: RouteObject[] = [
     errorElement: <ChunkLoadErrorFallback />,
     children: [
       { path: "/s/:token", element: <JournalShared /> },
+      // Design-system matrix — registered only in dev builds so the bundle and
+      // any shipped router never contain it.
+      ...(DevComponents ? [{ path: "/dev/components", element: <DevComponents /> }] : []),
       {
         path: Routes.AUTH,
         children: [

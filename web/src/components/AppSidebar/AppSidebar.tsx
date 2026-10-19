@@ -385,7 +385,7 @@ const NavPill = ({ label, icon: Icon, to, onClick, active = false, expanded = fa
           )}
         >
           <span className="flex min-w-0 items-center overflow-hidden">
-            <span data-sidebar-label className="shrink-0 truncate text-[12px] leading-5">
+            <span data-sidebar-label className="shrink-0 truncate text-xs leading-5">
               {label}
             </span>
           </span>
@@ -507,7 +507,7 @@ const AppSidebar = ({ className }: { className?: string }) => {
             onClick={() => setMobileOpen(false)}
             className={cn(
               sidebarSurfaceVariants({ role: "account" }),
-              "group text-[13px] font-medium text-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50",
+              "group text-ui font-medium text-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50",
             )}
           >
             <span className={SIDEBAR_LEADING_SLOT_CLASSES}>

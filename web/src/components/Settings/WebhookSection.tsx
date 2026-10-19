@@ -89,7 +89,7 @@ const WebhookSection = () => {
             key: "url",
             header: t("setting.webhook.url"),
             render: (_, webhook: UserWebhook) => (
-              <span className="max-w-[300px] inline-block truncate text-foreground" title={webhook.url}>
+              <span className="max-w-75 inline-block truncate text-foreground" title={webhook.url}>
                 {webhook.url}
               </span>
             ),

@@ -31,7 +31,7 @@ const MemoShareImagePreview = forwardRef<HTMLDivElement, { width: number }>(({ w
           <div className="flex min-w-0 items-center gap-2.5">
             <UserAvatar avatarUrl={preview.avatarUrl} name={preview.displayName} className="h-8 w-8" />
             <div className="min-w-0">
-              <div className="truncate text-[13px] font-semibold text-foreground">{preview.displayName}</div>
+              <div className="truncate text-ui font-semibold text-foreground">{preview.displayName}</div>
               {preview.formattedDisplayTime && <div className="truncate text-xs text-muted-foreground">{preview.formattedDisplayTime}</div>}
             </div>
           </div>
@@ -43,7 +43,7 @@ const MemoShareImagePreview = forwardRef<HTMLDivElement, { width: number }>(({ w
               content={memo.content}
               attachments={memo.attachments}
               compact={false}
-              contentClassName="text-[14px] leading-6.5 sm:text-[15px]"
+              contentClassName="text-sm leading-6.5 sm:text-base"
             />
           </div>
         </div>
@@ -75,7 +75,7 @@ const MemoShareImagePreview = forwardRef<HTMLDivElement, { width: number }>(({ w
             {preview.footerBadges.map((badge) => (
               <span
                 key={badge.type}
-                className="inline-flex rounded-full border border-border/70 bg-muted/55 px-2 py-0.5 text-[11px] text-muted-foreground"
+                className="inline-flex rounded-full border border-border/70 bg-muted/55 px-2 py-0.5 text-2xs text-muted-foreground"
               >
                 {badge.count} {t("common.attachments").toLowerCase()}
               </span>

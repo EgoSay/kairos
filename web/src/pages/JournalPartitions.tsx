@@ -397,7 +397,7 @@ export default function JournalPartitions() {
   const action = useJournalPartitionAction();
   const [name, setName] = useState("");
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-7 pb-12 pt-5 sm:pt-10">
+    <div className="mx-auto w-full max-w-5xl space-y-7 pb-12 pt-5 sm:pt-10">
       <header>
         <h1 className="font-content text-3xl font-medium">{t("journal.partitions")}</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">想分类的时候，再放进一个分区。所有记录仍留在一起。</p>

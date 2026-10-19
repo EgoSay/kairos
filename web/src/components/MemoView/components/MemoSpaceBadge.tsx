@@ -30,7 +30,7 @@ const MemoSpaceBadge = ({ spaceName }: MemoSpaceBadgeProps) => {
       shape="pill"
       title={accessibleLabel}
       className={cn(
-        "min-w-0 shrink gap-1 border-border/60 bg-muted/30 px-1.5 py-0 text-[11px] font-normal text-muted-foreground",
+        "min-w-0 shrink gap-1 border-border/60 bg-muted/30 px-1.5 py-0 text-2xs font-normal text-muted-foreground",
         showUid && uid ? "max-w-52 sm:max-w-64" : "max-w-36 sm:max-w-48",
       )}
     >

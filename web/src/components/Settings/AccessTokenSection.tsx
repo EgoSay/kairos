@@ -73,7 +73,7 @@ const HowToUseDisclosure = () => {
     <div className="rounded-lg border border-border/60">
       <button
         type="button"
-        className="flex w-full items-center gap-1.5 px-3 py-2.5 text-[13px] font-medium text-muted-foreground hover:text-foreground"
+        className="flex w-full items-center gap-1.5 px-3 py-2.5 text-ui font-medium text-muted-foreground hover:text-foreground"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
@@ -124,7 +124,7 @@ const EmptyState = ({ onCreate }: { onCreate: () => void }) => {
         <KeyRoundIcon className="size-4" />
       </span>
       <h4 className="mt-3 text-sm font-medium text-foreground">{t("setting.access-token.empty-title")}</h4>
-      <p className="mx-auto mt-1 max-w-sm text-[13px] leading-5 text-muted-foreground">{t("setting.access-token.empty-description")}</p>
+      <p className="mx-auto mt-1 max-w-sm text-ui text-muted-foreground">{t("setting.access-token.empty-description")}</p>
       <div className="mx-auto mt-4 max-w-md text-left">
         <ApiUsageExample />
       </div>
@@ -148,7 +148,7 @@ const TokenRow = ({ token, onDelete }: { token: PersonalAccessToken; onDelete: (
     <li className="group flex items-center gap-3 px-4 py-3">
       <StatusDot status={status} />
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] font-medium text-foreground">{token.description}</div>
+        <div className="text-ui font-medium text-foreground">{token.description}</div>
         <div className="mt-0.5 text-xs text-muted-foreground">
           {lastUsedAt ? (
             <>

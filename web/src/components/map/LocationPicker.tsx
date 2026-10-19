@@ -238,7 +238,7 @@ const LocationPicker = ({
 
       {!readOnly && (
         <div className="pointer-events-none absolute left-3 top-3 z-[450] flex items-center gap-2">
-          <div className="rounded-full border border-border bg-background/92 px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-foreground/80 shadow-sm backdrop-blur-sm">
+          <div className="rounded-full border border-border bg-background/92 px-2.5 py-1 text-2xs font-medium tracking-[0.02em] text-foreground/80 shadow-sm backdrop-blur-sm">
             {statusLabel}
           </div>
         </div>

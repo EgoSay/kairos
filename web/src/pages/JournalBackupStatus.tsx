@@ -37,7 +37,7 @@ export default function JournalBackupStatus() {
   const busy = action.isPending || data?.job?.status === "running" || data?.state === "running";
   const run = (operation: string, snapshotId?: string) => action.mutate({ action: operation, payload: snapshotId ? { snapshotId } : {} });
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 pb-12 pt-5 sm:pt-10">
+    <div className="mx-auto w-full max-w-5xl space-y-6 pb-12 pt-5 sm:pt-10">
       <header className="space-y-3">
         <h1 className="font-content text-3xl">{t("journal.backup-status")}</h1>
         <Link className="inline-block min-h-11 py-3 text-sm underline" to="/journal/backup">

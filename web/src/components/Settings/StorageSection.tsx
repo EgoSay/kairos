@@ -323,7 +323,7 @@ const StorageSection = () => {
                               key={badge}
                               variant="outline"
                               className={cn(
-                                "rounded-sm px-1.5 py-0 text-[10px] font-normal",
+                                "rounded-sm px-1.5 py-0 text-3xs font-normal",
                                 badge === "setting.storage.badge-recommended" && "border-primary/30 bg-primary/10 text-primary",
                               )}
                             >

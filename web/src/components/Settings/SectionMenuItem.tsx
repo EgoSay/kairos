@@ -15,7 +15,7 @@ const SectionMenuItem: React.FC<SectionMenuItemProps> = ({ text, icon: IconCompo
       href={href}
       aria-current={isSelected ? "page" : undefined}
       className={cn(
-        "flex w-full min-w-0 items-center gap-2 rounded-sm px-2 py-1 text-[13px] leading-5 transition-colors",
+        "flex w-full min-w-0 items-center gap-2 rounded-sm px-2 py-1 text-ui transition-colors",
         isSelected ? "bg-accent font-medium text-foreground" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
       )}
     >

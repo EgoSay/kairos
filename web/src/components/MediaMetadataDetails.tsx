@@ -43,9 +43,9 @@ const DetailRow = ({ icon: Icon, label, value, secondary, action }: DetailRowPro
   <div className="grid grid-cols-[1rem_minmax(0,1fr)_auto] gap-x-2.5 py-2.5">
     <Icon className="mt-0.5 size-3.5 text-white/38" strokeWidth={1.75} aria-hidden="true" />
     <div className="min-w-0">
-      <div className="text-[11px] font-medium leading-4 text-white/45">{label}</div>
-      <div className="mt-0.5 break-words text-[13px] leading-5 text-white/88 tabular-nums">{value}</div>
-      {secondary && <div className="mt-0.5 text-[11px] leading-4 text-white/48">{secondary}</div>}
+      <div className="text-2xs font-medium leading-4 text-white/45">{label}</div>
+      <div className="mt-0.5 break-words text-ui text-white/88 tabular-nums">{value}</div>
+      {secondary && <div className="mt-0.5 text-2xs text-white/48">{secondary}</div>}
     </div>
     {action && <div className="self-center">{action}</div>}
   </div>
@@ -53,7 +53,7 @@ const DetailRow = ({ icon: Icon, label, value, secondary, action }: DetailRowPro
 
 const DetailSection = ({ title, children }: { title: string; children: ReactNode }) => (
   <section>
-    <h3 className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/32">{title}</h3>
+    <h3 className="mb-0.5 text-3xs font-semibold uppercase tracking-[0.16em] text-white/32">{title}</h3>
     <div className="divide-y divide-white/[0.07]">{children}</div>
   </section>
 );
@@ -225,7 +225,7 @@ const MediaMetadataDetails = ({ id, item, onClose, className }: MediaMetadataDet
 
           {details.sourceExifOrientation !== undefined && (
             <details className="group border-t border-white/[0.08] pt-3">
-              <summary className="cursor-pointer select-none text-[11px] font-medium text-white/42 hover:text-white/65">
+              <summary className="cursor-pointer select-none text-2xs font-medium text-white/42 hover:text-white/65">
                 {t("attachment-details.sections.technical")}
               </summary>
               <div className="mt-2">

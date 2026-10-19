@@ -198,7 +198,7 @@ const SpacesSection = () => {
                             <SpaceRoleBadge role={invitation.role} />
                           </div>
                           {uid ? (
-                            <p className="mt-0.5 flex min-w-0 items-baseline gap-1 text-[11px] text-muted-foreground">
+                            <p className="mt-0.5 flex min-w-0 items-baseline gap-1 text-2xs text-muted-foreground">
                               <span className="shrink-0">{t("space.custom-id-label")}:</span>
                               <span title={uid} className="min-w-0 break-all font-mono">
                                 {uid}
@@ -287,7 +287,7 @@ const SpacesSection = () => {
                           <p className="truncate text-sm font-medium">{space.title}</p>
                           <SpaceRoleBadge role={space.currentUserRole} />
                         </div>
-                        <p className="mt-0.5 flex min-w-0 items-baseline gap-1 text-[11px] text-muted-foreground">
+                        <p className="mt-0.5 flex min-w-0 items-baseline gap-1 text-2xs text-muted-foreground">
                           <span className="shrink-0">{t("space.custom-id-label")}:</span>
                           <span title={uid} className="min-w-0 break-all font-mono">
                             {uid}

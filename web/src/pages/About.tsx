@@ -63,7 +63,7 @@ const About = () => {
   if (isCustomBranded) {
     buildRows.push({
       label: t("about.distribution"),
-      value: <span className="text-[13px] text-muted-foreground">{t("about.powered-by")}</span>,
+      value: <span className="text-ui text-muted-foreground">{t("about.powered-by")}</span>,
     });
   }
 

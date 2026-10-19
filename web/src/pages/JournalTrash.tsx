@@ -31,7 +31,7 @@ export default function JournalTrash() {
     },
   });
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8 sm:px-8">
+    <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8 sm:px-8">
       <Link to="/" className="text-sm text-muted-foreground underline">
         回到记录
       </Link>

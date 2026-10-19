@@ -46,7 +46,7 @@ const LinkMetadataCard = ({ url, fallback, enabled = true }: LinkMetadataCardPro
       )}
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5 px-2.5 py-2 sm:gap-1 sm:px-3 sm:py-2.5">
-        {hostname && <span className="truncate text-[11px] leading-4 text-muted-foreground sm:text-xs">{hostname}</span>}
+        {hostname && <span className="truncate text-2xs text-muted-foreground sm:text-xs">{hostname}</span>}
         {title && <span className="line-clamp-2 text-sm font-medium leading-5 text-foreground">{title}</span>}
         {description && <span className="line-clamp-1 text-xs leading-4 text-muted-foreground sm:line-clamp-2">{description}</span>}
       </span>

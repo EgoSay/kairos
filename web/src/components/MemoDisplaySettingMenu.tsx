@@ -35,7 +35,7 @@ const SettingRow = ({ label, description, children }: SettingRowProps) => (
   <div className="flex min-h-6 items-center justify-between gap-2">
     <div className="min-w-0">
       <p className="text-xs leading-4 text-foreground">{label}</p>
-      {description && <p className="text-[11px] leading-4 text-muted-foreground">{description}</p>}
+      {description && <p className="text-2xs text-muted-foreground">{description}</p>}
     </div>
     {children}
   </div>
@@ -117,7 +117,7 @@ function MemoDisplaySettingsContent() {
                 data-value={value}
                 onClick={() => setMaxColumns(value)}
                 className={cn(
-                  "flex h-6 min-w-0 items-center justify-center gap-1 rounded-sm px-1 text-[11px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  "flex h-6 min-w-0 items-center justify-center gap-1 rounded-sm px-1 text-2xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
                   active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
                 )}
               >

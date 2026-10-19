@@ -43,7 +43,7 @@ export const AudioRecorderPanel: FC<AudioRecorderPanelProps> = ({
           <LoaderCircleIcon className="size-3.5 shrink-0 animate-spin text-muted-foreground" aria-hidden />
         ) : null}
         <span className="sr-only">{srStatusText}</span>
-        <VoiceWaveform levels={waveformLevels} className="max-w-[200px] overflow-hidden" />
+        <VoiceWaveform levels={waveformLevels} className="max-w-50 overflow-hidden" />
         <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
           {isTranscribing ? t("editor.audio-recorder.transcribing") : formatAudioTime(elapsedSeconds)}
         </span>

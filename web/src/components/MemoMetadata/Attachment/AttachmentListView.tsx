@@ -127,7 +127,7 @@ const SingleVisualItem = ({ item, onPreview }: { item: VisualItem; onPreview?: (
           containerClassName="max-w-full"
           posterClassName={cn(NATURAL_MEDIA_CLASS, "object-contain")}
           videoClassName={SINGLE_MOTION_VIDEO_CLASS}
-          badgeClassName="left-2 top-2 px-2 py-0.5 text-[10px]"
+          badgeClassName="left-2 top-2 px-2 py-0.5 text-3xs"
         />
       </VisualTile>
     );

@@ -23,7 +23,7 @@ const SectionChip: React.FC<SectionChipProps> = ({ text, href, isSelected }) => 
       href={href}
       aria-current={isSelected ? "page" : undefined}
       className={cn(
-        "shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-[13px] leading-5 transition-colors",
+        "shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-ui transition-colors",
         isSelected
           ? "border-transparent bg-accent font-medium text-foreground"
           : "border-border/70 text-muted-foreground hover:bg-accent/60 hover:text-foreground",

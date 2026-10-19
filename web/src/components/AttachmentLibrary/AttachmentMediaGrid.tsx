@@ -49,7 +49,7 @@ const AttachmentMediaCard = ({ item, creator, onPreview }: { item: AttachmentLib
               <span
                 className={cn(
                   "absolute bottom-2.5 right-2.5 inline-flex h-8 items-center justify-center rounded-full bg-background/85 text-foreground shadow-sm backdrop-blur-sm",
-                  videoDuration === undefined ? "w-8" : "gap-1.5 px-2.5 text-[11px] font-medium tabular-nums",
+                  videoDuration === undefined ? "w-8" : "gap-1.5 px-2.5 text-2xs font-medium tabular-nums",
                 )}
               >
                 <PlayIcon className="h-3.5 w-3.5 fill-current" />
@@ -88,7 +88,7 @@ const AttachmentMediaCard = ({ item, creator, onPreview }: { item: AttachmentLib
           </div>
 
           {item.kind === "motion" && (
-            <Badge variant="outline" className="rounded-full border-border/60 bg-background/70 px-1.5 py-0.5 text-[11px]">
+            <Badge variant="outline" className="rounded-full border-border/60 bg-background/70 px-1.5 py-0.5 text-2xs">
               {t("attachment-library.labels.live")}
             </Badge>
           )}

@@ -69,7 +69,7 @@ const AttachmentThumbnails = ({ attachments }: { attachments: Attachment[] }) =>
       {others.map((item) => (
         <div key={item.id} className="flex items-center gap-1 text-2xs text-muted-foreground">
           <FileIcon className="size-3 shrink-0" strokeWidth={1.8} />
-          <span className="truncate max-w-[80px]">{item.filename}</span>
+          <span className="truncate max-w-20">{item.filename}</span>
         </div>
       ))}
     </div>
