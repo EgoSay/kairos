@@ -1,4 +1,4 @@
-import { act, createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import QuickFindDialog from "@/components/AppSidebar/QuickFindDialog";
@@ -210,8 +210,9 @@ describe("Quick Find navigation", () => {
     openQuickFind();
     fireEvent.change(await findSearchField(), { target: { value: "去年" } });
     fireEvent.click(screen.getByRole("button", { name: "更多筛选" }));
-    fireEvent.click(screen.getByRole("checkbox", { name: "未添加标签" }));
-    fireEvent.click(screen.getByRole("checkbox", { name: "有图片" }));
+    const facetPanel = () => within(screen.getByLabelText("筛选条件"));
+    fireEvent.click(facetPanel().getByRole("button", { name: "未添加标签" }));
+    fireEvent.click(facetPanel().getByRole("button", { name: "有图片" }));
     fireEvent.change(screen.getByLabelText("开始日期"), { target: { value: "2025-01-01" } });
     fireEvent.change(screen.getByLabelText("结束日期"), { target: { value: "2025-12-31" } });
     fireEvent.change(screen.getByRole("combobox", { name: "搜索范围" }), { target: { value: "own" } });
@@ -229,7 +230,7 @@ describe("Quick Find navigation", () => {
     renderSearch("/");
     openQuickFind();
     fireEvent.click(screen.getByRole("button", { name: "更多筛选" }));
-    fireEvent.click(screen.getByRole("checkbox", { name: "未添加标签" }));
+    fireEvent.click(within(screen.getByLabelText("筛选条件")).getByRole("button", { name: "未添加标签" }));
     expect(screen.queryByRole("button", { name: "移除包含标签 人生/阅读" })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("开始日期"), { target: { value: "2026-12-31" } });
     fireEvent.change(screen.getByLabelText("结束日期"), { target: { value: "2026-01-01" } });

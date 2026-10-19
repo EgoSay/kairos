@@ -29,6 +29,7 @@ import { getMemoViewId, isMemoCollectionRoute } from "@/lib/memo-views";
 import { buildMemoCreatorFilter } from "@/lib/resource-names";
 import { extractSpaceUidFromName, formatSpaceUidForDisplay } from "@/lib/space-display";
 import { cn } from "@/lib/utils";
+import { emptyViewScope, mergeScopes, parseViewFilter, scopeFromFilters } from "@/lib/view-scope";
 import { getCollectionCreator, withCollectionCreator } from "@/router/routes";
 import { State } from "@/types/proto/api/v1/common_pb";
 import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
@@ -144,7 +145,7 @@ const QuickFindDialog = () => {
   const memoViews = memoViewsQuery.data ?? [];
   const { filters, setFilters, setMemoView, memoView } = useMemoFilterContext();
   const { duplicateSpaceTitles, selectedSpace, selectedSpaceName, memoFilter, isSpaceReady } = useSpaceContext();
-  const { quickFindOpen, setQuickFindOpen } = useAppSidebar();
+  const { quickFindOpen, setQuickFindOpen, setViewComposer } = useAppSidebar();
   const { timeBasis } = useView();
   const { data: preferences } = useJournalPreferences();
   const timezone = preferences?.timezone ?? "Asia/Shanghai";
@@ -537,9 +538,27 @@ const QuickFindDialog = () => {
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/50 px-4 py-2">
             <span className="text-xs text-muted-foreground">↑↓ 选择 · Enter 查看全部</span>
-            <Button type="submit" variant="ghost" disabled={Boolean(dateError) || isComposing}>
-              查看全部匹配记录
-            </Button>
+            <span className="flex items-center gap-1">
+              {currentUser && selectedFilters.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() =>
+                    setViewComposer({
+                      scope: mergeScopes(
+                        scopeFromFilters(selectedFilters),
+                        !allOwn && selectedMemoView ? parseViewFilter(selectedMemoView.filter, timezone) : emptyViewScope(),
+                      ),
+                    })
+                  }
+                >
+                  {t("view.save-as")}
+                </Button>
+              )}
+              <Button type="submit" variant="ghost" disabled={Boolean(dateError) || isComposing}>
+                查看全部匹配记录
+              </Button>
+            </span>
           </div>
         </form>
       </DialogContent>

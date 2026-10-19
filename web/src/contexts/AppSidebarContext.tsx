@@ -1,10 +1,18 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import type { MemoParentStatus } from "@/components/MemoParentPlaceholder";
+import type { ViewScope } from "@/lib/view-scope";
 import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
+import type { MemoView } from "@/types/proto/api/v1/user_service_pb";
 
 export type AttachmentSection = "all" | "media" | "audio" | "documents" | "unused";
 export type InboxFilter = "all" | "unread" | "archived";
+
+/** What a "save as view" entry hands to the composer: either fresh conditions or a view to edit. */
+export interface ViewComposerRequest {
+  scope?: ViewScope;
+  editing?: MemoView;
+}
 
 export interface MemoDetailSidebarDescriptor {
   memo: Memo;
@@ -34,6 +42,8 @@ interface AppSidebarContextValue {
   completeMobileClose: (open: boolean) => void;
   quickFindOpen: boolean;
   setQuickFindOpen: (open: boolean) => void;
+  viewComposer: ViewComposerRequest | undefined;
+  setViewComposer: (request?: ViewComposerRequest) => void;
 }
 
 const AppSidebarContext = createContext<AppSidebarContextValue | null>(null);
@@ -47,6 +57,7 @@ export const AppSidebarProvider = ({ children }: { children: ReactNode }) => {
   const pendingMobileCloseActionRef = useRef<(() => void) | undefined>(undefined);
   const scheduledMobileCloseActionFrameRef = useRef<number | undefined>(undefined);
   const [quickFindOpen, setQuickFindOpen] = useState(false);
+  const [viewComposer, setViewComposer] = useState<ViewComposerRequest | undefined>(undefined);
 
   useEffect(() => {
     pendingMobileCloseActionRef.current = undefined;
@@ -112,8 +123,20 @@ export const AppSidebarProvider = ({ children }: { children: ReactNode }) => {
       completeMobileClose,
       quickFindOpen,
       setQuickFindOpen,
+      viewComposer,
+      setViewComposer,
     }),
-    [attachmentSection, inboxFilter, memoDetail, setMemoDetail, mobileOpen, closeMobileThen, completeMobileClose, quickFindOpen],
+    [
+      attachmentSection,
+      inboxFilter,
+      memoDetail,
+      setMemoDetail,
+      mobileOpen,
+      closeMobileThen,
+      completeMobileClose,
+      quickFindOpen,
+      viewComposer,
+    ],
   );
 
   return <AppSidebarContext.Provider value={value}>{children}</AppSidebarContext.Provider>;

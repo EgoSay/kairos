@@ -10,6 +10,7 @@ export type FilterFactor =
   | "untagged"
   | "dateStart"
   | "dateEnd"
+  | "dateRange"
   | "partition"
   | "includeArchived"
   | "property.hasImage"
