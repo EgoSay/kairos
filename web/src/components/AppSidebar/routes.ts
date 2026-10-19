@@ -1,6 +1,6 @@
 import { matchPath } from "react-router-dom";
 import { isCalendarRoute, isMemoScopeRoute, type MemoScope, resolveMemoScope } from "@/lib/memo-views";
-import { getCollectionHomePath, ROUTES, resolveCollectionRoute } from "@/router/routes";
+import { getCollectionHomePath, isJournalDayPath, ROUTES, resolveCollectionRoute } from "@/router/routes";
 
 export type SidebarRouteKind =
   | MemoScope
@@ -25,7 +25,7 @@ export interface RouteActionPolicy {
 
 export const getSidebarRouteKind = (path: string): SidebarRouteKind => {
   const normalizedPath = resolveCollectionRoute(path).pathname;
-  if (matchPath(`${ROUTES.JOURNAL}/day/:date`, normalizedPath)) return "journal-day";
+  if (isJournalDayPath(normalizedPath)) return "journal-day";
   if (normalizedPath === ROUTES.JOURNAL || normalizedPath.startsWith(`${ROUTES.JOURNAL}/`)) return "journal";
   if (isMemoScopeRoute(normalizedPath)) return resolveMemoScope(normalizedPath);
   if (matchPath(ROUTES.VIEWS, normalizedPath)) return "views";
@@ -47,11 +47,11 @@ export const getRouteActionPolicy = (path: string, search = ""): RouteActionPoli
 
   if (kind === "home" || kind === "explore") return { searchScope: "route-collection" };
   if (kind === "archived") return { searchScope: "user-collection" };
-  if (kind === "journal" || kind === "journal-day") return { searchScope: "user-collection", searchDestination: ROUTES.HOME };
+  if (kind === "journal") return { searchScope: "user-collection", searchDestination: ROUTES.HOME };
 
-  // Calendar and attachments browse the route collection but are not memo lists
-  // themselves, so a search leaves for the same collection's Home.
-  if (kind === "calendar" || kind === "map" || kind === "attachments") {
+  // Calendar, attachments and the day reader browse the route collection but are not
+  // memo lists themselves, so a search leaves for the same collection's Home.
+  if (kind === "calendar" || kind === "map" || kind === "attachments" || kind === "journal-day") {
     return { searchScope: "route-collection", searchDestination: getCollectionHomePath({ pathname: path, search }) };
   }
 

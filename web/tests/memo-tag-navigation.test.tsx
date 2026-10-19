@@ -63,6 +63,19 @@ describe("Memo tag navigation", () => {
       </MemoryRouter>,
     );
     fireEvent.click(screen.getByText("#日常"));
-    expect(navigateTo).toHaveBeenCalledWith(`/?filter=${encodeURIComponent("tagSearch:" + encodeURIComponent("日常"))}`);
+    // A creatorless day reader belongs to the all-creator collection: Explore.
+    expect(navigateTo).toHaveBeenCalledWith(`/explore?filter=${encodeURIComponent("tagSearch:" + encodeURIComponent("日常"))}`);
+  });
+
+  it("keeps the day reader's collection when opening a tag from the records", () => {
+    render(
+      <MemoryRouter initialEntries={["/spaces/a/journal/day/2025-10-03?creator=alice"]}>
+        <Tag data-tag="work" parentPage="/spaces/a/journal/day/2025-10-03?creator=alice">
+          #work
+        </Tag>
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByText("#work"));
+    expect(navigateTo).toHaveBeenCalledWith("/spaces/a?creator=alice&filter=tagSearch%3Awork");
   });
 });

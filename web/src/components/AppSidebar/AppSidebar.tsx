@@ -304,15 +304,40 @@ const RouteSidebarContent = () => {
 
 const JournalDaySidebarContent = () => {
   const t = useTranslate();
-  const user = useCurrentUser();
+  const currentUser = useCurrentUser();
   const { date } = useParams();
   const [search] = useSearchParams();
-  const { scope, from } = readJournalDayContext(search, user?.name ?? "");
-  const { setMobileOpen } = useAppSidebar();
+  const { scope, from } = readJournalDayContext(search, currentUser?.name ?? "");
+  const { creatorUsername, selectedSpaceName } = useSpaceContext();
+  const { mobileOpen, setMobileOpen } = useAppSidebar();
+  const { isInitialized: authInitialized } = useAuth();
+  const { isInitialized: instanceInitialized } = useInstance();
+  const md = useMediaQuery("md");
+  // The day reader keeps the collection sidebar: the calendar and tags share the day's scope snapshot.
+  const archived = scope.state === State.ARCHIVED;
+  const { tags, loading, error, retry, retrying } = useFilteredMemoStats({
+    context: archived ? "archived" : "collection",
+    filter: scope.filter,
+    includeArchived: scope.includeArchived,
+    enabled: authInitialized && instanceInitialized && (md || mobileOpen),
+  });
+  const tagStateScope = archived ? "archived" : `${creatorUsername ?? "all"}${selectedSpaceName ? `:${selectedSpaceName}` : ""}`;
   return (
-    <SidebarSection ariaLabel={t("common.statistics")}>
-      <JournalCalendar scope={scope} selectedDate={date} returnTo={from} onDateSelect={() => setMobileOpen(false)} />
-    </SidebarSection>
+    <div className={SIDEBAR_SECTION_STACK_CLASSES}>
+      <SidebarSection ariaLabel={t("common.statistics")}>
+        <JournalCalendar scope={scope} selectedDate={date} returnTo={from} onDateSelect={() => setMobileOpen(false)} />
+      </SidebarSection>
+      {currentUser && <ViewsSection />}
+      <TagsSection
+        tagCount={tags}
+        scope={tagStateScope}
+        onSelect={() => setMobileOpen(false)}
+        loading={loading}
+        error={error}
+        onRetry={retry}
+        retrying={retrying}
+      />
+    </div>
   );
 };
 
@@ -440,7 +465,7 @@ const GlobalNavigation = () => {
             expanded={expandedKind === "timeline"}
             className={cn(timelineActive && "rounded-e-none pe-0")}
           />
-          {timelineActive && routeKind !== "journal-day" && <MemoDisplaySettingMenu anchor={timelineRef} />}
+          {timelineActive && <MemoDisplaySettingMenu anchor={timelineRef} />}
         </div>
         {destinations.map((destination) => (
           <NavPill
@@ -562,7 +587,7 @@ export const MobileAppHeader = () => {
       {user ? (
         <nav aria-label={t("journal.primary-nav")} className="flex items-center gap-5 px-3 text-sm">
           <Link
-            to={ROUTES.HOME}
+            to={collectionNavigationPath(ROUTES.HOME, location, user?.username)}
             aria-current={!journalActive ? "page" : undefined}
             className={cn(
               "inline-flex min-h-11 items-center rounded-lg focus-visible:outline-2",

@@ -6,9 +6,21 @@ import JournalCalendar from "@/components/JournalCalendar";
 import { readJournalDayContext } from "@/lib/journal";
 import { State } from "@/types/proto/api/v1/common_pb";
 
-const mocks = vi.hoisted(() => ({ stats: vi.fn(), scopeFilter: 'creator == "users/other"' }));
+const mocks = vi.hoisted(() => ({
+  stats: vi.fn(),
+  scopeFilter: 'creator == "users/other"',
+  creatorUsername: undefined as string | undefined,
+  selectedSpaceName: undefined as string | undefined,
+}));
 vi.mock("@/contexts/MemoFilterContext", () => ({ useMemoFilterContext: () => ({ filters: [] }) }));
-vi.mock("@/contexts/SpaceContext", () => ({ useSpaceContext: () => ({ memoFilter: mocks.scopeFilter }) }));
+vi.mock("@/contexts/SpaceContext", () => ({
+  useSpaceContext: () => ({
+    memoFilter: mocks.scopeFilter,
+    creatorUsername: mocks.creatorUsername,
+    selectedSpaceName: mocks.selectedSpaceName,
+  }),
+}));
+vi.mock("@/hooks/useCurrentUser", () => ({ default: () => ({ name: "users/me", username: "me" }) }));
 vi.mock("@/hooks/useMemoFilters", () => ({ useMemoFilters: () => undefined }));
 vi.mock("@/hooks/useUserQueries", () => ({ useAllUserStats: (...args: unknown[]) => mocks.stats(...args) }));
 vi.mock("@/hooks/useJournalQueries", () => ({
@@ -19,6 +31,8 @@ vi.mock("@/hooks/useJournalQueries", () => ({
 beforeEach(() => {
   vi.setSystemTime(new Date("2026-10-10T12:00:00Z"));
   mocks.stats.mockReturnValue({ data: [{ memoCreatedTimestamps: [timestampFromDate(new Date("2026-09-30T16:30:00Z"))] }] });
+  mocks.creatorUsername = undefined;
+  mocks.selectedSpaceName = undefined;
 });
 
 describe("activity calendar collection scope", () => {
@@ -29,6 +43,7 @@ describe("activity calendar collection scope", () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole("link", { name: "1 records on 2026-10-01" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "0 records on 2026-10-10" })).toHaveAttribute("aria-current", "date");
   });
 
   it("keeps the selected month, scope and original return link across successive day clicks", () => {
@@ -48,12 +63,14 @@ describe("activity calendar collection scope", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(screen.getByRole("link", { name: "0 records on 2026-09-17" })).toHaveAttribute("aria-current", "date");
+    expect(screen.getByRole("link", { name: "0 records on 2026-09-17" })).toHaveAttribute("aria-current", "page");
     fireEvent.click(screen.getByRole("link", { name: "0 records on 2026-09-18" }));
-    expect(screen.getByRole("link", { name: "0 records on 2026-09-18" })).toHaveAttribute("aria-current", "date");
+    expect(screen.getByRole("link", { name: "0 records on 2026-09-18" })).toHaveAttribute("aria-current", "page");
     fireEvent.click(screen.getByRole("button", { name: "Next month" }));
     fireEvent.click(screen.getByRole("link", { name: "1 records on 2026-10-01" }));
-    expect(screen.getByRole("link", { name: "1 records on 2026-10-01" })).toHaveAttribute("aria-current", "date");
+    expect(screen.getByRole("link", { name: "1 records on 2026-10-01" })).toHaveAttribute("aria-current", "page");
+    // Today keeps its own marker while another day is the page being read.
+    expect(screen.getByRole("link", { name: "0 records on 2026-10-10" })).toHaveAttribute("aria-current", "date");
     const next = new URL(screen.getByRole("link", { name: "0 records on 2026-10-02" }).getAttribute("href")!, "https://kairos.test");
     expect(next.searchParams.get("from")).toBe(from);
     expect(next.searchParams.get("scope")).toBe(scope);
@@ -76,9 +93,12 @@ describe("activity calendar collection scope", () => {
     expect(query.get("state")).toBe("archived");
     expect(query.get("scope")).toBe('content.contains("历史")');
     expect(query.get("archived")).toBe("0");
+    // An archived scope is inherently its owner's, so the day URL carries the creator.
+    expect(query.get("creator")).toBe("me");
   });
 
   it("keeps the selected other creator without changing the source date", () => {
+    mocks.creatorUsername = "other";
     render(
       <MemoryRouter initialEntries={["/?creator=other"]}>
         <JournalCalendar />
@@ -89,5 +109,20 @@ describe("activity calendar collection scope", () => {
     expect(query.get("scope")).toContain('creator == "users/other"');
     expect(query.get("from")).toBe("/?creator=other");
     expect(query.get("state")).toBe("normal");
+    expect(query.get("creator")).toBe("other");
+  });
+
+  it("carries Space and creator identity into the day URL", () => {
+    mocks.selectedSpaceName = "spaces/product";
+    mocks.creatorUsername = "alice";
+    render(
+      <MemoryRouter initialEntries={["/spaces/product?creator=alice"]}>
+        <JournalCalendar />
+      </MemoryRouter>,
+    );
+    const link = new URL(screen.getByRole("link", { name: "1 records on 2026-10-01" }).getAttribute("href")!, "https://kairos.test");
+    expect(link.pathname).toBe("/spaces/product/journal/day/2026-10-01");
+    expect(link.searchParams.get("creator")).toBe("alice");
+    expect(link.searchParams.get("from")).toBe("/spaces/product?creator=alice");
   });
 });

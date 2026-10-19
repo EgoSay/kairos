@@ -17,7 +17,7 @@ const INTERACTIVE_CHIP =
 const OUTSIDE_MONTH_CHIP = "bg-transparent text-muted-foreground/25";
 const EMPTY_CHIP = "bg-transparent text-foreground group-hover/day:bg-muted/40";
 /** A picked day is a checked filter like a view or tag row: it takes the accent, not a ring. */
-const SELECTED_CHIP = "z-10 bg-primary font-medium text-primary-foreground";
+export const SELECTED_DAY_CHIP = "z-10 bg-primary font-medium text-primary-foreground";
 
 /** Shared by both small calendars. Opaque text and a 42% cap keep dates readable on dark surfaces. */
 export const ACTIVITY_LEVEL_STYLES: Record<ActivityLevel, string> = {
@@ -44,7 +44,7 @@ const getFillClass = (day: CalendarDayCell, maxCount: number): string => {
   if (!day.isCurrentMonth) return OUTSIDE_MONTH_CHIP;
   // Selected owns the fill outright: layering the empty-cell hover tint on top would swap
   // the accent out on hover and leave primary-foreground text on a muted chip.
-  if (day.isSelected) return SELECTED_CHIP;
+  if (day.isSelected) return SELECTED_DAY_CHIP;
   const level = getActivityLevel(day.count, maxCount);
   return level === 0 ? EMPTY_CHIP : ACTIVITY_LEVEL_STYLES[level];
 };
