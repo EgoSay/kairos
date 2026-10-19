@@ -3,12 +3,13 @@ import dayjs from "dayjs";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ACTIVITY_LEVEL_STYLES } from "@/components/ActivityCalendar/cellStyles";
+import { ACTIVITY_LEVEL_STYLES, SELECTED_DAY_CHIP } from "@/components/ActivityCalendar/cellStyles";
 import { buildMonthDays } from "@/components/ActivityCalendar/monthDays";
 import { calculateMaxCount, getActivityLevel } from "@/components/ActivityCalendar/utils";
 import { Button } from "@/components/ui/button";
 import { useMemoFilterContext } from "@/contexts/MemoFilterContext";
 import { useSpaceContext } from "@/contexts/SpaceContext";
+import useCurrentUser from "@/hooks/useCurrentUser";
 import { useJournalPreferences, useUpdateJournalPreferences } from "@/hooks/useJournalQueries";
 import { useMemoFilters } from "@/hooks/useMemoFilters";
 import { useAllUserStats } from "@/hooks/useUserQueries";
@@ -17,7 +18,7 @@ import { combineCELFilters } from "@/lib/cel-filter";
 import { journalDate } from "@/lib/journal";
 import { searchIncludesArchived } from "@/lib/memo-search";
 import { cn } from "@/lib/utils";
-import { ROUTES } from "@/router/routes";
+import { buildCollectionPath, ROUTES } from "@/router/routes";
 import { State } from "@/types/proto/api/v1/common_pb";
 import { useTranslate } from "@/utils/i18n";
 
@@ -45,7 +46,8 @@ export default function JournalCalendar({ mobile = false, onDateSelect, selected
   const visible = preferences.data?.calendarVisible ?? false;
   const location = useLocation();
   const { filters } = useMemoFilterContext();
-  const { memoFilter } = useSpaceContext();
+  const { memoFilter, creatorUsername, selectedSpaceName } = useSpaceContext();
+  const currentUser = useCurrentUser();
   const activeFilter = useMemoFilters({ includeMemoViews: true, includePinned: true });
   const filter = scope ? scope.filter : combineCELFilters(memoFilter, activeFilter);
   const state = scope?.state ?? State.NORMAL;
@@ -71,6 +73,10 @@ export default function JournalCalendar({ mobile = false, onDateSelect, selected
     state: state === State.ARCHIVED ? "archived" : "normal",
     from: returnTo ?? location.pathname + location.search,
   });
+  // The day URL carries collection identity: Space in its path, creator as a param.
+  // An archived scope is inherently its owner's, even though `/archived` itself has no creator.
+  const dayCreator = creatorUsername ?? (state === State.ARCHIVED ? currentUser?.username : undefined);
+  if (dayCreator) dayQuery.set("creator", dayCreator);
   const maxCount = calculateMaxCount(counts);
   const days = buildMonthDays({ month, data: counts, today, weekStartDayOffset: 1 });
 
@@ -153,19 +159,23 @@ export default function JournalCalendar({ mobile = false, onDateSelect, selected
                   day.isCurrentMonth ? (
                     <Link
                       key={day.date}
-                      to={`${ROUTES.JOURNAL}/day/${day.date}?${dayQuery}`}
+                      to={`${buildCollectionPath(`${ROUTES.JOURNAL}/day/${day.date}`, selectedSpaceName)}?${dayQuery}`}
                       onClick={() => {
                         setSelectedMonth(undefined);
                         onDateSelect?.();
                       }}
                       title={t("journal.calendar-day-count", { date: day.date, count: day.count })}
                       aria-label={t("journal.calendar-day-count", { date: day.date, count: day.count })}
-                      aria-current={(selectedDate ? day.date === selectedDate : day.isToday) ? "date" : undefined}
+                      aria-current={day.date === selectedDate ? "page" : day.isToday ? "date" : undefined}
                       className={cn(
-                        "flex aspect-square min-h-8 items-center justify-center rounded-sm text-xs tabular-nums hover:ring-1 hover:ring-ring focus-visible:outline-2 focus-visible:outline-offset-1",
-                        ACTIVITY_LEVEL_STYLES[preferences.data?.calendarColor ? getActivityLevel(day.count, maxCount) : 0],
+                        "flex aspect-square min-h-8 items-center justify-center rounded-sm text-xs tabular-nums focus-visible:outline-2 focus-visible:outline-offset-1",
+                        day.date === selectedDate
+                          ? SELECTED_DAY_CHIP
+                          : cn(
+                              "hover:ring-1 hover:ring-ring",
+                              ACTIVITY_LEVEL_STYLES[preferences.data?.calendarColor ? getActivityLevel(day.count, maxCount) : 0],
+                            ),
                         day.isToday && "font-bold underline underline-offset-4",
-                        day.date === selectedDate && "ring-1 ring-ring",
                       )}
                     >
                       {day.label}

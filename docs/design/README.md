@@ -25,6 +25,7 @@ The following designs have been implemented and are frozen:
 
 - [API abuse controls](api-abuse-controls.md)
 - [Configuration provisioning](configuration-provisioning.md)
+- [Kairos 日期页 collection 上下文](kairos-journal-day-collection-2026-10-19.md)
 - [Memos Export Format](memos-export-format.md), including the schemas under `memo-export/1.0/`
 - [Multi-Spaces](multi-spaces.md)
 - [Unique email](unique-email.md)

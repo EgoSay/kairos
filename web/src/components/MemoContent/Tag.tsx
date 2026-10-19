@@ -8,7 +8,7 @@ import { tagStyles } from "@/lib/markdownStyles";
 import { isMemoCollectionRoute } from "@/lib/memo-views";
 import { findTagMetadata } from "@/lib/tag";
 import { cn } from "@/lib/utils";
-import { Routes } from "@/router";
+import { getCollectionCreator, getCollectionHomePath, withCollectionCreator } from "@/router/routes";
 import { withMemoFilter } from "../MemoView/navigation";
 
 interface TagProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -44,7 +44,10 @@ export const Tag: React.FC<TagProps> = ({ "data-tag": dataTag, children, classNa
 
     // Detail and journal readers do not apply collection filters themselves.
     if (!isMemoCollectionRoute(location.pathname)) {
-      const collection = parentPage && isMemoCollectionRoute(parentPage) ? parentPage : Routes.HOME;
+      const collection =
+        parentPage && isMemoCollectionRoute(parentPage)
+          ? parentPage
+          : `${getCollectionHomePath(location)}${withCollectionCreator("", getCollectionCreator(location.search))}`;
       navigateTo(withMemoFilter(collection, stringifyFilters([{ factor: "tagSearch", value: tag }])));
       return;
     }

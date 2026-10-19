@@ -14,6 +14,7 @@ describe("sidebar route content", () => {
     ["/journal/insights", "journal"],
     ["/journal/day/2026-10-17", "journal-day"],
     ["/Journal/Day/2026-10-17/", "journal-day"],
+    ["/spaces/product/journal/day/2026-10-17", "journal-day"],
     ["/u/steven", "common"],
     ["/U/Steven/", "common"],
     ["/views", "views"],
@@ -62,6 +63,20 @@ describe("sidebar route content", () => {
     expect(getRouteActionPolicy("/spaces/a/calendar/2026/08/02", "?creator=alice")).toEqual({
       searchScope: "route-collection",
       searchDestination: "/spaces/a",
+    });
+  });
+
+  it.each([
+    ["/spaces/a/journal/day/2026-10-17", "?creator=alice", "/spaces/a"],
+    ["/journal/day/2026-10-17", "?creator=test", "/"],
+  ])("keeps %s search inside the route collection", (path, search, searchDestination) => {
+    expect(getRouteActionPolicy(path, search)).toEqual({ searchScope: "route-collection", searchDestination });
+  });
+
+  it("sends search from a creatorless day reader to Explore", () => {
+    expect(getRouteActionPolicy("/journal/day/2026-10-17", "?scoped=1&scope=x")).toEqual({
+      searchScope: "route-collection",
+      searchDestination: "/explore",
     });
   });
 

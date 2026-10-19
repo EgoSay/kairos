@@ -32,13 +32,26 @@ export const ROUTES = {
 /** Router pattern for the calendar: month and day are optional so `/calendar` can redirect. */
 export const CALENDAR_ROUTE_PATTERN = `${ROUTES.CALENDAR}/:year?/:month?/:day?`;
 
+/** Router pattern for the day reader: `/journal/day/:date` exists globally and beneath a Space. */
+export const JOURNAL_DAY_ROUTE_PATTERN = `${ROUTES.JOURNAL}/day/:date`;
+
 export type RouteKey = keyof typeof ROUTES;
 export type RoutePath = (typeof ROUTES)[RouteKey];
 
 export const SPACE_ROUTE_PATTERN = "/spaces/:spaceUid";
 
 /** Collection pages that exist both globally and beneath a Space. */
-const COLLECTION_ROUTE_PATTERNS = [ROUTES.HOME, ROUTES.EXPLORE, ROUTES.ATTACHMENTS, CALENDAR_ROUTE_PATTERN, ROUTES.MAP];
+const COLLECTION_ROUTE_PATTERNS = [
+  ROUTES.HOME,
+  ROUTES.EXPLORE,
+  ROUTES.ATTACHMENTS,
+  CALENDAR_ROUTE_PATTERN,
+  ROUTES.MAP,
+  JOURNAL_DAY_ROUTE_PATTERN,
+];
+
+export const isJournalDayPath = (pathname: string): boolean =>
+  matchPath({ path: JOURNAL_DAY_ROUTE_PATTERN, caseSensitive: false }, pathname) !== null;
 
 const isCollectionPathname = (pathname: string): boolean =>
   COLLECTION_ROUTE_PATTERNS.some((path) => matchPath({ path, caseSensitive: false }, pathname) !== null);
@@ -124,6 +137,12 @@ export const collectionNavigationPath = (
   return `${collectionPathForLocation(pathname, location.pathname)}${withCollectionCreator(search, creator)}`;
 };
 
+/** Only the `?filter=` narrowing survives a jump between collection pages; page-local params stay behind. */
+export const collectionFilterSearch = (search: string): string => {
+  const filter = new URLSearchParams(search).get("filter");
+  return filter ? `?${new URLSearchParams({ filter })}` : "";
+};
+
 /** A creator change keeps the current collection view and Space. */
 export const getCreatorSwitchPath = (
   location: { pathname: string; search: string; hash?: string },
@@ -131,15 +150,25 @@ export const getCreatorSwitchPath = (
   currentUsername?: string,
 ): string => {
   const route = resolveCollectionRoute(location.pathname);
-  const isMemoList = route.pathname === ROUTES.HOME || route.pathname === ROUTES.EXPLORE || !route.isCollection;
+  // A day reader's scope snapshot belongs to one creator; switching lands on that creator's list.
+  const dayReader = isJournalDayPath(route.pathname);
+  const isMemoList = route.pathname === ROUTES.HOME || route.pathname === ROUTES.EXPLORE || !route.isCollection || dayReader;
   const pathname = isMemoList ? buildCollectionPath(username ? ROUTES.HOME : ROUTES.EXPLORE, route.spaceName) : location.pathname;
   const creator = username === currentUsername && isMemoList ? undefined : username;
-  return `${pathname}${withCollectionCreator(location.search, creator)}${location.hash || ""}`;
+  const search = dayReader ? collectionFilterSearch(location.search) : location.search;
+  return `${pathname}${withCollectionCreator(search, creator)}${location.hash || ""}`;
 };
 
 /** Switching preserves collection views and their query; other pages start at Home. */
 export const getSpaceSwitchPath = (location: { pathname: string; search: string; hash?: string }, spaceName?: string): string => {
   const route = resolveCollectionRoute(location.pathname);
+  // A day reader's scope snapshot belongs to its Space; switching lands on the target collection's home.
+  if (isJournalDayPath(route.pathname)) {
+    return `${buildCollectionPath(ROUTES.HOME, spaceName)}${withCollectionCreator(
+      collectionFilterSearch(location.search),
+      getCollectionCreator(location.search),
+    )}`;
+  }
   return route.isCollection
     ? `${buildCollectionPath(route.pathname, spaceName)}${location.search}${location.hash || ""}`
     : buildCollectionPath(ROUTES.HOME, spaceName);

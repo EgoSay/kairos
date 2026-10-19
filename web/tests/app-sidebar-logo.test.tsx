@@ -229,22 +229,56 @@ describe("App sidebar logo", () => {
   });
 
   it.each([
-    { search: "", filter: 'creator == "users/test"', state: State.NORMAL, includeArchived: true, from: "/" },
     {
-      search: `?${new URLSearchParams({ scoped: "1", scope: 'creator == "users/other"', state: "normal", archived: "0", from: "/?creator=other" })}`,
+      search: "",
+      filter: 'creator == "users/test"',
+      state: State.NORMAL,
+      includeArchived: true,
+      from: "/",
+      statsContext: "collection",
+      tagScope: "all",
+    },
+    {
+      search: `?${new URLSearchParams({
+        scoped: "1",
+        scope: 'creator == "users/other"',
+        state: "normal",
+        archived: "0",
+        from: "/?creator=other",
+        creator: "other",
+      })}`,
       filter: 'creator == "users/other"',
       state: State.NORMAL,
       includeArchived: false,
       from: "/?creator=other",
+      statsContext: "collection",
+      tagScope: "other",
     },
     {
-      search: `?${new URLSearchParams({ scoped: "1", scope: 'content.contains("历史")', state: "archived", archived: "0", from: "/archived" })}`,
+      search: `?${new URLSearchParams({
+        scoped: "1",
+        scope: 'content.contains("历史")',
+        state: "archived",
+        archived: "0",
+        from: "/archived",
+        creator: "test",
+      })}`,
       filter: 'content.contains("历史")',
       state: State.ARCHIVED,
       includeArchived: false,
       from: "/archived",
+      statsContext: "archived",
+      tagScope: "archived",
     },
-  ])("keeps day records in the calendar sidebar with scope $filter", ({ search, filter, state, includeArchived, from }) => {
+  ])("keeps day records in the calendar sidebar with scope $filter", ({
+    search,
+    filter,
+    state,
+    includeArchived,
+    from,
+    statsContext,
+    tagScope,
+  }) => {
     render(
       <MemoryRouter initialEntries={[`/journal/day/2026-09-17${search}`]}>
         <Routes>
@@ -258,9 +292,50 @@ describe("App sidebar logo", () => {
     expect(screen.queryByRole("link", { name: "journal.ai-insights" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "journal.explore" })).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("link", { name: "memo.layout-list" })).toHaveAttribute("aria-current", "page");
+    // The day reader keeps the collection chrome: display settings, views and tags stay mounted.
+    expect(screen.getByRole("button", { name: "memo.view-options" })).toBeInTheDocument();
+    expect(screen.getByText("common.views")).toBeInTheDocument();
+    expect(screen.getByText("Tags")).toBeInTheDocument();
     expect(journalCalendarHook).toHaveBeenLastCalledWith(
       expect.objectContaining({ selectedDate: "2026-09-17", returnTo: from, scope: { filter, state, includeArchived } }),
     );
+    expect(filteredStatsHook).toHaveBeenCalledWith(expect.objectContaining({ context: statsContext, filter, includeArchived }));
+    expect(tagsSectionHook).toHaveBeenCalledWith(expect.objectContaining({ scope: tagScope }));
+  });
+
+  it("keeps the Space and creator chrome on a Space day reader", () => {
+    const product = { name: "spaces/product", title: "Product", description: "" };
+    spaceState.spaces = [product];
+    spaceState.selectedSpace = product;
+    const search = `?${new URLSearchParams({
+      scoped: "1",
+      scope: 'creator == "users/alice"',
+      state: "normal",
+      archived: "0",
+      creator: "alice",
+      from: "/spaces/product?creator=alice",
+    })}`;
+    render(
+      <MemoryRouter initialEntries={[`/spaces/product/journal/day/2026-09-17${search}`]}>
+        <Routes>
+          <Route path="/spaces/:spaceUid/journal/day/:date" element={<AppSidebar />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("button", { name: "space.switch: alice / Product" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "memo.layout-list" })).toHaveAttribute("href", "/spaces/product?creator=alice");
+    expect(screen.getByText("Tags")).toBeInTheDocument();
+  });
+
+  it("shows the day reader's creator in the switcher", () => {
+    render(
+      <MemoryRouter initialEntries={[`/journal/day/2026-09-17?scoped=1&scope=x&creator=test`]}>
+        <Routes>
+          <Route path="/journal/day/:date" element={<AppSidebar />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("button", { name: "space.switch: test" })).toBeInTheDocument();
   });
 
   it("keeps creator, Space and tag filters when returning from the map to the list", () => {

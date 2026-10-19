@@ -162,6 +162,7 @@ export const routeConfig: RouteObject[] = [
                               { index: true, element: <HomeRoute /> },
                               { path: "explore", element: <ExploreRoute /> },
                               { path: "calendar/:year?/:month?/:day?", element: <Calendar /> },
+                              { path: "journal/day/:date", element: <JournalDay /> },
                             ],
                           },
                           { path: "attachments", element: <Attachments /> },

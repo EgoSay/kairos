@@ -68,6 +68,18 @@ describe("Space route contract", () => {
     expect(getCreatorHomePath("alice")).toBe("/?creator=alice");
     expect(getCreatorHomePath("júlia")).toBe("/?creator=j%C3%BAlia");
   });
+  it("re-roots a day reader at the target collection's home on context switches", () => {
+    const location = {
+      pathname: "/spaces/a/journal/day/2026-10-17",
+      search: "?scoped=1&scope=x&from=%2Fspaces%2Fa&creator=alice&filter=tagSearch%3Awork",
+    };
+    // The scope snapshot belongs to its Space and creator; only creator and narrowing filters travel.
+    expect(getSpaceSwitchPath(location, "spaces/b")).toBe("/spaces/b?filter=tagSearch%3Awork&creator=alice");
+    expect(getCreatorSwitchPath(location, "steven")).toBe("/spaces/a?filter=tagSearch%3Awork&creator=steven");
+    expect(getCreatorSwitchPath(location, "alice", "alice")).toBe("/spaces/a?filter=tagSearch%3Awork");
+    expect(getSpaceSwitchPath({ pathname: "/journal/day/2026-10-17", search: "?scoped=1&scope=x" })).toBe("/");
+  });
+
   it("keeps personal Home and all-creator Explore distinct while changing views", () => {
     expect(getCreatorSwitchPath({ pathname: "/", search: "?filter=tagSearch%3Awork" })).toBe("/explore?filter=tagSearch%3Awork");
     expect(getCreatorSwitchPath({ pathname: "/spaces/a/explore", search: "" }, "alice", "alice")).toBe("/spaces/a");

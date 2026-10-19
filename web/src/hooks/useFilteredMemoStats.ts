@@ -34,6 +34,8 @@ export interface UseFilteredMemoStatsOptions {
    * sidebar tag tree ignores the tag facet itself so picking a tag doesn't collapse it.
    */
   tagFilter?: string;
+  /** Explicit archived inclusion (e.g. a day reader's scope snapshot); defaults to the search facets. */
+  includeArchived?: boolean;
 }
 
 const timestampsForBasis = (stats: UserStats, basis: MemoTimeBasis) => {
@@ -48,13 +50,13 @@ const timestampsForBasis = (stats: UserStats, basis: MemoTimeBasis) => {
 };
 
 export const useFilteredMemoStats = (options: UseFilteredMemoStatsOptions = {}): FilteredMemoStats => {
-  const { userName, context, enabled = true, filter, tagFilter } = options;
+  const { userName, context, enabled = true, filter, tagFilter, includeArchived: includeArchivedOption } = options;
   const currentUser = useCurrentUser();
   const { timeBasis } = useView();
   const preferences = useJournalPreferences();
   const timezone = preferences.data?.timezone ?? "Asia/Shanghai";
   const { filters } = useMemoFilterContext();
-  const includeArchived = searchIncludesArchived(filters) && context !== "archived";
+  const includeArchived = includeArchivedOption ?? (searchIncludesArchived(filters) && context !== "archived");
 
   // Legacy personal collections use backend per-user stats.
   const userStatsQuery = useUserStats(userName, { enabled, filter });
