@@ -327,6 +327,81 @@ func TestPartitionPauseCancelsInflightRequest(t *testing.T) {
 	require.Equal(t, "cancelled", f.deliveries(t)[0].Status)
 }
 
+func TestPartitionRefreshDeliveryRevisionsKeepsQueuedIntent(t *testing.T) {
+	f := newFixture(t)
+	f.target(t, true)
+	f.commit(t)
+
+	// A tag-organize edit changes the revision without being a "change".
+	f.memo.Content = "my actual words #tagged"
+	f.memo.Revision = "revision-2"
+	require.NoError(t, f.service.RefreshDeliveryRevisions(context.Background(), f.owner, f.memo.UID))
+
+	deliveries := f.deliveries(t)
+	require.Len(t, deliveries, 1, "refresh must not create new intents")
+	require.Equal(t, "pending", deliveries[0].Status)
+	require.Equal(t, "revision-2", deliveries[0].Revision)
+
+	calls := 0
+	f.service.Send = func(_ context.Context, r *webhook.Request) (*webhook.DeliveryReceipt, error) {
+		calls++
+		var p Payload
+		require.NoError(t, json.Unmarshal(r.Payload.(json.RawMessage), &p))
+		require.Equal(t, "my actual words #tagged", *p.Content)
+		require.Equal(t, "revision-2", p.Revision)
+		return &webhook.DeliveryReceipt{StatusCode: 204}, nil
+	}
+	f.process(t)
+	require.Equal(t, 1, calls)
+	require.Equal(t, "delivered", f.deliveries(t)[0].Status)
+}
+
+func TestPartitionRefreshDeliveryRevisionsKeepsManualIntentSendable(t *testing.T) {
+	f := newFixture(t)
+	f.target(t, true)
+	f.commit(t)
+	f.process(t)
+
+	// A first real change queues a manual intent; a tag edit then bumps the
+	// revision again. The manual send must still carry current content.
+	f.memo.Revision = "revision-2"
+	f.memo.Content = "changed words"
+	changed := f.commit(t)
+	require.Len(t, changed, 1)
+	require.Equal(t, "local_changed", changed[0].Status)
+
+	f.memo.Revision = "revision-3"
+	f.memo.Content = "changed words #tagged"
+	require.NoError(t, f.service.RefreshDeliveryRevisions(context.Background(), f.owner, f.memo.UID))
+
+	current := f.deliveries(t)
+	require.Len(t, current, 2)
+	for _, d := range current {
+		if d.Status == "local_changed" {
+			require.Equal(t, "revision-3", d.Revision)
+		}
+	}
+
+	_, err := f.service.Retry(context.Background(), f.owner, changed[0].ID)
+	require.NoError(t, err)
+	f.process(t)
+	for _, d := range f.deliveries(t) {
+		require.Equal(t, "delivered", d.Status)
+	}
+}
+
+func TestPartitionRefreshDeliveryRevisionsLeavesTerminalEvents(t *testing.T) {
+	f := newFixture(t)
+	f.target(t, true)
+	f.commit(t)
+	f.process(t)
+	require.Equal(t, "delivered", f.deliveries(t)[0].Status)
+
+	f.memo.Revision = "revision-2"
+	require.NoError(t, f.service.RefreshDeliveryRevisions(context.Background(), f.owner, f.memo.UID))
+	require.Equal(t, "revision-1", f.deliveries(t)[0].Revision)
+}
+
 func TestPartitionRetractionHasNoDeletedContent(t *testing.T) {
 	f := newFixture(t)
 	target := f.target(t, true)

@@ -50,6 +50,34 @@ service MemoService {
     option (google.api.http) = {delete: "/api/v1/{name=memos/*}"};
     option (google.api.method_signature) = "name";
   }
+  // BatchUpdateMemoTags appends and removes authored tags on the named memos.
+  // Each memo is updated independently; per-memo failures do not abort the
+  // batch. The caller must own every named memo. Tag organization edits the
+  // memo content but never triggers partition delivery.
+  rpc BatchUpdateMemoTags(BatchUpdateMemoTagsRequest) returns (BatchUpdateMemoTagsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/memos:batchUpdateTags"
+      body: "*"
+    };
+  }
+  // RenameTag rewrites an authored tag across the caller's memos, optionally
+  // including descendant paths. Renaming onto an existing tag merges them.
+  // Requires authentication.
+  rpc RenameTag(RenameTagRequest) returns (RenameTagResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/memos/tags:rename"
+      body: "*"
+    };
+  }
+  // DeleteTag removes an authored tag, optionally including descendant paths,
+  // from the caller's memos. The memos themselves and their other metadata
+  // are kept. Requires authentication.
+  rpc DeleteTag(DeleteTagRequest) returns (DeleteTagResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/memos/tags:delete"
+      body: "*"
+    };
+  }
   // SetMemoAttachments replaces the full set of attachments on a memo with the
   // provided list (not an append). Pass the complete desired set; an empty list
   // clears all attachments. Idempotent.
@@ -243,6 +271,10 @@ message Memo {
   // Output only. The tags extracted from the content.
   repeated string tags = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 
+  // Output only. The tags authored explicitly in the content, without the
+  // implied ancestor paths that `tags` includes.
+  repeated string explicit_tags = 20 [(google.api.field_behavior) = OUTPUT_ONLY];
+
   // Whether the memo is pinned.
   bool pinned = 11 [(google.api.field_behavior) = OPTIONAL];
 
@@ -422,6 +454,161 @@ message DeleteMemoRequest {
 
   // Optional. If set to true, the memo will be deleted even if it has associated data.
   bool force = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+message BatchUpdateMemoTagsRequest {
+  // Optional. The memos to update. At most 200 names. Mutually exclusive with
+  // scope_tag: exactly one scope must be set.
+  // Format: memos/{memo}
+  repeated string names = 1 [
+    (google.api.field_behavior) = OPTIONAL,
+    (google.api.resource_reference) = {type: "memos.api.v1/Memo"}
+  ];
+
+  // Optional. Tag values to append to every memo, without the # prefix.
+  repeated string add_tags = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Explicit tag values to remove from every memo, without the #
+  // prefix.
+  repeated string remove_tags = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. When set, the batch applies to every memo authoring this tag
+  // instead of a name list. At most 1000 memos are processed per call;
+  // remaining_count reports the rest and a repeated call continues
+  // idempotently.
+  string scope_tag = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. With scope_tag, also match memos authoring descendant
+  // scope_tag/... paths.
+  bool scope_include_descendants = 5 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// The failure detail of a single memo inside a tag organization operation.
+message MemoTagOperationFailure {
+  // The resource name of the memo.
+  // Format: memos/{memo}
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "memos.api.v1/Memo"}
+  ];
+
+  // The canonical error code describing the failure (e.g. "aborted").
+  string code = 2;
+
+  // The human-readable failure detail.
+  string message = 3;
+}
+
+message BatchUpdateMemoTagsResponse {
+  // The updated memos, in request order, for every name that succeeded. A memo
+  // that needed no change is returned unchanged and still counts as a success.
+  // Scope-driven batches omit this list; the caller watches failures and
+  // remaining_count.
+  repeated Memo memos = 1;
+
+  // The memos that could not be updated.
+  repeated MemoTagOperationFailure failures = 2;
+
+  // The number of scope-matched memos not processed because of the per-call
+  // cap. Zero for name-driven batches. Repeat the call to continue.
+  int32 remaining_count = 3;
+}
+
+// A saved memo view affected by a tag organization operation.
+message TagOperationAffectedView {
+  // The resource name of the memo view.
+  // Format: users/{user}/views/{view}
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // The title of the memo view.
+  string title = 2;
+}
+
+message RenameTagRequest {
+  // Required. The tag value to rename, without the # prefix.
+  string old_tag = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The replacement tag value, without the # prefix.
+  string new_tag = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. Also rewrite descendant paths (old_tag/...).
+  bool include_descendants = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Only report the affected scope; write nothing.
+  bool validate_only = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Rewrite saved-view filters and tag display-rule keys that
+  // reference the renamed tag. Defaults to true when unset.
+  optional bool update_references = 5 [(google.api.field_behavior) = OPTIONAL];
+}
+
+message RenameTagResponse {
+  // The number of memos whose content was (or, for validate_only, would be)
+  // rewritten.
+  int32 affected_memos = 1;
+
+  // The explicit tag values matched by the operation.
+  repeated string affected_tags = 2;
+
+  // True when the new tag already exists on other memos; the operation then
+  // merges the two tags.
+  bool merges_into_existing = 3;
+
+  // The saved views whose filters reference the renamed tag. Their filters
+  // are rewritten in place unless update_references is false.
+  repeated TagOperationAffectedView affected_views = 4;
+
+  // The tag display-rule keys that reference the renamed tag. Exact-match
+  // keys are renamed along; pattern keys are reported but left unchanged.
+  repeated string affected_tag_rules = 5;
+
+  // The memos that could not be rewritten.
+  repeated MemoTagOperationFailure failures = 6;
+
+  // The number of matched memos not processed because of the per-call cap.
+  // Repeat the call to continue; the operation is idempotent.
+  int32 remaining_count = 7;
+}
+
+message DeleteTagRequest {
+  // Required. The tag value to remove, without the # prefix.
+  string tag = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. Also remove descendant paths (tag/...).
+  bool include_descendants = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Only report the affected scope; write nothing.
+  bool validate_only = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Rewrite saved-view filters that reference the deleted tag so
+  // the tag conditions no longer match. Tag display rules are kept and only
+  // reported. Defaults to true when unset.
+  optional bool update_references = 4 [(google.api.field_behavior) = OPTIONAL];
+}
+
+message DeleteTagResponse {
+  // The number of memos whose content was (or, for validate_only, would be)
+  // rewritten.
+  int32 affected_memos = 1;
+
+  // The explicit tag values matched by the operation.
+  repeated string affected_tags = 2;
+
+  // The saved views whose filters reference the deleted tag. Their tag
+  // conditions are rewritten to match nothing unless update_references is
+  // false.
+  repeated TagOperationAffectedView affected_views = 3;
+
+  // The tag display-rule keys that reference the deleted tag. They are kept
+  // unchanged; removing a display rule is a separate decision.
+  repeated string affected_tag_rules = 4;
+
+  // The memos that could not be rewritten.
+  repeated MemoTagOperationFailure failures = 5;
+
+  // The number of matched memos not processed because of the per-call cap.
+  // Repeat the call to continue; the operation is idempotent.
+  int32 remaining_count = 6;
 }
 
 message SetMemoAttachmentsRequest {

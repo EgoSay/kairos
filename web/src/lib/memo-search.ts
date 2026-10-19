@@ -1,5 +1,12 @@
-import type { MemoFilter } from "@/contexts/MemoFilterContext";
+import type { FilterFactor, MemoFilter } from "@/contexts/MemoFilterContext";
 import { journalDayRange } from "@/lib/journal";
+
+/**
+ * Facets that select records BY their tags. Faceted-search rule: the tag stats
+ * themselves must ignore these, or picking a tag collapses the tree to only the
+ * tags co-occurring with it.
+ */
+export const TAG_DIMENSION_FACTORS: readonly FilterFactor[] = ["tagSearch", "untagged", "tagExclude", "tagMatch", "tagExact"];
 
 /** Quotes every word as data; plain search never interprets a user's expression. */
 export const keywordSearchFilter = (query: string): string | undefined => {

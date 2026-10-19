@@ -1,7 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SIDEBAR_ROW_BOX_CLASSES, SIDEBAR_ROW_COUNT_RAIL_CLASSES, SIDEBAR_ROW_SLOT_CLASSES } from "@/components/AppSidebar/SidebarRow";
+import {
+  SIDEBAR_ROW_BOX_CLASSES,
+  SIDEBAR_ROW_COUNT_RAIL_CLASSES,
+  SIDEBAR_ROW_LABEL_CLASSES,
+  SIDEBAR_ROW_SLOT_CLASSES,
+} from "@/components/AppSidebar/SidebarRow";
 import { SIDEBAR_SECTION_ACTION_ICON_CLASSES } from "@/components/AppSidebar/SidebarSection";
 import TagsSection from "@/components/AppSidebar/TagsSection";
 import { MemoFilterProvider, parseFilterQuery, useMemoFilterContext } from "@/contexts/MemoFilterContext";
@@ -140,7 +145,9 @@ describe("TagsSection", () => {
     const path = alpha.parentElement?.parentElement as HTMLSpanElement;
     const count = screen.getByText("2");
 
-    expect(alphaButton).toHaveClass(...SIDEBAR_ROW_BOX_CLASSES.split(" "));
+    // Split-row grammar: box on the row wrapper (it carries the ⋯ menu), label on the button.
+    expect(alphaButton.parentElement).toHaveClass(...SIDEBAR_ROW_BOX_CLASSES.split(" "));
+    expect(alphaButton).toHaveClass(...SIDEBAR_ROW_LABEL_CLASSES.split(" "));
     // The # sits in the same fixed slot the tree uses, so switching modes keeps it in place.
     expect(alphaButton.firstElementChild).toHaveClass(...SIDEBAR_ROW_SLOT_CLASSES.split(" "));
     expect(path).toHaveClass("truncate", "text-start");

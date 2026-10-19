@@ -150,7 +150,7 @@ func local_request_SpaceService_GetSpace_0(ctx context.Context, marshaler runtim
 	return msg, metadata, err
 }
 
-var filter_SpaceService_UpdateSpace_0 = &utilities.DoubleArray{Encoding: map[string]int{"space": 0, "name": 1}, Base: []int{1, 2, 1, 0, 0}, Check: []int{0, 1, 2, 3, 2}}
+var filter_SpaceService_UpdateSpace_0 = &utilities.DoubleArray{Encoding: map[string]int{"space": 0, "name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3}}
 
 func request_SpaceService_UpdateSpace_0(ctx context.Context, marshaler runtime.Marshaler, client SpaceServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
@@ -681,7 +681,7 @@ func local_request_SpaceService_GetSpaceMember_0(ctx context.Context, marshaler 
 	return msg, metadata, err
 }
 
-var filter_SpaceService_UpdateSpaceMember_0 = &utilities.DoubleArray{Encoding: map[string]int{"space_member": 0, "name": 1}, Base: []int{1, 2, 1, 0, 0}, Check: []int{0, 1, 2, 3, 2}}
+var filter_SpaceService_UpdateSpaceMember_0 = &utilities.DoubleArray{Encoding: map[string]int{"space_member": 0, "name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3}}
 
 func request_SpaceService_UpdateSpaceMember_0(ctx context.Context, marshaler runtime.Marshaler, client SpaceServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (

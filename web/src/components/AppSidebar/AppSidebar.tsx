@@ -49,6 +49,7 @@ import { useMemoFilters } from "@/hooks/useMemoFilters";
 import { useNotifications } from "@/hooks/useUserQueries";
 import { combineCELFilters } from "@/lib/cel-filter";
 import { readJournalDayContext } from "@/lib/journal";
+import { TAG_DIMENSION_FACTORS } from "@/lib/memo-search";
 import { cn } from "@/lib/utils";
 import { collectionNavigationPath, ROUTES } from "@/router/routes";
 import { State } from "@/types/proto/api/v1/common_pb";
@@ -105,9 +106,14 @@ const CollectionSidebarContent = ({
   const collectionFilter = isUserLevelCollection ? undefined : memoFilter;
   const activeFilter = useMemoFilters({ includeMemoViews: true, includePinned: true });
   const statsFilter = combineCELFilters(collectionFilter, scopeFilter, activeFilter);
+  // The tag tree ignores the tag facet itself: picking a tag must not collapse the
+  // tree to only tags co-occurring with it. Other filters (search, day, view) still apply.
+  const tagFacetFilter = useMemoFilters({ includeMemoViews: true, includePinned: true, excludeFactors: TAG_DIMENSION_FACTORS });
+  const tagStatsFilter = combineCELFilters(collectionFilter, scopeFilter, tagFacetFilter);
   const { statistics, tags, loading, error, retry, retrying } = useFilteredMemoStats({
     context: context === "archived" ? "archived" : "collection",
     filter: statsFilter,
+    tagFilter: tagStatsFilter,
     enabled: authInitialized && instanceInitialized && (md || mobileOpen),
   });
 
