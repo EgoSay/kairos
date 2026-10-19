@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { ACTIVITY_LEVEL_STYLES } from "@/components/ActivityCalendar/cellStyles";
 import { buildMonthDays } from "@/components/ActivityCalendar/monthDays";
 import { calculateMaxCount, getActivityLevel } from "@/components/ActivityCalendar/utils";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,6 @@ import { cn } from "@/lib/utils";
 import { ROUTES } from "@/router/routes";
 import { State } from "@/types/proto/api/v1/common_pb";
 import { useTranslate } from "@/utils/i18n";
-
-const fills = ["", "bg-primary/12", "bg-primary/22", "bg-primary/34", "bg-primary/48"];
 
 interface JournalCalendarProps {
   mobile?: boolean;
@@ -156,7 +155,7 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
                       aria-current={day.isToday ? "date" : undefined}
                       className={cn(
                         "flex aspect-square min-h-8 items-center justify-center rounded-sm text-xs tabular-nums hover:ring-1 hover:ring-ring focus-visible:outline-2 focus-visible:outline-offset-1",
-                        preferences.data?.calendarColor && fills[getActivityLevel(day.count, maxCount)],
+                        ACTIVITY_LEVEL_STYLES[preferences.data?.calendarColor ? getActivityLevel(day.count, maxCount) : 0],
                         day.isToday && "font-bold underline underline-offset-4",
                       )}
                     >

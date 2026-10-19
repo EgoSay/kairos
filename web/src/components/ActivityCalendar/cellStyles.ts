@@ -15,16 +15,17 @@ const INTERACTIVE_CHIP =
   "group-hover/day:brightness-[0.97] group-focus-visible/day:ring-2 group-focus-visible/day:ring-ring/40 group-focus-visible/day:ring-inset";
 
 const OUTSIDE_MONTH_CHIP = "bg-transparent text-muted-foreground/25";
-const EMPTY_CHIP = "bg-transparent text-foreground/75 group-hover/day:bg-muted/40";
+const EMPTY_CHIP = "bg-transparent text-foreground group-hover/day:bg-muted/40";
 /** A picked day is a checked filter like a view or tag row: it takes the accent, not a ring. */
 const SELECTED_CHIP = "z-10 bg-primary font-medium text-primary-foreground";
 
-/** Primary-tinted activity levels; the small chip can carry a stronger wash than a full day cell. */
-const INTENSITY_TINTS: Record<Exclude<ActivityLevel, 0>, string> = {
-  1: "bg-primary/12 text-foreground/75",
-  2: "bg-primary/22 text-foreground/80",
-  3: "bg-primary/34 text-foreground/80",
-  4: "bg-primary/48 text-foreground/85",
+/** Shared by both small calendars. Opaque text and a 42% cap keep dates readable on dark surfaces. */
+export const ACTIVITY_LEVEL_STYLES: Record<ActivityLevel, string> = {
+  0: "text-foreground",
+  1: "bg-primary/12 text-foreground",
+  2: "bg-primary/22 text-foreground",
+  3: "bg-primary/34 text-foreground",
+  4: "bg-primary/42 text-foreground",
 };
 
 /**
@@ -45,7 +46,7 @@ const getFillClass = (day: CalendarDayCell, maxCount: number): string => {
   // the accent out on hover and leave primary-foreground text on a muted chip.
   if (day.isSelected) return SELECTED_CHIP;
   const level = getActivityLevel(day.count, maxCount);
-  return level === 0 ? EMPTY_CHIP : INTENSITY_TINTS[level];
+  return level === 0 ? EMPTY_CHIP : ACTIVITY_LEVEL_STYLES[level];
 };
 
 export const getChipClassName = (day: CalendarDayCell, maxCount: number, isInteractive: boolean): string =>

@@ -1,7 +1,7 @@
 # Color System Guide
 
 Kairos 的颜色系统建立在 OKLCH 色彩空间与语义化 CSS 变量之上。
-本文是**事实文档**：以 `default.css` / `default-dark.css` / `paper.css` 的实际定义为准；
+本文是**事实文档**：以 `default.css` / `default-dark.css` / `paper.css` / `paper-dark.css` 的实际定义为准；
 设计意图与完整规范见 `docs/design/kairos-design-system-2026-10-16.md`。
 
 ## 工作方式
@@ -75,6 +75,14 @@ color: var(--muted-foreground);
 /* 错：硬编码 */
 color: #555;
 ```
+
+## 对比度与交互状态
+
+- 普通字号文字（包括占位、次要说明和日历日期）至少 **4.5:1**；大号文字与必要的非文字状态指示至少 **3:1**。正文以 **7:1** 为目标。
+- 透明度会改变最终对比度；按实际表面合成后校验，不能只比较原始 token。覆盖普通/纸面 × 浅色/深色四套主题，以及侧栏、页面和卡片背景。
+- `Button` 的主按钮和危险按钮保留 2px 内描焦点，分别使用 `primary-foreground` / `destructive-foreground`，保证焦点与按钮填充有对比；不要让内描焦点与底色同色。
+- `JournalCalendar` 与 `ActivityCalendar` 的小格热力样式共用 `ActivityCalendar/cellStyles.ts` 中的 `ACTIVITY_LEVEL_STYLES`：主色透明度为 12% / 22% / 34% / 42%，搭配不透明 `foreground`。无记录日期保持无热力填充，选中日期仍用完整 `primary` / `primary-foreground` 配对。
+- 标准依据：[WCAG 2.2 文字对比度](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)与[非文字对比度](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)。
 
 ## Z-Index 分层
 
