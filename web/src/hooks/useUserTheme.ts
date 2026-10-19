@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getThemeWithFallback, loadTheme, setupSystemThemeListener } from "@/utils/theme";
+import { getThemeWithFallback, loadTheme, parseThemePreference, setupSystemThemeListener } from "@/utils/theme";
 
 /**
  * Hook that reactively applies user theme preference.
@@ -21,8 +21,9 @@ export const useUserTheme = () => {
   // Read the latest preference on each change, including local-only guest choices.
   useEffect(() => {
     return setupSystemThemeListener(() => {
-      if (getThemeWithFallback(userGeneralSetting?.theme) === "system") {
-        loadTheme("system");
+      const theme = getThemeWithFallback(userGeneralSetting?.theme);
+      if (parseThemePreference(theme)?.mode === "system") {
+        loadTheme(theme);
       }
     });
   }, [userGeneralSetting?.theme]);

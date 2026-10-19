@@ -1,4 +1,5 @@
 import { toBlob } from "html-to-image";
+import { getMemoShareFontCSS } from "./memoShareImageFonts";
 
 const WINDOW_HORIZONTAL_MARGIN = 32;
 const PREVIEW_HORIZONTAL_PADDING_IN_DIALOG = 40;
@@ -104,9 +105,11 @@ export const createMemoShareImageBlob = async (node: HTMLElement) => {
   const rect = node.getBoundingClientRect();
   const width = Math.ceil(rect.width || node.offsetWidth || node.clientWidth);
   const height = Math.ceil(rect.height || node.offsetHeight || node.clientHeight);
+  const fontEmbedCSS = await getMemoShareFontCSS(node);
 
   const blob = await toBlob(node, {
     cacheBust: true,
+    fontEmbedCSS,
     height,
     pixelRatio: Math.max(2, Math.min(window.devicePixelRatio || 1, 3)),
     width,

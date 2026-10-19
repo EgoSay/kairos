@@ -21,6 +21,7 @@ const MODE_ICONS: Record<ThemePreference["mode"], ReactElement> = {
 const ThemeSelect = ({ value, onValueChange, className, compact = false }: ThemeSelectProps = {}) => {
   const t = useTranslate();
   const pref = parseThemePreference(value) ?? { mode: "system" as const, surface: "plain" as const };
+  const options = THEME_MODE_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) }));
 
   const handleModeChange = (newMode: string) => {
     const next = serializeThemePreference({ ...pref, mode: newMode as ThemePreference["mode"] });
@@ -29,7 +30,7 @@ const ThemeSelect = ({ value, onValueChange, className, compact = false }: Theme
   };
 
   return (
-    <Select value={pref.mode} onValueChange={handleModeChange}>
+    <Select value={pref.mode} items={options} onValueChange={handleModeChange}>
       <SelectTrigger className={className}>
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {compact && MODE_ICONS[pref.mode]}
@@ -37,11 +38,11 @@ const ThemeSelect = ({ value, onValueChange, className, compact = false }: Theme
         </div>
       </SelectTrigger>
       <SelectContent>
-        {THEME_MODE_OPTIONS.map((option) => (
+        {options.map((option) => (
           <SelectItem key={option.value} value={option.value}>
             <div className="flex items-center gap-2">
               {MODE_ICONS[option.value]}
-              <span>{t(option.labelKey)}</span>
+              <span>{option.label}</span>
             </div>
           </SelectItem>
         ))}
