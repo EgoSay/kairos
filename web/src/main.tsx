@@ -13,6 +13,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { refreshAccessToken } from "@/connect";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { InstanceProvider, useInstance } from "@/contexts/InstanceContext";
+import { PWAInstallProvider } from "@/contexts/PWAInstallContext";
 import { useLiveMemoRefresh } from "@/hooks/useLiveMemoRefresh";
 import { useTokenRefreshOnFocus } from "@/hooks/useTokenRefreshOnFocus";
 import { registerJournalShell } from "@/lib/journal-shell";
@@ -94,6 +95,10 @@ function Main() {
 
 const container = document.getElementById("root");
 const root = createRoot(container as HTMLElement);
-root.render(<Main />);
+root.render(
+  <PWAInstallProvider>
+    <Main />
+  </PWAInstallProvider>,
+);
 
 void registerJournalShell();
