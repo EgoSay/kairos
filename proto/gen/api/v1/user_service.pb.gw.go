@@ -191,7 +191,7 @@ func local_request_UserService_CreateUser_0(ctx context.Context, marshaler runti
 	return msg, metadata, err
 }
 
-var filter_UserService_UpdateUser_0 = &utilities.DoubleArray{Encoding: map[string]int{"user": 0, "name": 1}, Base: []int{1, 2, 1, 0, 0}, Check: []int{0, 1, 2, 3, 2}}
+var filter_UserService_UpdateUser_0 = &utilities.DoubleArray{Encoding: map[string]int{"user": 0, "name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3}}
 
 func request_UserService_UpdateUser_0(ctx context.Context, marshaler runtime.Marshaler, client UserServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
@@ -536,7 +536,7 @@ func local_request_UserService_GetUserSetting_0(ctx context.Context, marshaler r
 	return msg, metadata, err
 }
 
-var filter_UserService_UpdateUserSetting_0 = &utilities.DoubleArray{Encoding: map[string]int{"setting": 0, "name": 1}, Base: []int{1, 2, 1, 0, 0}, Check: []int{0, 1, 2, 3, 2}}
+var filter_UserService_UpdateUserSetting_0 = &utilities.DoubleArray{Encoding: map[string]int{"setting": 0, "name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3}}
 
 func request_UserService_UpdateUserSetting_0(ctx context.Context, marshaler runtime.Marshaler, client UserServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
@@ -807,7 +807,7 @@ func local_request_UserService_CreateMemoView_0(ctx context.Context, marshaler r
 	return msg, metadata, err
 }
 
-var filter_UserService_UpdateMemoView_0 = &utilities.DoubleArray{Encoding: map[string]int{"memo_view": 0, "name": 1}, Base: []int{1, 2, 1, 0, 0}, Check: []int{0, 1, 2, 3, 2}}
+var filter_UserService_UpdateMemoView_0 = &utilities.DoubleArray{Encoding: map[string]int{"memo_view": 0, "name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3}}
 
 func request_UserService_UpdateMemoView_0(ctx context.Context, marshaler runtime.Marshaler, client UserServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
@@ -1310,7 +1310,7 @@ func local_request_UserService_CreateUserWebhook_0(ctx context.Context, marshale
 	return msg, metadata, err
 }
 
-var filter_UserService_UpdateUserWebhook_0 = &utilities.DoubleArray{Encoding: map[string]int{"webhook": 0, "name": 1}, Base: []int{1, 2, 1, 0, 0}, Check: []int{0, 1, 2, 3, 2}}
+var filter_UserService_UpdateUserWebhook_0 = &utilities.DoubleArray{Encoding: map[string]int{"webhook": 0, "name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3}}
 
 func request_UserService_UpdateUserWebhook_0(ctx context.Context, marshaler runtime.Marshaler, client UserServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
@@ -1522,7 +1522,7 @@ func local_request_UserService_ListUserNotifications_0(ctx context.Context, mars
 	return msg, metadata, err
 }
 
-var filter_UserService_UpdateUserNotification_0 = &utilities.DoubleArray{Encoding: map[string]int{"notification": 0, "name": 1}, Base: []int{1, 2, 1, 0, 0}, Check: []int{0, 1, 2, 3, 2}}
+var filter_UserService_UpdateUserNotification_0 = &utilities.DoubleArray{Encoding: map[string]int{"notification": 0, "name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3}}
 
 func request_UserService_UpdateUserNotification_0(ctx context.Context, marshaler runtime.Marshaler, client UserServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (

@@ -9,6 +9,7 @@ import {
   sidebarRowStateAttributes,
   sidebarRowStateClasses,
 } from "@/components/AppSidebar/SidebarRow";
+import TagActionsMenu, { TAG_MENU_TRIGGER_BASE, type TagAction } from "@/components/TagOrganization/TagActionsMenu";
 import { useLocalStorage, useOverflowTitle } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { useTranslate } from "@/utils/i18n";
@@ -29,6 +30,8 @@ interface Props {
   /** Identifies whose tags these are, so expansion persists per tenant rather than per browser. */
   scope: string;
   onTagClick: (tag: string) => void;
+  /** When set, every row carries a ⋯ menu that reports tag organization actions. */
+  onTagAction?: (tag: string, action: TagAction) => void;
 }
 
 /** Persisted per scope: which branches are open, and the selection already revealed. */
@@ -41,6 +44,13 @@ const EMPTY_EXPANSION: TagTreeExpansion = { expanded: [] };
 
 // A structural row toggles like any other, so it hovers like one too — just quieter at rest.
 const STRUCTURAL_ROW_CLASSES = cn(sidebarRowStateClasses(), "font-medium text-muted-foreground/65");
+
+/** The row's ⋯ menu: same hidden-until-engaged trailing control as the view rows. */
+const TAG_MENU_TRIGGER_CLASSES = cn(
+  SIDEBAR_ROW_SLOT_BUTTON_CLASSES,
+  TAG_MENU_TRIGGER_BASE,
+  "md:opacity-0 md:group-hover/tag:opacity-100 md:focus-visible:opacity-100 data-popup-open:opacity-100",
+);
 
 /** One announcement for a tag row in either layout, so tree and flat mode never drift apart. */
 export const tagRowAriaLabel = (t: ReturnType<typeof useTranslate>, tag: string, amount: number) =>
@@ -105,9 +115,10 @@ interface TagItemProps {
   expanded: ReadonlySet<string>;
   onTagClick: (tag: string) => void;
   onToggle: (path: string) => void;
+  onTagAction?: (tag: string, action: TagAction) => void;
 }
 
-const TagItem = ({ tag, depth, activeTag, expanded, onTagClick, onToggle }: TagItemProps) => {
+const TagItem = ({ tag, depth, activeTag, expanded, onTagClick, onToggle, onTagAction }: TagItemProps) => {
   const t = useTranslate();
   const isTag = tag.amount !== undefined;
   const isActive = activeTag === tag.text;
@@ -128,6 +139,7 @@ const TagItem = ({ tag, depth, activeTag, expanded, onTagClick, onToggle }: TagI
         {...sidebarRowStateAttributes(state)}
         className={cn(
           SIDEBAR_ROW_BOX_CLASSES,
+          "group/tag",
           isTag ? sidebarRowStateClasses(state) : STRUCTURAL_ROW_CLASSES,
           isAncestorOfActiveTag && !isActive && "text-foreground/75",
         )}
@@ -158,8 +170,16 @@ const TagItem = ({ tag, depth, activeTag, expanded, onTagClick, onToggle }: TagI
           <span ref={labelRef} className="min-w-0 flex-1 truncate">
             {tag.key}
           </span>
-          <span className={SIDEBAR_ROW_COUNT_RAIL_CLASSES}>{tag.amount ?? "—"}</span>
+          <span className={cn(SIDEBAR_ROW_COUNT_RAIL_CLASSES, onTagAction && "md:group-hover/tag:opacity-0")}>{tag.amount ?? "—"}</span>
         </button>
+        {onTagAction && (
+          <TagActionsMenu
+            tag={tag.text}
+            onAction={onTagAction}
+            aria-label={`${t("tagOps.manage-entry")} #${tag.text}`}
+            className={TAG_MENU_TRIGGER_CLASSES}
+          />
+        )}
       </div>
 
       {open && (
@@ -173,6 +193,7 @@ const TagItem = ({ tag, depth, activeTag, expanded, onTagClick, onToggle }: TagI
               expanded={expanded}
               onTagClick={onTagClick}
               onToggle={onToggle}
+              onTagAction={onTagAction}
             />
           ))}
         </div>
@@ -181,7 +202,7 @@ const TagItem = ({ tag, depth, activeTag, expanded, onTagClick, onToggle }: TagI
   );
 };
 
-const TagTree = ({ tagAmounts, activeTag, scope, onTagClick }: Props) => {
+const TagTree = ({ tagAmounts, activeTag, scope, onTagClick, onTagAction }: Props) => {
   const t = useTranslate();
   const tags = useMemo(() => buildTagTree(tagAmounts), [tagAmounts]);
   // Scoped per tenant: the paths are one account's tag names, so another user's profile tree
@@ -223,6 +244,7 @@ const TagTree = ({ tagAmounts, activeTag, scope, onTagClick }: Props) => {
           expanded={expanded}
           onTagClick={onTagClick}
           onToggle={handleToggle}
+          onTagAction={onTagAction}
         />
       ))}
     </div>

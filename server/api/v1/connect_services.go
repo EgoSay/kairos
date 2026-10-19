@@ -405,6 +405,30 @@ func (s *ConnectServiceHandler) DeleteMemo(ctx context.Context, req *connect.Req
 	return connect.NewResponse(resp), nil
 }
 
+func (s *ConnectServiceHandler) BatchUpdateMemoTags(ctx context.Context, req *connect.Request[v1pb.BatchUpdateMemoTagsRequest]) (*connect.Response[v1pb.BatchUpdateMemoTagsResponse], error) {
+	resp, err := s.APIV1Service.BatchUpdateMemoTags(ctx, req.Msg)
+	if err != nil {
+		return nil, convertGRPCError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (s *ConnectServiceHandler) RenameTag(ctx context.Context, req *connect.Request[v1pb.RenameTagRequest]) (*connect.Response[v1pb.RenameTagResponse], error) {
+	resp, err := s.APIV1Service.RenameTag(ctx, req.Msg)
+	if err != nil {
+		return nil, convertGRPCError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (s *ConnectServiceHandler) DeleteTag(ctx context.Context, req *connect.Request[v1pb.DeleteTagRequest]) (*connect.Response[v1pb.DeleteTagResponse], error) {
+	resp, err := s.APIV1Service.DeleteTag(ctx, req.Msg)
+	if err != nil {
+		return nil, convertGRPCError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (s *ConnectServiceHandler) SetMemoAttachments(ctx context.Context, req *connect.Request[v1pb.SetMemoAttachmentsRequest]) (*connect.Response[emptypb.Empty], error) {
 	resp, err := s.APIV1Service.SetMemoAttachments(ctx, req.Msg)
 	if err != nil {

@@ -1,6 +1,6 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { countBy } from "lodash-es";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useMemoFilterContext } from "@/contexts/MemoFilterContext";
 import { type MemoTimeBasis, useView } from "@/contexts/ViewContext";
 import useCurrentUser from "@/hooks/useCurrentUser";
@@ -29,6 +29,11 @@ export interface UseFilteredMemoStatsOptions {
   context?: MemoStatsContext;
   enabled?: boolean;
   filter?: string;
+  /**
+   * Filter for the tag-count surface when it should differ from `filter` — e.g. the
+   * sidebar tag tree ignores the tag facet itself so picking a tag doesn't collapse it.
+   */
+  tagFilter?: string;
 }
 
 const timestampsForBasis = (stats: UserStats, basis: MemoTimeBasis) => {
@@ -43,7 +48,7 @@ const timestampsForBasis = (stats: UserStats, basis: MemoTimeBasis) => {
 };
 
 export const useFilteredMemoStats = (options: UseFilteredMemoStatsOptions = {}): FilteredMemoStats => {
-  const { userName, context, enabled = true, filter } = options;
+  const { userName, context, enabled = true, filter, tagFilter } = options;
   const currentUser = useCurrentUser();
   const { timeBasis } = useView();
   const preferences = useJournalPreferences();
@@ -69,6 +74,26 @@ export const useFilteredMemoStats = (options: UseFilteredMemoStatsOptions = {}):
   });
   const { data: allUserStats = [], isLoading: isLoadingAllUserStats } = allStatsQuery;
 
+  // Tag counts can need a different filter than the activity stats; only fetch a
+  // second stats result when it actually differs — same filter shares the cache.
+  const separateTagQuery = tagFilter !== undefined && tagFilter !== filter;
+  const tagUserStatsQuery = useUserStats(userName, { enabled: enabled && separateTagQuery && !!userName, filter: tagFilter });
+  const { data: tagUserStats } = tagUserStatsQuery;
+  const tagAllStatsQuery = useAllUserStats(
+    context === "collection"
+      ? { state: State.NORMAL, filter: tagFilter, includeArchived }
+      : context === "archived"
+        ? { state: State.ARCHIVED, filter: tagFilter }
+        : {},
+    { enabled: enabled && separateTagQuery && shouldFetchAllUserStats },
+  );
+  const { data: tagAllUserStats = [] } = tagAllStatsQuery;
+  const tagStatsInFlight = separateTagQuery && (tagAllStatsQuery.isFetching || tagUserStatsQuery.isFetching);
+
+  // The tag tree is a navigation surface: while its dedicated stats reload, keep
+  // showing the last real counts instead of flashing an empty tree.
+  const stableTagCountRef = useRef<Record<string, number>>({});
+
   const data = useMemo(() => {
     const loading = isLoadingUserStats || isLoadingAllUserStats;
     let activityStats: Record<string, number> = {};
@@ -76,7 +101,7 @@ export const useFilteredMemoStats = (options: UseFilteredMemoStatsOptions = {}):
 
     if (context === "collection" || context === "archived") {
       const displayDates: string[] = [];
-      tagCount = mergeTagCounts(...allUserStats.map((stats) => stats.tagCount));
+      tagCount = mergeTagCounts(...(separateTagQuery ? tagAllUserStats : allUserStats).map((stats) => stats.tagCount));
       for (const stats of allUserStats) {
         displayDates.push(
           ...timestampsForBasis(stats, timeBasis)
@@ -98,12 +123,28 @@ export const useFilteredMemoStats = (options: UseFilteredMemoStatsOptions = {}):
         );
       }
       if (userStats.tagCount) {
-        tagCount = mergeTagCounts(userStats.tagCount);
+        tagCount = mergeTagCounts((separateTagQuery && tagUserStats ? tagUserStats : userStats).tagCount);
       }
     }
 
-    return { statistics: { activityStats, timeBasis }, tags: tagCount, loading };
-  }, [context, userName, userStats, allUserStats, isLoadingUserStats, isLoadingAllUserStats, timeBasis, timezone]);
+    if (Object.keys(tagCount).length > 0 || !tagStatsInFlight) {
+      stableTagCountRef.current = tagCount;
+    }
+    return { statistics: { activityStats, timeBasis }, tags: stableTagCountRef.current, loading };
+  }, [
+    context,
+    userName,
+    userStats,
+    allUserStats,
+    separateTagQuery,
+    tagUserStats,
+    tagAllUserStats,
+    isLoadingUserStats,
+    isLoadingAllUserStats,
+    tagStatsInFlight,
+    timeBasis,
+    timezone,
+  ]);
 
   const query = context === "collection" || context === "archived" ? allStatsQuery : userStatsQuery;
   return {

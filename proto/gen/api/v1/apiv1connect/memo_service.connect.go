@@ -44,6 +44,13 @@ const (
 	MemoServiceUpdateMemoProcedure = "/memos.api.v1.MemoService/UpdateMemo"
 	// MemoServiceDeleteMemoProcedure is the fully-qualified name of the MemoService's DeleteMemo RPC.
 	MemoServiceDeleteMemoProcedure = "/memos.api.v1.MemoService/DeleteMemo"
+	// MemoServiceBatchUpdateMemoTagsProcedure is the fully-qualified name of the MemoService's
+	// BatchUpdateMemoTags RPC.
+	MemoServiceBatchUpdateMemoTagsProcedure = "/memos.api.v1.MemoService/BatchUpdateMemoTags"
+	// MemoServiceRenameTagProcedure is the fully-qualified name of the MemoService's RenameTag RPC.
+	MemoServiceRenameTagProcedure = "/memos.api.v1.MemoService/RenameTag"
+	// MemoServiceDeleteTagProcedure is the fully-qualified name of the MemoService's DeleteTag RPC.
+	MemoServiceDeleteTagProcedure = "/memos.api.v1.MemoService/DeleteTag"
 	// MemoServiceSetMemoAttachmentsProcedure is the fully-qualified name of the MemoService's
 	// SetMemoAttachments RPC.
 	MemoServiceSetMemoAttachmentsProcedure = "/memos.api.v1.MemoService/SetMemoAttachments"
@@ -107,6 +114,19 @@ type MemoServiceClient interface {
 	// DeleteMemo deletes only the named memo and its owned resources. It removes
 	// incident relations but never deletes another memo.
 	DeleteMemo(context.Context, *connect.Request[v1.DeleteMemoRequest]) (*connect.Response[emptypb.Empty], error)
+	// BatchUpdateMemoTags appends and removes authored tags on the named memos.
+	// Each memo is updated independently; per-memo failures do not abort the
+	// batch. The caller must own every named memo. Tag organization edits the
+	// memo content but never triggers partition delivery.
+	BatchUpdateMemoTags(context.Context, *connect.Request[v1.BatchUpdateMemoTagsRequest]) (*connect.Response[v1.BatchUpdateMemoTagsResponse], error)
+	// RenameTag rewrites an authored tag across the caller's memos, optionally
+	// including descendant paths. Renaming onto an existing tag merges them.
+	// Requires authentication.
+	RenameTag(context.Context, *connect.Request[v1.RenameTagRequest]) (*connect.Response[v1.RenameTagResponse], error)
+	// DeleteTag removes an authored tag, optionally including descendant paths,
+	// from the caller's memos. The memos themselves and their other metadata
+	// are kept. Requires authentication.
+	DeleteTag(context.Context, *connect.Request[v1.DeleteTagRequest]) (*connect.Response[v1.DeleteTagResponse], error)
 	// SetMemoAttachments replaces the full set of attachments on a memo with the
 	// provided list (not an append). Pass the complete desired set; an empty list
 	// clears all attachments. Idempotent.
@@ -185,6 +205,24 @@ func NewMemoServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			httpClient,
 			baseURL+MemoServiceDeleteMemoProcedure,
 			connect.WithSchema(memoServiceMethods.ByName("DeleteMemo")),
+			connect.WithClientOptions(opts...),
+		),
+		batchUpdateMemoTags: connect.NewClient[v1.BatchUpdateMemoTagsRequest, v1.BatchUpdateMemoTagsResponse](
+			httpClient,
+			baseURL+MemoServiceBatchUpdateMemoTagsProcedure,
+			connect.WithSchema(memoServiceMethods.ByName("BatchUpdateMemoTags")),
+			connect.WithClientOptions(opts...),
+		),
+		renameTag: connect.NewClient[v1.RenameTagRequest, v1.RenameTagResponse](
+			httpClient,
+			baseURL+MemoServiceRenameTagProcedure,
+			connect.WithSchema(memoServiceMethods.ByName("RenameTag")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteTag: connect.NewClient[v1.DeleteTagRequest, v1.DeleteTagResponse](
+			httpClient,
+			baseURL+MemoServiceDeleteTagProcedure,
+			connect.WithSchema(memoServiceMethods.ByName("DeleteTag")),
 			connect.WithClientOptions(opts...),
 		),
 		setMemoAttachments: connect.NewClient[v1.SetMemoAttachmentsRequest, emptypb.Empty](
@@ -287,6 +325,9 @@ type memoServiceClient struct {
 	getMemo              *connect.Client[v1.GetMemoRequest, v1.Memo]
 	updateMemo           *connect.Client[v1.UpdateMemoRequest, v1.Memo]
 	deleteMemo           *connect.Client[v1.DeleteMemoRequest, emptypb.Empty]
+	batchUpdateMemoTags  *connect.Client[v1.BatchUpdateMemoTagsRequest, v1.BatchUpdateMemoTagsResponse]
+	renameTag            *connect.Client[v1.RenameTagRequest, v1.RenameTagResponse]
+	deleteTag            *connect.Client[v1.DeleteTagRequest, v1.DeleteTagResponse]
 	setMemoAttachments   *connect.Client[v1.SetMemoAttachmentsRequest, emptypb.Empty]
 	listMemoAttachments  *connect.Client[v1.ListMemoAttachmentsRequest, v1.ListMemoAttachmentsResponse]
 	setMemoRelations     *connect.Client[v1.SetMemoRelationsRequest, emptypb.Empty]
@@ -327,6 +368,21 @@ func (c *memoServiceClient) UpdateMemo(ctx context.Context, req *connect.Request
 // DeleteMemo calls memos.api.v1.MemoService.DeleteMemo.
 func (c *memoServiceClient) DeleteMemo(ctx context.Context, req *connect.Request[v1.DeleteMemoRequest]) (*connect.Response[emptypb.Empty], error) {
 	return c.deleteMemo.CallUnary(ctx, req)
+}
+
+// BatchUpdateMemoTags calls memos.api.v1.MemoService.BatchUpdateMemoTags.
+func (c *memoServiceClient) BatchUpdateMemoTags(ctx context.Context, req *connect.Request[v1.BatchUpdateMemoTagsRequest]) (*connect.Response[v1.BatchUpdateMemoTagsResponse], error) {
+	return c.batchUpdateMemoTags.CallUnary(ctx, req)
+}
+
+// RenameTag calls memos.api.v1.MemoService.RenameTag.
+func (c *memoServiceClient) RenameTag(ctx context.Context, req *connect.Request[v1.RenameTagRequest]) (*connect.Response[v1.RenameTagResponse], error) {
+	return c.renameTag.CallUnary(ctx, req)
+}
+
+// DeleteTag calls memos.api.v1.MemoService.DeleteTag.
+func (c *memoServiceClient) DeleteTag(ctx context.Context, req *connect.Request[v1.DeleteTagRequest]) (*connect.Response[v1.DeleteTagResponse], error) {
+	return c.deleteTag.CallUnary(ctx, req)
 }
 
 // SetMemoAttachments calls memos.api.v1.MemoService.SetMemoAttachments.
@@ -420,6 +476,19 @@ type MemoServiceHandler interface {
 	// DeleteMemo deletes only the named memo and its owned resources. It removes
 	// incident relations but never deletes another memo.
 	DeleteMemo(context.Context, *connect.Request[v1.DeleteMemoRequest]) (*connect.Response[emptypb.Empty], error)
+	// BatchUpdateMemoTags appends and removes authored tags on the named memos.
+	// Each memo is updated independently; per-memo failures do not abort the
+	// batch. The caller must own every named memo. Tag organization edits the
+	// memo content but never triggers partition delivery.
+	BatchUpdateMemoTags(context.Context, *connect.Request[v1.BatchUpdateMemoTagsRequest]) (*connect.Response[v1.BatchUpdateMemoTagsResponse], error)
+	// RenameTag rewrites an authored tag across the caller's memos, optionally
+	// including descendant paths. Renaming onto an existing tag merges them.
+	// Requires authentication.
+	RenameTag(context.Context, *connect.Request[v1.RenameTagRequest]) (*connect.Response[v1.RenameTagResponse], error)
+	// DeleteTag removes an authored tag, optionally including descendant paths,
+	// from the caller's memos. The memos themselves and their other metadata
+	// are kept. Requires authentication.
+	DeleteTag(context.Context, *connect.Request[v1.DeleteTagRequest]) (*connect.Response[v1.DeleteTagResponse], error)
 	// SetMemoAttachments replaces the full set of attachments on a memo with the
 	// provided list (not an append). Pass the complete desired set; an empty list
 	// clears all attachments. Idempotent.
@@ -494,6 +563,24 @@ func NewMemoServiceHandler(svc MemoServiceHandler, opts ...connect.HandlerOption
 		MemoServiceDeleteMemoProcedure,
 		svc.DeleteMemo,
 		connect.WithSchema(memoServiceMethods.ByName("DeleteMemo")),
+		connect.WithHandlerOptions(opts...),
+	)
+	memoServiceBatchUpdateMemoTagsHandler := connect.NewUnaryHandler(
+		MemoServiceBatchUpdateMemoTagsProcedure,
+		svc.BatchUpdateMemoTags,
+		connect.WithSchema(memoServiceMethods.ByName("BatchUpdateMemoTags")),
+		connect.WithHandlerOptions(opts...),
+	)
+	memoServiceRenameTagHandler := connect.NewUnaryHandler(
+		MemoServiceRenameTagProcedure,
+		svc.RenameTag,
+		connect.WithSchema(memoServiceMethods.ByName("RenameTag")),
+		connect.WithHandlerOptions(opts...),
+	)
+	memoServiceDeleteTagHandler := connect.NewUnaryHandler(
+		MemoServiceDeleteTagProcedure,
+		svc.DeleteTag,
+		connect.WithSchema(memoServiceMethods.ByName("DeleteTag")),
 		connect.WithHandlerOptions(opts...),
 	)
 	memoServiceSetMemoAttachmentsHandler := connect.NewUnaryHandler(
@@ -598,6 +685,12 @@ func NewMemoServiceHandler(svc MemoServiceHandler, opts ...connect.HandlerOption
 			memoServiceUpdateMemoHandler.ServeHTTP(w, r)
 		case MemoServiceDeleteMemoProcedure:
 			memoServiceDeleteMemoHandler.ServeHTTP(w, r)
+		case MemoServiceBatchUpdateMemoTagsProcedure:
+			memoServiceBatchUpdateMemoTagsHandler.ServeHTTP(w, r)
+		case MemoServiceRenameTagProcedure:
+			memoServiceRenameTagHandler.ServeHTTP(w, r)
+		case MemoServiceDeleteTagProcedure:
+			memoServiceDeleteTagHandler.ServeHTTP(w, r)
 		case MemoServiceSetMemoAttachmentsProcedure:
 			memoServiceSetMemoAttachmentsHandler.ServeHTTP(w, r)
 		case MemoServiceListMemoAttachmentsProcedure:
@@ -655,6 +748,18 @@ func (UnimplementedMemoServiceHandler) UpdateMemo(context.Context, *connect.Requ
 
 func (UnimplementedMemoServiceHandler) DeleteMemo(context.Context, *connect.Request[v1.DeleteMemoRequest]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("memos.api.v1.MemoService.DeleteMemo is not implemented"))
+}
+
+func (UnimplementedMemoServiceHandler) BatchUpdateMemoTags(context.Context, *connect.Request[v1.BatchUpdateMemoTagsRequest]) (*connect.Response[v1.BatchUpdateMemoTagsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("memos.api.v1.MemoService.BatchUpdateMemoTags is not implemented"))
+}
+
+func (UnimplementedMemoServiceHandler) RenameTag(context.Context, *connect.Request[v1.RenameTagRequest]) (*connect.Response[v1.RenameTagResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("memos.api.v1.MemoService.RenameTag is not implemented"))
+}
+
+func (UnimplementedMemoServiceHandler) DeleteTag(context.Context, *connect.Request[v1.DeleteTagRequest]) (*connect.Response[v1.DeleteTagResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("memos.api.v1.MemoService.DeleteTag is not implemented"))
 }
 
 func (UnimplementedMemoServiceHandler) SetMemoAttachments(context.Context, *connect.Request[v1.SetMemoAttachmentsRequest]) (*connect.Response[emptypb.Empty], error) {

@@ -401,6 +401,70 @@ func (s *Service) saveDelivery(ctx context.Context, owner int32, d *Delivery) er
 	return err
 }
 
+// refreshable reports whether an upsert intent may still be sent: queued,
+// in-flight, retryable, or awaiting a manual send.
+func refreshable(status string) bool {
+	return status == "pending" || status == "delivering" || status == "failed" || status == "local_changed"
+}
+
+// RefreshDeliveryRevisions keeps already-queued upsert intents deliverable
+// after a content edit that must not count as a change, such as tag
+// organization. Each unsent delivery adopts the memo's current revision;
+// nothing new is queued, no status changes, and terminal or retract events
+// are untouched. Without this, authorization would silently cancel the
+// queued work on its next attempt because the stored revision went stale.
+func (s *Service) RefreshDeliveryRevisions(ctx context.Context, owner int32, memoUID string) error {
+	memo, err := s.ReadMemo(ctx, owner, memoUID, false)
+	if err != nil {
+		return err
+	}
+	if memo == nil || !memo.Active {
+		return nil
+	}
+	docs, err := s.documents(ctx, owner, DeliveryKind)
+	if err != nil {
+		return err
+	}
+	for _, doc := range docs {
+		d, err := decode[Delivery](doc)
+		if err != nil {
+			return err
+		}
+		if d.MemoUID != memoUID || d.Event != "upsert" || d.Revision == memo.Revision || !refreshable(d.Status) {
+			continue
+		}
+		for attempt := 0; attempt < 5; attempt++ {
+			d.Revision = memo.Revision
+			d.UpdatedTs = s.Now().Unix()
+			_, err := s.put(ctx, owner, DeliveryKind, d.ID, d, d.Version)
+			if err == nil {
+				break
+			}
+			if !errors.Is(err, store.ErrJournalConflict) {
+				return err
+			}
+			current, err := s.Repo.GetJournalDocument(ctx, owner, DeliveryKind, d.ID)
+			if err != nil {
+				return err
+			}
+			if current == nil {
+				break
+			}
+			d, err = decode[Delivery](current)
+			if err != nil {
+				return err
+			}
+			if !refreshable(d.Status) || d.Revision == memo.Revision {
+				break
+			}
+			if attempt == 4 {
+				return store.ErrJournalConflict
+			}
+		}
+	}
+	return nil
+}
+
 // PauseAll is used after backup restoration. It disables every destination
 // before any background worker is allowed to resume.
 func (s *Service) PauseAll(ctx context.Context) error {

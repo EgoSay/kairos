@@ -20,7 +20,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file api/v1/memo_service.proto.
  */
 export const file_api_v1_memo_service: GenFile = /*@__PURE__*/
-  fileDesc("ChlhcGkvdjEvbWVtb19zZXJ2aWNlLnByb3RvEgxtZW1vcy5hcGkudjEiigIKCFJlYWN0aW9uEhQKBG5hbWUYASABKAlCBuBBA+BBCBIqCgdjcmVhdG9yGAIgASgJQhngQQP6QRMKEW1lbW9zLmFwaS52MS9Vc2VyEhoKDXJlYWN0aW9uX3R5cGUYBCABKAlCA+BBAhI0CgtjcmVhdGVfdGltZRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCA+BBAzpY6kFVChVtZW1vcy5hcGkudjEvUmVhY3Rpb24SIW1lbW9zL3ttZW1vfS9yZWFjdGlvbnMve3JlYWN0aW9ufRoEbmFtZSoJcmVhY3Rpb25zMghyZWFjdGlvbkoECAMQBFIKY29udGVudF9pZCKkBwoETWVtbxIRCgRuYW1lGAEgASgJQgPgQQgSJwoFc3RhdGUYAiABKA4yEy5tZW1vcy5hcGkudjEuU3RhdGVCA+BBAhIqCgdjcmVhdG9yGAMgASgJQhngQQP6QRMKEW1lbW9zLmFwaS52MS9Vc2VyEjQKC2NyZWF0ZV90aW1lGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEID4EEBEjQKC3VwZGF0ZV90aW1lGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEID4EEBEhQKB2NvbnRlbnQYByABKAlCA+BBAhIxCgp2aXNpYmlsaXR5GAkgASgOMhgubWVtb3MuYXBpLnYxLlZpc2liaWxpdHlCA+BBAhIRCgR0YWdzGAogAygJQgPgQQMSEwoGcGlubmVkGAsgASgIQgPgQQESMgoLYXR0YWNobWVudHMYDCADKAsyGC5tZW1vcy5hcGkudjEuQXR0YWNobWVudEID4EEBEjIKCXJlbGF0aW9ucxgNIAMoCzIaLm1lbW9zLmFwaS52MS5NZW1vUmVsYXRpb25CA+BBARIuCglyZWFjdGlvbnMYDiADKAsyFi5tZW1vcy5hcGkudjEuUmVhY3Rpb25CA+BBAxIyCghwcm9wZXJ0eRgPIAEoCzIbLm1lbW9zLmFwaS52MS5NZW1vLlByb3BlcnR5QgPgQQMSLgoGcGFyZW50GBAgASgJQhngQQP6QRMKEW1lbW9zLmFwaS52MS9NZW1vSACIAQESFAoHc25pcHBldBgRIAEoCUID4EEDEjIKCGxvY2F0aW9uGBIgASgLMhYubWVtb3MuYXBpLnYxLkxvY2F0aW9uQgPgQQFIAYgBARIuCgVzcGFjZRgTIAEoCUIa4EEB+kEUChJtZW1vcy5hcGkudjEvU3BhY2VIAogBARpyCghQcm9wZXJ0eRIQCghoYXNfbGluaxgBIAEoCBIVCg1oYXNfdGFza19saXN0GAIgASgIEhAKCGhhc19jb2RlGAMgASgIEhwKFGhhc19pbmNvbXBsZXRlX3Rhc2tzGAQgASgIEg0KBXRpdGxlGAUgASgJOjfqQTQKEW1lbW9zLmFwaS52MS9NZW1vEgxtZW1vcy97bWVtb30aBG5hbWUqBW1lbW9zMgRtZW1vQgkKB19wYXJlbnRCCwoJX2xvY2F0aW9uQggKBl9zcGFjZUoECAYQB1IMZGlzcGxheV90aW1lImsKCExvY2F0aW9uEhgKC3BsYWNlaG9sZGVyGAEgASgJQgPgQQESFQoIbGF0aXR1ZGUYAiABKAFCA+BBARIWCglsb25naXR1ZGUYAyABKAFCA+BBARIWCgluYW1lX29ubHkYBCABKAhCA+BBASKZAQoRQ3JlYXRlTWVtb1JlcXVlc3QSJQoEbWVtbxgBIAEoCzISLm1lbW9zLmFwaS52MS5NZW1vQgPgQQISFAoHbWVtb19pZBgCIAEoCUID4EEBEkcKEWpvdXJuYWxfcGFydGl0aW9uGAMgASgLMicubWVtb3MuYXBpLnYxLkpvdXJuYWxQYXJ0aXRpb25TZWxlY3Rpb25CA+BBASJLChlKb3VybmFsUGFydGl0aW9uU2VsZWN0aW9uEhQKDHBhcnRpdGlvbl9pZBgBIAEoCRIYChBleHBlY3RlZF92ZXJzaW9uGAIgASgDIvEBChBMaXN0TWVtb3NSZXF1ZXN0EhYKCXBhZ2Vfc2l6ZRgBIAEoBUID4EEBEhcKCnBhZ2VfdG9rZW4YAiABKAlCA+BBARInCgVzdGF0ZRgDIAEoDjITLm1lbW9zLmFwaS52MS5TdGF0ZUID4EEBEhUKCG9yZGVyX2J5GAQgASgJQgPgQQESEwoGZmlsdGVyGAUgASgJQgPgQQESGQoMc2hvd19kZWxldGVkGAYgASgIQgPgQQESHQoQaW5jbHVkZV9hcmNoaXZlZBgJIAEoCEID4EEBSgQIBxAISgQICBAJUgVzcGFjZVIKdW5hc3NpZ25lZCJPChFMaXN0TWVtb3NSZXNwb25zZRIhCgVtZW1vcxgBIAMoCzISLm1lbW9zLmFwaS52MS5NZW1vEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCSI5Cg5HZXRNZW1vUmVxdWVzdBInCgRuYW1lGAEgASgJQhngQQL6QRMKEW1lbW9zLmFwaS52MS9NZW1vIrkBChFVcGRhdGVNZW1vUmVxdWVzdBIlCgRtZW1vGAEgASgLMhIubWVtb3MuYXBpLnYxLk1lbW9CA+BBAhI0Cgt1cGRhdGVfbWFzaxgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5GaWVsZE1hc2tCA+BBAhJHChFqb3VybmFsX3BhcnRpdGlvbhgDIAEoCzInLm1lbW9zLmFwaS52MS5Kb3VybmFsUGFydGl0aW9uU2VsZWN0aW9uQgPgQQEiUAoRRGVsZXRlTWVtb1JlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbxISCgVmb3JjZRgCIAEoCEID4EEBIngKGVNldE1lbW9BdHRhY2htZW50c1JlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbxIyCgthdHRhY2htZW50cxgCIAMoCzIYLm1lbW9zLmFwaS52MS5BdHRhY2htZW50QgPgQQIidgoaTGlzdE1lbW9BdHRhY2htZW50c1JlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbxIWCglwYWdlX3NpemUYAiABKAVCA+BBARIXCgpwYWdlX3Rva2VuGAMgASgJQgPgQQEiZQobTGlzdE1lbW9BdHRhY2htZW50c1Jlc3BvbnNlEi0KC2F0dGFjaG1lbnRzGAEgAygLMhgubWVtb3MuYXBpLnYxLkF0dGFjaG1lbnQSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIrMCCgxNZW1vUmVsYXRpb24SMgoEbWVtbxgBIAEoCzIfLm1lbW9zLmFwaS52MS5NZW1vUmVsYXRpb24uTWVtb0ID4EECEjoKDHJlbGF0ZWRfbWVtbxgCIAEoCzIfLm1lbW9zLmFwaS52MS5NZW1vUmVsYXRpb24uTWVtb0ID4EECEjIKBHR5cGUYAyABKA4yHy5tZW1vcy5hcGkudjEuTWVtb1JlbGF0aW9uLlR5cGVCA+BBAhpFCgRNZW1vEicKBG5hbWUYASABKAlCGeBBAvpBEwoRbWVtb3MuYXBpLnYxL01lbW8SFAoHc25pcHBldBgCIAEoCUID4EEDIjgKBFR5cGUSFAoQVFlQRV9VTlNQRUNJRklFRBAAEg0KCVJFRkVSRU5DRRABEgsKB0NPTU1FTlQQAiJ2ChdTZXRNZW1vUmVsYXRpb25zUmVxdWVzdBInCgRuYW1lGAEgASgJQhngQQL6QRMKEW1lbW9zLmFwaS52MS9NZW1vEjIKCXJlbGF0aW9ucxgCIAMoCzIaLm1lbW9zLmFwaS52MS5NZW1vUmVsYXRpb25CA+BBAiJ0ChhMaXN0TWVtb1JlbGF0aW9uc1JlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbxIWCglwYWdlX3NpemUYAiABKAVCA+BBARIXCgpwYWdlX3Rva2VuGAMgASgJQgPgQQEiYwoZTGlzdE1lbW9SZWxhdGlvbnNSZXNwb25zZRItCglyZWxhdGlvbnMYASADKAsyGi5tZW1vcy5hcGkudjEuTWVtb1JlbGF0aW9uEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCSKGAQoYQ3JlYXRlTWVtb0NvbW1lbnRSZXF1ZXN0EicKBG5hbWUYASABKAlCGeBBAvpBEwoRbWVtb3MuYXBpLnYxL01lbW8SKAoHY29tbWVudBgCIAEoCzISLm1lbW9zLmFwaS52MS5NZW1vQgPgQQISFwoKY29tbWVudF9pZBgDIAEoCUID4EEBIooBChdMaXN0TWVtb0NvbW1lbnRzUmVxdWVzdBInCgRuYW1lGAEgASgJQhngQQL6QRMKEW1lbW9zLmFwaS52MS9NZW1vEhYKCXBhZ2Vfc2l6ZRgCIAEoBUID4EEBEhcKCnBhZ2VfdG9rZW4YAyABKAlCA+BBARIVCghvcmRlcl9ieRgEIAEoCUID4EEBIlYKGExpc3RNZW1vQ29tbWVudHNSZXNwb25zZRIhCgVtZW1vcxgBIAMoCzISLm1lbW9zLmFwaS52MS5NZW1vEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCSJ0ChhMaXN0TWVtb1JlYWN0aW9uc1JlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbxIWCglwYWdlX3NpemUYAiABKAVCA+BBARIXCgpwYWdlX3Rva2VuGAMgASgJQgPgQQEiXwoZTGlzdE1lbW9SZWFjdGlvbnNSZXNwb25zZRIpCglyZWFjdGlvbnMYASADKAsyFi5tZW1vcy5hcGkudjEuUmVhY3Rpb24SFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJInMKGVVwc2VydE1lbW9SZWFjdGlvblJlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbxItCghyZWFjdGlvbhgCIAEoCzIWLm1lbW9zLmFwaS52MS5SZWFjdGlvbkID4EECIkgKGURlbGV0ZU1lbW9SZWFjdGlvblJlcXVlc3QSKwoEbmFtZRgBIAEoCUId4EEC+kEXChVtZW1vcy5hcGkudjEvUmVhY3Rpb24i6AEKCU1lbW9TaGFyZRIRCgRuYW1lGAEgASgJQgPgQQgSNAoLY3JlYXRlX3RpbWUYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgPgQQMSOQoLZXhwaXJlX3RpbWUYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgPgQQFIAIgBATpH6kFEChZtZW1vcy5hcGkudjEvTWVtb1NoYXJlEhttZW1vcy97bWVtb30vc2hhcmVzL3tzaGFyZX0qBnNoYXJlczIFc2hhcmVCDgoMX2V4cGlyZV90aW1lInUKFkNyZWF0ZU1lbW9TaGFyZVJlcXVlc3QSKQoGcGFyZW50GAEgASgJQhngQQL6QRMKEW1lbW9zLmFwaS52MS9NZW1vEjAKCm1lbW9fc2hhcmUYAiABKAsyFy5tZW1vcy5hcGkudjEuTWVtb1NoYXJlQgPgQQIiQgoVTGlzdE1lbW9TaGFyZXNSZXF1ZXN0EikKBnBhcmVudBgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbyJGChZMaXN0TWVtb1NoYXJlc1Jlc3BvbnNlEiwKC21lbW9fc2hhcmVzGAEgAygLMhcubWVtb3MuYXBpLnYxLk1lbW9TaGFyZSJGChZEZWxldGVNZW1vU2hhcmVSZXF1ZXN0EiwKBG5hbWUYASABKAlCHuBBAvpBGAoWbWVtb3MuYXBpLnYxL01lbW9TaGFyZSIwChRHZXRTaGFyZWRNZW1vUmVxdWVzdBIYCgtzaGFyZV90b2tlbhgBIAEoCUID4EECIioKFkdldExpbmtNZXRhZGF0YVJlcXVlc3QSEAoDdXJsGAEgASgJQgPgQQIiMAobQmF0Y2hHZXRMaW5rTWV0YWRhdGFSZXF1ZXN0EhEKBHVybHMYASADKAlCA+BBAiJRChxCYXRjaEdldExpbmtNZXRhZGF0YVJlc3BvbnNlEjEKDWxpbmtfbWV0YWRhdGEYASADKAsyGi5tZW1vcy5hcGkudjEuTGlua01ldGFkYXRhIk4KDExpbmtNZXRhZGF0YRILCgN1cmwYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSDQoFaW1hZ2UYBCABKAkqWwoKVmlzaWJpbGl0eRIaChZWSVNJQklMSVRZX1VOU1BFQ0lGSUVEEAASCwoHUFJJVkFURRABEg0KCVBST1RFQ1RFRBACEgoKBlBVQkxJQxADEgkKBVNQQUNFEAQykRUKC01lbW9TZXJ2aWNlEmUKCkNyZWF0ZU1lbW8SHy5tZW1vcy5hcGkudjEuQ3JlYXRlTWVtb1JlcXVlc3QaEi5tZW1vcy5hcGkudjEuTWVtbyIi2kEEbWVtb4LT5JMCFToEbWVtbyINL2FwaS92MS9tZW1vcxJmCglMaXN0TWVtb3MSHi5tZW1vcy5hcGkudjEuTGlzdE1lbW9zUmVxdWVzdBofLm1lbW9zLmFwaS52MS5MaXN0TWVtb3NSZXNwb25zZSIY2kEAgtPkkwIPEg0vYXBpL3YxL21lbW9zEmIKB0dldE1lbW8SHC5tZW1vcy5hcGkudjEuR2V0TWVtb1JlcXVlc3QaEi5tZW1vcy5hcGkudjEuTWVtbyIl2kEEbmFtZYLT5JMCGBIWL2FwaS92MS97bmFtZT1tZW1vcy8qfRJ/CgpVcGRhdGVNZW1vEh8ubWVtb3MuYXBpLnYxLlVwZGF0ZU1lbW9SZXF1ZXN0GhIubWVtb3MuYXBpLnYxLk1lbW8iPNpBEG1lbW8sdXBkYXRlX21hc2uC0+STAiM6BG1lbW8yGy9hcGkvdjEve21lbW8ubmFtZT1tZW1vcy8qfRJsCgpEZWxldGVNZW1vEh8ubWVtb3MuYXBpLnYxLkRlbGV0ZU1lbW9SZXF1ZXN0GhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5IiXaQQRuYW1lgtPkkwIYKhYvYXBpL3YxL3tuYW1lPW1lbW9zLyp9EosBChJTZXRNZW1vQXR0YWNobWVudHMSJy5tZW1vcy5hcGkudjEuU2V0TWVtb0F0dGFjaG1lbnRzUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eSI02kEEbmFtZYLT5JMCJzoBKjIiL2FwaS92MS97bmFtZT1tZW1vcy8qfS9hdHRhY2htZW50cxKdAQoTTGlzdE1lbW9BdHRhY2htZW50cxIoLm1lbW9zLmFwaS52MS5MaXN0TWVtb0F0dGFjaG1lbnRzUmVxdWVzdBopLm1lbW9zLmFwaS52MS5MaXN0TWVtb0F0dGFjaG1lbnRzUmVzcG9uc2UiMdpBBG5hbWWC0+STAiQSIi9hcGkvdjEve25hbWU9bWVtb3MvKn0vYXR0YWNobWVudHMShQEKEFNldE1lbW9SZWxhdGlvbnMSJS5tZW1vcy5hcGkudjEuU2V0TWVtb1JlbGF0aW9uc1JlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHkiMtpBBG5hbWWC0+STAiU6ASoyIC9hcGkvdjEve25hbWU9bWVtb3MvKn0vcmVsYXRpb25zEpUBChFMaXN0TWVtb1JlbGF0aW9ucxImLm1lbW9zLmFwaS52MS5MaXN0TWVtb1JlbGF0aW9uc1JlcXVlc3QaJy5tZW1vcy5hcGkudjEuTGlzdE1lbW9SZWxhdGlvbnNSZXNwb25zZSIv2kEEbmFtZYLT5JMCIhIgL2FwaS92MS97bmFtZT1tZW1vcy8qfS9yZWxhdGlvbnMSkAEKEUNyZWF0ZU1lbW9Db21tZW50EiYubWVtb3MuYXBpLnYxLkNyZWF0ZU1lbW9Db21tZW50UmVxdWVzdBoSLm1lbW9zLmFwaS52MS5NZW1vIj/aQQxuYW1lLGNvbW1lbnSC0+STAio6B2NvbW1lbnQiHy9hcGkvdjEve25hbWU9bWVtb3MvKn0vY29tbWVudHMSkQEKEExpc3RNZW1vQ29tbWVudHMSJS5tZW1vcy5hcGkudjEuTGlzdE1lbW9Db21tZW50c1JlcXVlc3QaJi5tZW1vcy5hcGkudjEuTGlzdE1lbW9Db21tZW50c1Jlc3BvbnNlIi7aQQRuYW1lgtPkkwIhEh8vYXBpL3YxL3tuYW1lPW1lbW9zLyp9L2NvbW1lbnRzEpUBChFMaXN0TWVtb1JlYWN0aW9ucxImLm1lbW9zLmFwaS52MS5MaXN0TWVtb1JlYWN0aW9uc1JlcXVlc3QaJy5tZW1vcy5hcGkudjEuTGlzdE1lbW9SZWFjdGlvbnNSZXNwb25zZSIv2kEEbmFtZYLT5JMCIhIgL2FwaS92MS97bmFtZT1tZW1vcy8qfS9yZWFjdGlvbnMSiQEKElVwc2VydE1lbW9SZWFjdGlvbhInLm1lbW9zLmFwaS52MS5VcHNlcnRNZW1vUmVhY3Rpb25SZXF1ZXN0GhYubWVtb3MuYXBpLnYxLlJlYWN0aW9uIjLaQQRuYW1lgtPkkwIlOgEqIiAvYXBpL3YxL3tuYW1lPW1lbW9zLyp9L3JlYWN0aW9ucxKIAQoSRGVsZXRlTWVtb1JlYWN0aW9uEicubWVtb3MuYXBpLnYxLkRlbGV0ZU1lbW9SZWFjdGlvblJlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHkiMdpBBG5hbWWC0+STAiQqIi9hcGkvdjEve25hbWU9bWVtb3MvKi9yZWFjdGlvbnMvKn0SmQEKD0NyZWF0ZU1lbW9TaGFyZRIkLm1lbW9zLmFwaS52MS5DcmVhdGVNZW1vU2hhcmVSZXF1ZXN0GhcubWVtb3MuYXBpLnYxLk1lbW9TaGFyZSJH2kERcGFyZW50LG1lbW9fc2hhcmWC0+STAi06Cm1lbW9fc2hhcmUiHy9hcGkvdjEve3BhcmVudD1tZW1vcy8qfS9zaGFyZXMSjQEKDkxpc3RNZW1vU2hhcmVzEiMubWVtb3MuYXBpLnYxLkxpc3RNZW1vU2hhcmVzUmVxdWVzdBokLm1lbW9zLmFwaS52MS5MaXN0TWVtb1NoYXJlc1Jlc3BvbnNlIjDaQQZwYXJlbnSC0+STAiESHy9hcGkvdjEve3BhcmVudD1tZW1vcy8qfS9zaGFyZXMSfwoPRGVsZXRlTWVtb1NoYXJlEiQubWVtb3MuYXBpLnYxLkRlbGV0ZU1lbW9TaGFyZVJlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHkiLtpBBG5hbWWC0+STAiEqHy9hcGkvdjEve25hbWU9bWVtb3MvKi9zaGFyZXMvKn0ScgoNR2V0U2hhcmVkTWVtbxIiLm1lbW9zLmFwaS52MS5HZXRTaGFyZWRNZW1vUmVxdWVzdBoSLm1lbW9zLmFwaS52MS5NZW1vIimC0+STAiMSIS9hcGkvdjEvc2hhcmVzL3tzaGFyZV90b2tlbn0vbWVtbxJ5Cg9HZXRMaW5rTWV0YWRhdGESJC5tZW1vcy5hcGkudjEuR2V0TGlua01ldGFkYXRhUmVxdWVzdBoaLm1lbW9zLmFwaS52MS5MaW5rTWV0YWRhdGEiJILT5JMCHhIcL2FwaS92MS9tZW1vcy8tL2xpbmtNZXRhZGF0YRKfAQoUQmF0Y2hHZXRMaW5rTWV0YWRhdGESKS5tZW1vcy5hcGkudjEuQmF0Y2hHZXRMaW5rTWV0YWRhdGFSZXF1ZXN0GioubWVtb3MuYXBpLnYxLkJhdGNoR2V0TGlua01ldGFkYXRhUmVzcG9uc2UiMILT5JMCKjoBKiIlL2FwaS92MS9tZW1vcy8tL2xpbmtNZXRhZGF0YTpiYXRjaEdldEKnAQoQY29tLm1lbW9zLmFwaS52MUIQTWVtb1NlcnZpY2VQcm90b1ABWi9naXRodWIuY29tL0Vnb1NheS9rYWlyb3MvcHJvdG8vZ2VuL2FwaS92MTthcGl2MaICA01BWKoCDE1lbW9zLkFwaS5WMcoCDE1lbW9zXEFwaVxWMeICGE1lbW9zXEFwaVxWMVxHUEJNZXRhZGF0YeoCDk1lbW9zOjpBcGk6OlYxYgZwcm90bzM", [file_api_v1_attachment_service, file_api_v1_common, file_google_api_annotations, file_google_api_client, file_google_api_field_behavior, file_google_api_resource, file_google_protobuf_empty, file_google_protobuf_field_mask, file_google_protobuf_timestamp]);
+  fileDesc("ChlhcGkvdjEvbWVtb19zZXJ2aWNlLnByb3RvEgxtZW1vcy5hcGkudjEiigIKCFJlYWN0aW9uEhQKBG5hbWUYASABKAlCBuBBA+BBCBIqCgdjcmVhdG9yGAIgASgJQhngQQP6QRMKEW1lbW9zLmFwaS52MS9Vc2VyEhoKDXJlYWN0aW9uX3R5cGUYBCABKAlCA+BBAhI0CgtjcmVhdGVfdGltZRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCA+BBAzpY6kFVChVtZW1vcy5hcGkudjEvUmVhY3Rpb24SIW1lbW9zL3ttZW1vfS9yZWFjdGlvbnMve3JlYWN0aW9ufRoEbmFtZSoJcmVhY3Rpb25zMghyZWFjdGlvbkoECAMQBFIKY29udGVudF9pZCLABwoETWVtbxIRCgRuYW1lGAEgASgJQgPgQQgSJwoFc3RhdGUYAiABKA4yEy5tZW1vcy5hcGkudjEuU3RhdGVCA+BBAhIqCgdjcmVhdG9yGAMgASgJQhngQQP6QRMKEW1lbW9zLmFwaS52MS9Vc2VyEjQKC2NyZWF0ZV90aW1lGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEID4EEBEjQKC3VwZGF0ZV90aW1lGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEID4EEBEhQKB2NvbnRlbnQYByABKAlCA+BBAhIxCgp2aXNpYmlsaXR5GAkgASgOMhgubWVtb3MuYXBpLnYxLlZpc2liaWxpdHlCA+BBAhIRCgR0YWdzGAogAygJQgPgQQMSGgoNZXhwbGljaXRfdGFncxgUIAMoCUID4EEDEhMKBnBpbm5lZBgLIAEoCEID4EEBEjIKC2F0dGFjaG1lbnRzGAwgAygLMhgubWVtb3MuYXBpLnYxLkF0dGFjaG1lbnRCA+BBARIyCglyZWxhdGlvbnMYDSADKAsyGi5tZW1vcy5hcGkudjEuTWVtb1JlbGF0aW9uQgPgQQESLgoJcmVhY3Rpb25zGA4gAygLMhYubWVtb3MuYXBpLnYxLlJlYWN0aW9uQgPgQQMSMgoIcHJvcGVydHkYDyABKAsyGy5tZW1vcy5hcGkudjEuTWVtby5Qcm9wZXJ0eUID4EEDEi4KBnBhcmVudBgQIAEoCUIZ4EED+kETChFtZW1vcy5hcGkudjEvTWVtb0gAiAEBEhQKB3NuaXBwZXQYESABKAlCA+BBAxIyCghsb2NhdGlvbhgSIAEoCzIWLm1lbW9zLmFwaS52MS5Mb2NhdGlvbkID4EEBSAGIAQESLgoFc3BhY2UYEyABKAlCGuBBAfpBFAoSbWVtb3MuYXBpLnYxL1NwYWNlSAKIAQEacgoIUHJvcGVydHkSEAoIaGFzX2xpbmsYASABKAgSFQoNaGFzX3Rhc2tfbGlzdBgCIAEoCBIQCghoYXNfY29kZRgDIAEoCBIcChRoYXNfaW5jb21wbGV0ZV90YXNrcxgEIAEoCBINCgV0aXRsZRgFIAEoCTo36kE0ChFtZW1vcy5hcGkudjEvTWVtbxIMbWVtb3Mve21lbW99GgRuYW1lKgVtZW1vczIEbWVtb0IJCgdfcGFyZW50QgsKCV9sb2NhdGlvbkIICgZfc3BhY2VKBAgGEAdSDGRpc3BsYXlfdGltZSJrCghMb2NhdGlvbhIYCgtwbGFjZWhvbGRlchgBIAEoCUID4EEBEhUKCGxhdGl0dWRlGAIgASgBQgPgQQESFgoJbG9uZ2l0dWRlGAMgASgBQgPgQQESFgoJbmFtZV9vbmx5GAQgASgIQgPgQQEimQEKEUNyZWF0ZU1lbW9SZXF1ZXN0EiUKBG1lbW8YASABKAsyEi5tZW1vcy5hcGkudjEuTWVtb0ID4EECEhQKB21lbW9faWQYAiABKAlCA+BBARJHChFqb3VybmFsX3BhcnRpdGlvbhgDIAEoCzInLm1lbW9zLmFwaS52MS5Kb3VybmFsUGFydGl0aW9uU2VsZWN0aW9uQgPgQQEiSwoZSm91cm5hbFBhcnRpdGlvblNlbGVjdGlvbhIUCgxwYXJ0aXRpb25faWQYASABKAkSGAoQZXhwZWN0ZWRfdmVyc2lvbhgCIAEoAyLxAQoQTGlzdE1lbW9zUmVxdWVzdBIWCglwYWdlX3NpemUYASABKAVCA+BBARIXCgpwYWdlX3Rva2VuGAIgASgJQgPgQQESJwoFc3RhdGUYAyABKA4yEy5tZW1vcy5hcGkudjEuU3RhdGVCA+BBARIVCghvcmRlcl9ieRgEIAEoCUID4EEBEhMKBmZpbHRlchgFIAEoCUID4EEBEhkKDHNob3dfZGVsZXRlZBgGIAEoCEID4EEBEh0KEGluY2x1ZGVfYXJjaGl2ZWQYCSABKAhCA+BBAUoECAcQCEoECAgQCVIFc3BhY2VSCnVuYXNzaWduZWQiTwoRTGlzdE1lbW9zUmVzcG9uc2USIQoFbWVtb3MYASADKAsyEi5tZW1vcy5hcGkudjEuTWVtbxIXCg9uZXh0X3BhZ2VfdG9rZW4YAiABKAkiOQoOR2V0TWVtb1JlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbyK5AQoRVXBkYXRlTWVtb1JlcXVlc3QSJQoEbWVtbxgBIAEoCzISLm1lbW9zLmFwaS52MS5NZW1vQgPgQQISNAoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrQgPgQQISRwoRam91cm5hbF9wYXJ0aXRpb24YAyABKAsyJy5tZW1vcy5hcGkudjEuSm91cm5hbFBhcnRpdGlvblNlbGVjdGlvbkID4EEBIlAKEURlbGV0ZU1lbW9SZXF1ZXN0EicKBG5hbWUYASABKAlCGeBBAvpBEwoRbWVtb3MuYXBpLnYxL01lbW8SEgoFZm9yY2UYAiABKAhCA+BBASK3AQoaQmF0Y2hVcGRhdGVNZW1vVGFnc1JlcXVlc3QSKAoFbmFtZXMYASADKAlCGeBBAfpBEwoRbWVtb3MuYXBpLnYxL01lbW8SFQoIYWRkX3RhZ3MYAiADKAlCA+BBARIYCgtyZW1vdmVfdGFncxgDIAMoCUID4EEBEhYKCXNjb3BlX3RhZxgEIAEoCUID4EEBEiYKGXNjb3BlX2luY2x1ZGVfZGVzY2VuZGFudHMYBSABKAhCA+BBASJhChdNZW1vVGFnT3BlcmF0aW9uRmFpbHVyZRInCgRuYW1lGAEgASgJQhngQQL6QRMKEW1lbW9zLmFwaS52MS9NZW1vEgwKBGNvZGUYAiABKAkSDwoHbWVzc2FnZRgDIAEoCSKSAQobQmF0Y2hVcGRhdGVNZW1vVGFnc1Jlc3BvbnNlEiEKBW1lbW9zGAEgAygLMhIubWVtb3MuYXBpLnYxLk1lbW8SNwoIZmFpbHVyZXMYAiADKAsyJS5tZW1vcy5hcGkudjEuTWVtb1RhZ09wZXJhdGlvbkZhaWx1cmUSFwoPcmVtYWluaW5nX2NvdW50GAMgASgFIjwKGFRhZ09wZXJhdGlvbkFmZmVjdGVkVmlldxIRCgRuYW1lGAEgASgJQgPgQQgSDQoFdGl0bGUYAiABKAkitwEKEFJlbmFtZVRhZ1JlcXVlc3QSFAoHb2xkX3RhZxgBIAEoCUID4EECEhQKB25ld190YWcYAiABKAlCA+BBAhIgChNpbmNsdWRlX2Rlc2NlbmRhbnRzGAMgASgIQgPgQQESGgoNdmFsaWRhdGVfb25seRgEIAEoCEID4EEBEiMKEXVwZGF0ZV9yZWZlcmVuY2VzGAUgASgIQgPgQQFIAIgBAUIUChJfdXBkYXRlX3JlZmVyZW5jZXMijgIKEVJlbmFtZVRhZ1Jlc3BvbnNlEhYKDmFmZmVjdGVkX21lbW9zGAEgASgFEhUKDWFmZmVjdGVkX3RhZ3MYAiADKAkSHAoUbWVyZ2VzX2ludG9fZXhpc3RpbmcYAyABKAgSPgoOYWZmZWN0ZWRfdmlld3MYBCADKAsyJi5tZW1vcy5hcGkudjEuVGFnT3BlcmF0aW9uQWZmZWN0ZWRWaWV3EhoKEmFmZmVjdGVkX3RhZ19ydWxlcxgFIAMoCRI3CghmYWlsdXJlcxgGIAMoCzIlLm1lbW9zLmFwaS52MS5NZW1vVGFnT3BlcmF0aW9uRmFpbHVyZRIXCg9yZW1haW5pbmdfY291bnQYByABKAUinQEKEERlbGV0ZVRhZ1JlcXVlc3QSEAoDdGFnGAEgASgJQgPgQQISIAoTaW5jbHVkZV9kZXNjZW5kYW50cxgCIAEoCEID4EEBEhoKDXZhbGlkYXRlX29ubHkYAyABKAhCA+BBARIjChF1cGRhdGVfcmVmZXJlbmNlcxgEIAEoCEID4EEBSACIAQFCFAoSX3VwZGF0ZV9yZWZlcmVuY2VzIvABChFEZWxldGVUYWdSZXNwb25zZRIWCg5hZmZlY3RlZF9tZW1vcxgBIAEoBRIVCg1hZmZlY3RlZF90YWdzGAIgAygJEj4KDmFmZmVjdGVkX3ZpZXdzGAMgAygLMiYubWVtb3MuYXBpLnYxLlRhZ09wZXJhdGlvbkFmZmVjdGVkVmlldxIaChJhZmZlY3RlZF90YWdfcnVsZXMYBCADKAkSNwoIZmFpbHVyZXMYBSADKAsyJS5tZW1vcy5hcGkudjEuTWVtb1RhZ09wZXJhdGlvbkZhaWx1cmUSFwoPcmVtYWluaW5nX2NvdW50GAYgASgFIngKGVNldE1lbW9BdHRhY2htZW50c1JlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbxIyCgthdHRhY2htZW50cxgCIAMoCzIYLm1lbW9zLmFwaS52MS5BdHRhY2htZW50QgPgQQIidgoaTGlzdE1lbW9BdHRhY2htZW50c1JlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbxIWCglwYWdlX3NpemUYAiABKAVCA+BBARIXCgpwYWdlX3Rva2VuGAMgASgJQgPgQQEiZQobTGlzdE1lbW9BdHRhY2htZW50c1Jlc3BvbnNlEi0KC2F0dGFjaG1lbnRzGAEgAygLMhgubWVtb3MuYXBpLnYxLkF0dGFjaG1lbnQSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIrMCCgxNZW1vUmVsYXRpb24SMgoEbWVtbxgBIAEoCzIfLm1lbW9zLmFwaS52MS5NZW1vUmVsYXRpb24uTWVtb0ID4EECEjoKDHJlbGF0ZWRfbWVtbxgCIAEoCzIfLm1lbW9zLmFwaS52MS5NZW1vUmVsYXRpb24uTWVtb0ID4EECEjIKBHR5cGUYAyABKA4yHy5tZW1vcy5hcGkudjEuTWVtb1JlbGF0aW9uLlR5cGVCA+BBAhpFCgRNZW1vEicKBG5hbWUYASABKAlCGeBBAvpBEwoRbWVtb3MuYXBpLnYxL01lbW8SFAoHc25pcHBldBgCIAEoCUID4EEDIjgKBFR5cGUSFAoQVFlQRV9VTlNQRUNJRklFRBAAEg0KCVJFRkVSRU5DRRABEgsKB0NPTU1FTlQQAiJ2ChdTZXRNZW1vUmVsYXRpb25zUmVxdWVzdBInCgRuYW1lGAEgASgJQhngQQL6QRMKEW1lbW9zLmFwaS52MS9NZW1vEjIKCXJlbGF0aW9ucxgCIAMoCzIaLm1lbW9zLmFwaS52MS5NZW1vUmVsYXRpb25CA+BBAiJ0ChhMaXN0TWVtb1JlbGF0aW9uc1JlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbxIWCglwYWdlX3NpemUYAiABKAVCA+BBARIXCgpwYWdlX3Rva2VuGAMgASgJQgPgQQEiYwoZTGlzdE1lbW9SZWxhdGlvbnNSZXNwb25zZRItCglyZWxhdGlvbnMYASADKAsyGi5tZW1vcy5hcGkudjEuTWVtb1JlbGF0aW9uEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCSKGAQoYQ3JlYXRlTWVtb0NvbW1lbnRSZXF1ZXN0EicKBG5hbWUYASABKAlCGeBBAvpBEwoRbWVtb3MuYXBpLnYxL01lbW8SKAoHY29tbWVudBgCIAEoCzISLm1lbW9zLmFwaS52MS5NZW1vQgPgQQISFwoKY29tbWVudF9pZBgDIAEoCUID4EEBIooBChdMaXN0TWVtb0NvbW1lbnRzUmVxdWVzdBInCgRuYW1lGAEgASgJQhngQQL6QRMKEW1lbW9zLmFwaS52MS9NZW1vEhYKCXBhZ2Vfc2l6ZRgCIAEoBUID4EEBEhcKCnBhZ2VfdG9rZW4YAyABKAlCA+BBARIVCghvcmRlcl9ieRgEIAEoCUID4EEBIlYKGExpc3RNZW1vQ29tbWVudHNSZXNwb25zZRIhCgVtZW1vcxgBIAMoCzISLm1lbW9zLmFwaS52MS5NZW1vEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCSJ0ChhMaXN0TWVtb1JlYWN0aW9uc1JlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbxIWCglwYWdlX3NpemUYAiABKAVCA+BBARIXCgpwYWdlX3Rva2VuGAMgASgJQgPgQQEiXwoZTGlzdE1lbW9SZWFjdGlvbnNSZXNwb25zZRIpCglyZWFjdGlvbnMYASADKAsyFi5tZW1vcy5hcGkudjEuUmVhY3Rpb24SFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJInMKGVVwc2VydE1lbW9SZWFjdGlvblJlcXVlc3QSJwoEbmFtZRgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbxItCghyZWFjdGlvbhgCIAEoCzIWLm1lbW9zLmFwaS52MS5SZWFjdGlvbkID4EECIkgKGURlbGV0ZU1lbW9SZWFjdGlvblJlcXVlc3QSKwoEbmFtZRgBIAEoCUId4EEC+kEXChVtZW1vcy5hcGkudjEvUmVhY3Rpb24i6AEKCU1lbW9TaGFyZRIRCgRuYW1lGAEgASgJQgPgQQgSNAoLY3JlYXRlX3RpbWUYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgPgQQMSOQoLZXhwaXJlX3RpbWUYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgPgQQFIAIgBATpH6kFEChZtZW1vcy5hcGkudjEvTWVtb1NoYXJlEhttZW1vcy97bWVtb30vc2hhcmVzL3tzaGFyZX0qBnNoYXJlczIFc2hhcmVCDgoMX2V4cGlyZV90aW1lInUKFkNyZWF0ZU1lbW9TaGFyZVJlcXVlc3QSKQoGcGFyZW50GAEgASgJQhngQQL6QRMKEW1lbW9zLmFwaS52MS9NZW1vEjAKCm1lbW9fc2hhcmUYAiABKAsyFy5tZW1vcy5hcGkudjEuTWVtb1NoYXJlQgPgQQIiQgoVTGlzdE1lbW9TaGFyZXNSZXF1ZXN0EikKBnBhcmVudBgBIAEoCUIZ4EEC+kETChFtZW1vcy5hcGkudjEvTWVtbyJGChZMaXN0TWVtb1NoYXJlc1Jlc3BvbnNlEiwKC21lbW9fc2hhcmVzGAEgAygLMhcubWVtb3MuYXBpLnYxLk1lbW9TaGFyZSJGChZEZWxldGVNZW1vU2hhcmVSZXF1ZXN0EiwKBG5hbWUYASABKAlCHuBBAvpBGAoWbWVtb3MuYXBpLnYxL01lbW9TaGFyZSIwChRHZXRTaGFyZWRNZW1vUmVxdWVzdBIYCgtzaGFyZV90b2tlbhgBIAEoCUID4EECIioKFkdldExpbmtNZXRhZGF0YVJlcXVlc3QSEAoDdXJsGAEgASgJQgPgQQIiMAobQmF0Y2hHZXRMaW5rTWV0YWRhdGFSZXF1ZXN0EhEKBHVybHMYASADKAlCA+BBAiJRChxCYXRjaEdldExpbmtNZXRhZGF0YVJlc3BvbnNlEjEKDWxpbmtfbWV0YWRhdGEYASADKAsyGi5tZW1vcy5hcGkudjEuTGlua01ldGFkYXRhIk4KDExpbmtNZXRhZGF0YRILCgN1cmwYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSDQoFaW1hZ2UYBCABKAkqWwoKVmlzaWJpbGl0eRIaChZWSVNJQklMSVRZX1VOU1BFQ0lGSUVEEAASCwoHUFJJVkFURRABEg0KCVBST1RFQ1RFRBACEgoKBlBVQkxJQxADEgkKBVNQQUNFEAQykBgKC01lbW9TZXJ2aWNlEmUKCkNyZWF0ZU1lbW8SHy5tZW1vcy5hcGkudjEuQ3JlYXRlTWVtb1JlcXVlc3QaEi5tZW1vcy5hcGkudjEuTWVtbyIi2kEEbWVtb4LT5JMCFToEbWVtbyINL2FwaS92MS9tZW1vcxJmCglMaXN0TWVtb3MSHi5tZW1vcy5hcGkudjEuTGlzdE1lbW9zUmVxdWVzdBofLm1lbW9zLmFwaS52MS5MaXN0TWVtb3NSZXNwb25zZSIY2kEAgtPkkwIPEg0vYXBpL3YxL21lbW9zEmIKB0dldE1lbW8SHC5tZW1vcy5hcGkudjEuR2V0TWVtb1JlcXVlc3QaEi5tZW1vcy5hcGkudjEuTWVtbyIl2kEEbmFtZYLT5JMCGBIWL2FwaS92MS97bmFtZT1tZW1vcy8qfRJ/CgpVcGRhdGVNZW1vEh8ubWVtb3MuYXBpLnYxLlVwZGF0ZU1lbW9SZXF1ZXN0GhIubWVtb3MuYXBpLnYxLk1lbW8iPNpBEG1lbW8sdXBkYXRlX21hc2uC0+STAiM6BG1lbW8yGy9hcGkvdjEve21lbW8ubmFtZT1tZW1vcy8qfRJsCgpEZWxldGVNZW1vEh8ubWVtb3MuYXBpLnYxLkRlbGV0ZU1lbW9SZXF1ZXN0GhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5IiXaQQRuYW1lgtPkkwIYKhYvYXBpL3YxL3tuYW1lPW1lbW9zLyp9EpQBChNCYXRjaFVwZGF0ZU1lbW9UYWdzEigubWVtb3MuYXBpLnYxLkJhdGNoVXBkYXRlTWVtb1RhZ3NSZXF1ZXN0GikubWVtb3MuYXBpLnYxLkJhdGNoVXBkYXRlTWVtb1RhZ3NSZXNwb25zZSIogtPkkwIiOgEqIh0vYXBpL3YxL21lbW9zOmJhdGNoVXBkYXRlVGFncxJyCglSZW5hbWVUYWcSHi5tZW1vcy5hcGkudjEuUmVuYW1lVGFnUmVxdWVzdBofLm1lbW9zLmFwaS52MS5SZW5hbWVUYWdSZXNwb25zZSIkgtPkkwIeOgEqIhkvYXBpL3YxL21lbW9zL3RhZ3M6cmVuYW1lEnIKCURlbGV0ZVRhZxIeLm1lbW9zLmFwaS52MS5EZWxldGVUYWdSZXF1ZXN0Gh8ubWVtb3MuYXBpLnYxLkRlbGV0ZVRhZ1Jlc3BvbnNlIiSC0+STAh46ASoiGS9hcGkvdjEvbWVtb3MvdGFnczpkZWxldGUSiwEKElNldE1lbW9BdHRhY2htZW50cxInLm1lbW9zLmFwaS52MS5TZXRNZW1vQXR0YWNobWVudHNSZXF1ZXN0GhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5IjTaQQRuYW1lgtPkkwInOgEqMiIvYXBpL3YxL3tuYW1lPW1lbW9zLyp9L2F0dGFjaG1lbnRzEp0BChNMaXN0TWVtb0F0dGFjaG1lbnRzEigubWVtb3MuYXBpLnYxLkxpc3RNZW1vQXR0YWNobWVudHNSZXF1ZXN0GikubWVtb3MuYXBpLnYxLkxpc3RNZW1vQXR0YWNobWVudHNSZXNwb25zZSIx2kEEbmFtZYLT5JMCJBIiL2FwaS92MS97bmFtZT1tZW1vcy8qfS9hdHRhY2htZW50cxKFAQoQU2V0TWVtb1JlbGF0aW9ucxIlLm1lbW9zLmFwaS52MS5TZXRNZW1vUmVsYXRpb25zUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eSIy2kEEbmFtZYLT5JMCJToBKjIgL2FwaS92MS97bmFtZT1tZW1vcy8qfS9yZWxhdGlvbnMSlQEKEUxpc3RNZW1vUmVsYXRpb25zEiYubWVtb3MuYXBpLnYxLkxpc3RNZW1vUmVsYXRpb25zUmVxdWVzdBonLm1lbW9zLmFwaS52MS5MaXN0TWVtb1JlbGF0aW9uc1Jlc3BvbnNlIi/aQQRuYW1lgtPkkwIiEiAvYXBpL3YxL3tuYW1lPW1lbW9zLyp9L3JlbGF0aW9ucxKQAQoRQ3JlYXRlTWVtb0NvbW1lbnQSJi5tZW1vcy5hcGkudjEuQ3JlYXRlTWVtb0NvbW1lbnRSZXF1ZXN0GhIubWVtb3MuYXBpLnYxLk1lbW8iP9pBDG5hbWUsY29tbWVudILT5JMCKjoHY29tbWVudCIfL2FwaS92MS97bmFtZT1tZW1vcy8qfS9jb21tZW50cxKRAQoQTGlzdE1lbW9Db21tZW50cxIlLm1lbW9zLmFwaS52MS5MaXN0TWVtb0NvbW1lbnRzUmVxdWVzdBomLm1lbW9zLmFwaS52MS5MaXN0TWVtb0NvbW1lbnRzUmVzcG9uc2UiLtpBBG5hbWWC0+STAiESHy9hcGkvdjEve25hbWU9bWVtb3MvKn0vY29tbWVudHMSlQEKEUxpc3RNZW1vUmVhY3Rpb25zEiYubWVtb3MuYXBpLnYxLkxpc3RNZW1vUmVhY3Rpb25zUmVxdWVzdBonLm1lbW9zLmFwaS52MS5MaXN0TWVtb1JlYWN0aW9uc1Jlc3BvbnNlIi/aQQRuYW1lgtPkkwIiEiAvYXBpL3YxL3tuYW1lPW1lbW9zLyp9L3JlYWN0aW9ucxKJAQoSVXBzZXJ0TWVtb1JlYWN0aW9uEicubWVtb3MuYXBpLnYxLlVwc2VydE1lbW9SZWFjdGlvblJlcXVlc3QaFi5tZW1vcy5hcGkudjEuUmVhY3Rpb24iMtpBBG5hbWWC0+STAiU6ASoiIC9hcGkvdjEve25hbWU9bWVtb3MvKn0vcmVhY3Rpb25zEogBChJEZWxldGVNZW1vUmVhY3Rpb24SJy5tZW1vcy5hcGkudjEuRGVsZXRlTWVtb1JlYWN0aW9uUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eSIx2kEEbmFtZYLT5JMCJCoiL2FwaS92MS97bmFtZT1tZW1vcy8qL3JlYWN0aW9ucy8qfRKZAQoPQ3JlYXRlTWVtb1NoYXJlEiQubWVtb3MuYXBpLnYxLkNyZWF0ZU1lbW9TaGFyZVJlcXVlc3QaFy5tZW1vcy5hcGkudjEuTWVtb1NoYXJlIkfaQRFwYXJlbnQsbWVtb19zaGFyZYLT5JMCLToKbWVtb19zaGFyZSIfL2FwaS92MS97cGFyZW50PW1lbW9zLyp9L3NoYXJlcxKNAQoOTGlzdE1lbW9TaGFyZXMSIy5tZW1vcy5hcGkudjEuTGlzdE1lbW9TaGFyZXNSZXF1ZXN0GiQubWVtb3MuYXBpLnYxLkxpc3RNZW1vU2hhcmVzUmVzcG9uc2UiMNpBBnBhcmVudILT5JMCIRIfL2FwaS92MS97cGFyZW50PW1lbW9zLyp9L3NoYXJlcxJ/Cg9EZWxldGVNZW1vU2hhcmUSJC5tZW1vcy5hcGkudjEuRGVsZXRlTWVtb1NoYXJlUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eSIu2kEEbmFtZYLT5JMCISofL2FwaS92MS97bmFtZT1tZW1vcy8qL3NoYXJlcy8qfRJyCg1HZXRTaGFyZWRNZW1vEiIubWVtb3MuYXBpLnYxLkdldFNoYXJlZE1lbW9SZXF1ZXN0GhIubWVtb3MuYXBpLnYxLk1lbW8iKYLT5JMCIxIhL2FwaS92MS9zaGFyZXMve3NoYXJlX3Rva2VufS9tZW1vEnkKD0dldExpbmtNZXRhZGF0YRIkLm1lbW9zLmFwaS52MS5HZXRMaW5rTWV0YWRhdGFSZXF1ZXN0GhoubWVtb3MuYXBpLnYxLkxpbmtNZXRhZGF0YSIkgtPkkwIeEhwvYXBpL3YxL21lbW9zLy0vbGlua01ldGFkYXRhEp8BChRCYXRjaEdldExpbmtNZXRhZGF0YRIpLm1lbW9zLmFwaS52MS5CYXRjaEdldExpbmtNZXRhZGF0YVJlcXVlc3QaKi5tZW1vcy5hcGkudjEuQmF0Y2hHZXRMaW5rTWV0YWRhdGFSZXNwb25zZSIwgtPkkwIqOgEqIiUvYXBpL3YxL21lbW9zLy0vbGlua01ldGFkYXRhOmJhdGNoR2V0QqcBChBjb20ubWVtb3MuYXBpLnYxQhBNZW1vU2VydmljZVByb3RvUAFaL2dpdGh1Yi5jb20vRWdvU2F5L2thaXJvcy9wcm90by9nZW4vYXBpL3YxO2FwaXYxogIDTUFYqgIMTWVtb3MuQXBpLlYxygIMTWVtb3NcQXBpXFYx4gIYTWVtb3NcQXBpXFYxXEdQQk1ldGFkYXRh6gIOTWVtb3M6OkFwaTo6VjFiBnByb3RvMw", [file_api_v1_attachment_service, file_api_v1_common, file_google_api_annotations, file_google_api_client, file_google_api_field_behavior, file_google_api_resource, file_google_protobuf_empty, file_google_protobuf_field_mask, file_google_protobuf_timestamp]);
 
 /**
  * Reaction is a reaction attached to a memo.
@@ -132,6 +132,14 @@ export type Memo = Message<"memos.api.v1.Memo"> & {
    * @generated from field: repeated string tags = 10;
    */
   tags: string[];
+
+  /**
+   * Output only. The tags authored explicitly in the content, without the
+   * implied ancestor paths that `tags` includes.
+   *
+   * @generated from field: repeated string explicit_tags = 20;
+   */
+  explicitTags: string[];
 
   /**
    * Whether the memo is pinned.
@@ -552,6 +560,377 @@ export const DeleteMemoRequestSchema: GenMessage<DeleteMemoRequest> = /*@__PURE_
   messageDesc(file_api_v1_memo_service, 9);
 
 /**
+ * @generated from message memos.api.v1.BatchUpdateMemoTagsRequest
+ */
+export type BatchUpdateMemoTagsRequest = Message<"memos.api.v1.BatchUpdateMemoTagsRequest"> & {
+  /**
+   * Optional. The memos to update. At most 200 names. Mutually exclusive with
+   * scope_tag: exactly one scope must be set.
+   * Format: memos/{memo}
+   *
+   * @generated from field: repeated string names = 1;
+   */
+  names: string[];
+
+  /**
+   * Optional. Tag values to append to every memo, without the # prefix.
+   *
+   * @generated from field: repeated string add_tags = 2;
+   */
+  addTags: string[];
+
+  /**
+   * Optional. Explicit tag values to remove from every memo, without the #
+   * prefix.
+   *
+   * @generated from field: repeated string remove_tags = 3;
+   */
+  removeTags: string[];
+
+  /**
+   * Optional. When set, the batch applies to every memo authoring this tag
+   * instead of a name list. At most 1000 memos are processed per call;
+   * remaining_count reports the rest and a repeated call continues
+   * idempotently.
+   *
+   * @generated from field: string scope_tag = 4;
+   */
+  scopeTag: string;
+
+  /**
+   * Optional. With scope_tag, also match memos authoring descendant
+   * scope_tag/... paths.
+   *
+   * @generated from field: bool scope_include_descendants = 5;
+   */
+  scopeIncludeDescendants: boolean;
+};
+
+/**
+ * Describes the message memos.api.v1.BatchUpdateMemoTagsRequest.
+ * Use `create(BatchUpdateMemoTagsRequestSchema)` to create a new message.
+ */
+export const BatchUpdateMemoTagsRequestSchema: GenMessage<BatchUpdateMemoTagsRequest> = /*@__PURE__*/
+  messageDesc(file_api_v1_memo_service, 10);
+
+/**
+ * The failure detail of a single memo inside a tag organization operation.
+ *
+ * @generated from message memos.api.v1.MemoTagOperationFailure
+ */
+export type MemoTagOperationFailure = Message<"memos.api.v1.MemoTagOperationFailure"> & {
+  /**
+   * The resource name of the memo.
+   * Format: memos/{memo}
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * The canonical error code describing the failure (e.g. "aborted").
+   *
+   * @generated from field: string code = 2;
+   */
+  code: string;
+
+  /**
+   * The human-readable failure detail.
+   *
+   * @generated from field: string message = 3;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message memos.api.v1.MemoTagOperationFailure.
+ * Use `create(MemoTagOperationFailureSchema)` to create a new message.
+ */
+export const MemoTagOperationFailureSchema: GenMessage<MemoTagOperationFailure> = /*@__PURE__*/
+  messageDesc(file_api_v1_memo_service, 11);
+
+/**
+ * @generated from message memos.api.v1.BatchUpdateMemoTagsResponse
+ */
+export type BatchUpdateMemoTagsResponse = Message<"memos.api.v1.BatchUpdateMemoTagsResponse"> & {
+  /**
+   * The updated memos, in request order, for every name that succeeded. A memo
+   * that needed no change is returned unchanged and still counts as a success.
+   * Scope-driven batches omit this list; the caller watches failures and
+   * remaining_count.
+   *
+   * @generated from field: repeated memos.api.v1.Memo memos = 1;
+   */
+  memos: Memo[];
+
+  /**
+   * The memos that could not be updated.
+   *
+   * @generated from field: repeated memos.api.v1.MemoTagOperationFailure failures = 2;
+   */
+  failures: MemoTagOperationFailure[];
+
+  /**
+   * The number of scope-matched memos not processed because of the per-call
+   * cap. Zero for name-driven batches. Repeat the call to continue.
+   *
+   * @generated from field: int32 remaining_count = 3;
+   */
+  remainingCount: number;
+};
+
+/**
+ * Describes the message memos.api.v1.BatchUpdateMemoTagsResponse.
+ * Use `create(BatchUpdateMemoTagsResponseSchema)` to create a new message.
+ */
+export const BatchUpdateMemoTagsResponseSchema: GenMessage<BatchUpdateMemoTagsResponse> = /*@__PURE__*/
+  messageDesc(file_api_v1_memo_service, 12);
+
+/**
+ * A saved memo view affected by a tag organization operation.
+ *
+ * @generated from message memos.api.v1.TagOperationAffectedView
+ */
+export type TagOperationAffectedView = Message<"memos.api.v1.TagOperationAffectedView"> & {
+  /**
+   * The resource name of the memo view.
+   * Format: users/{user}/views/{view}
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * The title of the memo view.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+};
+
+/**
+ * Describes the message memos.api.v1.TagOperationAffectedView.
+ * Use `create(TagOperationAffectedViewSchema)` to create a new message.
+ */
+export const TagOperationAffectedViewSchema: GenMessage<TagOperationAffectedView> = /*@__PURE__*/
+  messageDesc(file_api_v1_memo_service, 13);
+
+/**
+ * @generated from message memos.api.v1.RenameTagRequest
+ */
+export type RenameTagRequest = Message<"memos.api.v1.RenameTagRequest"> & {
+  /**
+   * Required. The tag value to rename, without the # prefix.
+   *
+   * @generated from field: string old_tag = 1;
+   */
+  oldTag: string;
+
+  /**
+   * Required. The replacement tag value, without the # prefix.
+   *
+   * @generated from field: string new_tag = 2;
+   */
+  newTag: string;
+
+  /**
+   * Optional. Also rewrite descendant paths (old_tag/...).
+   *
+   * @generated from field: bool include_descendants = 3;
+   */
+  includeDescendants: boolean;
+
+  /**
+   * Optional. Only report the affected scope; write nothing.
+   *
+   * @generated from field: bool validate_only = 4;
+   */
+  validateOnly: boolean;
+
+  /**
+   * Optional. Rewrite saved-view filters and tag display-rule keys that
+   * reference the renamed tag. Defaults to true when unset.
+   *
+   * @generated from field: optional bool update_references = 5;
+   */
+  updateReferences?: boolean | undefined;
+};
+
+/**
+ * Describes the message memos.api.v1.RenameTagRequest.
+ * Use `create(RenameTagRequestSchema)` to create a new message.
+ */
+export const RenameTagRequestSchema: GenMessage<RenameTagRequest> = /*@__PURE__*/
+  messageDesc(file_api_v1_memo_service, 14);
+
+/**
+ * @generated from message memos.api.v1.RenameTagResponse
+ */
+export type RenameTagResponse = Message<"memos.api.v1.RenameTagResponse"> & {
+  /**
+   * The number of memos whose content was (or, for validate_only, would be)
+   * rewritten.
+   *
+   * @generated from field: int32 affected_memos = 1;
+   */
+  affectedMemos: number;
+
+  /**
+   * The explicit tag values matched by the operation.
+   *
+   * @generated from field: repeated string affected_tags = 2;
+   */
+  affectedTags: string[];
+
+  /**
+   * True when the new tag already exists on other memos; the operation then
+   * merges the two tags.
+   *
+   * @generated from field: bool merges_into_existing = 3;
+   */
+  mergesIntoExisting: boolean;
+
+  /**
+   * The saved views whose filters reference the renamed tag. Their filters
+   * are rewritten in place unless update_references is false.
+   *
+   * @generated from field: repeated memos.api.v1.TagOperationAffectedView affected_views = 4;
+   */
+  affectedViews: TagOperationAffectedView[];
+
+  /**
+   * The tag display-rule keys that reference the renamed tag. Exact-match
+   * keys are renamed along; pattern keys are reported but left unchanged.
+   *
+   * @generated from field: repeated string affected_tag_rules = 5;
+   */
+  affectedTagRules: string[];
+
+  /**
+   * The memos that could not be rewritten.
+   *
+   * @generated from field: repeated memos.api.v1.MemoTagOperationFailure failures = 6;
+   */
+  failures: MemoTagOperationFailure[];
+
+  /**
+   * The number of matched memos not processed because of the per-call cap.
+   * Repeat the call to continue; the operation is idempotent.
+   *
+   * @generated from field: int32 remaining_count = 7;
+   */
+  remainingCount: number;
+};
+
+/**
+ * Describes the message memos.api.v1.RenameTagResponse.
+ * Use `create(RenameTagResponseSchema)` to create a new message.
+ */
+export const RenameTagResponseSchema: GenMessage<RenameTagResponse> = /*@__PURE__*/
+  messageDesc(file_api_v1_memo_service, 15);
+
+/**
+ * @generated from message memos.api.v1.DeleteTagRequest
+ */
+export type DeleteTagRequest = Message<"memos.api.v1.DeleteTagRequest"> & {
+  /**
+   * Required. The tag value to remove, without the # prefix.
+   *
+   * @generated from field: string tag = 1;
+   */
+  tag: string;
+
+  /**
+   * Optional. Also remove descendant paths (tag/...).
+   *
+   * @generated from field: bool include_descendants = 2;
+   */
+  includeDescendants: boolean;
+
+  /**
+   * Optional. Only report the affected scope; write nothing.
+   *
+   * @generated from field: bool validate_only = 3;
+   */
+  validateOnly: boolean;
+
+  /**
+   * Optional. Rewrite saved-view filters that reference the deleted tag so
+   * the tag conditions no longer match. Tag display rules are kept and only
+   * reported. Defaults to true when unset.
+   *
+   * @generated from field: optional bool update_references = 4;
+   */
+  updateReferences?: boolean | undefined;
+};
+
+/**
+ * Describes the message memos.api.v1.DeleteTagRequest.
+ * Use `create(DeleteTagRequestSchema)` to create a new message.
+ */
+export const DeleteTagRequestSchema: GenMessage<DeleteTagRequest> = /*@__PURE__*/
+  messageDesc(file_api_v1_memo_service, 16);
+
+/**
+ * @generated from message memos.api.v1.DeleteTagResponse
+ */
+export type DeleteTagResponse = Message<"memos.api.v1.DeleteTagResponse"> & {
+  /**
+   * The number of memos whose content was (or, for validate_only, would be)
+   * rewritten.
+   *
+   * @generated from field: int32 affected_memos = 1;
+   */
+  affectedMemos: number;
+
+  /**
+   * The explicit tag values matched by the operation.
+   *
+   * @generated from field: repeated string affected_tags = 2;
+   */
+  affectedTags: string[];
+
+  /**
+   * The saved views whose filters reference the deleted tag. Their tag
+   * conditions are rewritten to match nothing unless update_references is
+   * false.
+   *
+   * @generated from field: repeated memos.api.v1.TagOperationAffectedView affected_views = 3;
+   */
+  affectedViews: TagOperationAffectedView[];
+
+  /**
+   * The tag display-rule keys that reference the deleted tag. They are kept
+   * unchanged; removing a display rule is a separate decision.
+   *
+   * @generated from field: repeated string affected_tag_rules = 4;
+   */
+  affectedTagRules: string[];
+
+  /**
+   * The memos that could not be rewritten.
+   *
+   * @generated from field: repeated memos.api.v1.MemoTagOperationFailure failures = 5;
+   */
+  failures: MemoTagOperationFailure[];
+
+  /**
+   * The number of matched memos not processed because of the per-call cap.
+   * Repeat the call to continue; the operation is idempotent.
+   *
+   * @generated from field: int32 remaining_count = 6;
+   */
+  remainingCount: number;
+};
+
+/**
+ * Describes the message memos.api.v1.DeleteTagResponse.
+ * Use `create(DeleteTagResponseSchema)` to create a new message.
+ */
+export const DeleteTagResponseSchema: GenMessage<DeleteTagResponse> = /*@__PURE__*/
+  messageDesc(file_api_v1_memo_service, 17);
+
+/**
  * @generated from message memos.api.v1.SetMemoAttachmentsRequest
  */
 export type SetMemoAttachmentsRequest = Message<"memos.api.v1.SetMemoAttachmentsRequest"> & {
@@ -576,7 +955,7 @@ export type SetMemoAttachmentsRequest = Message<"memos.api.v1.SetMemoAttachments
  * Use `create(SetMemoAttachmentsRequestSchema)` to create a new message.
  */
 export const SetMemoAttachmentsRequestSchema: GenMessage<SetMemoAttachmentsRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 10);
+  messageDesc(file_api_v1_memo_service, 18);
 
 /**
  * @generated from message memos.api.v1.ListMemoAttachmentsRequest
@@ -610,7 +989,7 @@ export type ListMemoAttachmentsRequest = Message<"memos.api.v1.ListMemoAttachmen
  * Use `create(ListMemoAttachmentsRequestSchema)` to create a new message.
  */
 export const ListMemoAttachmentsRequestSchema: GenMessage<ListMemoAttachmentsRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 11);
+  messageDesc(file_api_v1_memo_service, 19);
 
 /**
  * @generated from message memos.api.v1.ListMemoAttachmentsResponse
@@ -636,7 +1015,7 @@ export type ListMemoAttachmentsResponse = Message<"memos.api.v1.ListMemoAttachme
  * Use `create(ListMemoAttachmentsResponseSchema)` to create a new message.
  */
 export const ListMemoAttachmentsResponseSchema: GenMessage<ListMemoAttachmentsResponse> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 12);
+  messageDesc(file_api_v1_memo_service, 20);
 
 /**
  * @generated from message memos.api.v1.MemoRelation
@@ -667,7 +1046,7 @@ export type MemoRelation = Message<"memos.api.v1.MemoRelation"> & {
  * Use `create(MemoRelationSchema)` to create a new message.
  */
 export const MemoRelationSchema: GenMessage<MemoRelation> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 13);
+  messageDesc(file_api_v1_memo_service, 21);
 
 /**
  * Memo reference in relations.
@@ -696,7 +1075,7 @@ export type MemoRelation_Memo = Message<"memos.api.v1.MemoRelation.Memo"> & {
  * Use `create(MemoRelation_MemoSchema)` to create a new message.
  */
 export const MemoRelation_MemoSchema: GenMessage<MemoRelation_Memo> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 13, 0);
+  messageDesc(file_api_v1_memo_service, 21, 0);
 
 /**
  * The type of the relation.
@@ -724,7 +1103,7 @@ export enum MemoRelation_Type {
  * Describes the enum memos.api.v1.MemoRelation.Type.
  */
 export const MemoRelation_TypeSchema: GenEnum<MemoRelation_Type> = /*@__PURE__*/
-  enumDesc(file_api_v1_memo_service, 13, 0);
+  enumDesc(file_api_v1_memo_service, 21, 0);
 
 /**
  * @generated from message memos.api.v1.SetMemoRelationsRequest
@@ -751,7 +1130,7 @@ export type SetMemoRelationsRequest = Message<"memos.api.v1.SetMemoRelationsRequ
  * Use `create(SetMemoRelationsRequestSchema)` to create a new message.
  */
 export const SetMemoRelationsRequestSchema: GenMessage<SetMemoRelationsRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 14);
+  messageDesc(file_api_v1_memo_service, 22);
 
 /**
  * @generated from message memos.api.v1.ListMemoRelationsRequest
@@ -785,7 +1164,7 @@ export type ListMemoRelationsRequest = Message<"memos.api.v1.ListMemoRelationsRe
  * Use `create(ListMemoRelationsRequestSchema)` to create a new message.
  */
 export const ListMemoRelationsRequestSchema: GenMessage<ListMemoRelationsRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 15);
+  messageDesc(file_api_v1_memo_service, 23);
 
 /**
  * @generated from message memos.api.v1.ListMemoRelationsResponse
@@ -811,7 +1190,7 @@ export type ListMemoRelationsResponse = Message<"memos.api.v1.ListMemoRelationsR
  * Use `create(ListMemoRelationsResponseSchema)` to create a new message.
  */
 export const ListMemoRelationsResponseSchema: GenMessage<ListMemoRelationsResponse> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 16);
+  messageDesc(file_api_v1_memo_service, 24);
 
 /**
  * @generated from message memos.api.v1.CreateMemoCommentRequest
@@ -845,7 +1224,7 @@ export type CreateMemoCommentRequest = Message<"memos.api.v1.CreateMemoCommentRe
  * Use `create(CreateMemoCommentRequestSchema)` to create a new message.
  */
 export const CreateMemoCommentRequestSchema: GenMessage<CreateMemoCommentRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 17);
+  messageDesc(file_api_v1_memo_service, 25);
 
 /**
  * @generated from message memos.api.v1.ListMemoCommentsRequest
@@ -886,7 +1265,7 @@ export type ListMemoCommentsRequest = Message<"memos.api.v1.ListMemoCommentsRequ
  * Use `create(ListMemoCommentsRequestSchema)` to create a new message.
  */
 export const ListMemoCommentsRequestSchema: GenMessage<ListMemoCommentsRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 18);
+  messageDesc(file_api_v1_memo_service, 26);
 
 /**
  * @generated from message memos.api.v1.ListMemoCommentsResponse
@@ -912,7 +1291,7 @@ export type ListMemoCommentsResponse = Message<"memos.api.v1.ListMemoCommentsRes
  * Use `create(ListMemoCommentsResponseSchema)` to create a new message.
  */
 export const ListMemoCommentsResponseSchema: GenMessage<ListMemoCommentsResponse> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 19);
+  messageDesc(file_api_v1_memo_service, 27);
 
 /**
  * @generated from message memos.api.v1.ListMemoReactionsRequest
@@ -946,7 +1325,7 @@ export type ListMemoReactionsRequest = Message<"memos.api.v1.ListMemoReactionsRe
  * Use `create(ListMemoReactionsRequestSchema)` to create a new message.
  */
 export const ListMemoReactionsRequestSchema: GenMessage<ListMemoReactionsRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 20);
+  messageDesc(file_api_v1_memo_service, 28);
 
 /**
  * @generated from message memos.api.v1.ListMemoReactionsResponse
@@ -972,7 +1351,7 @@ export type ListMemoReactionsResponse = Message<"memos.api.v1.ListMemoReactionsR
  * Use `create(ListMemoReactionsResponseSchema)` to create a new message.
  */
 export const ListMemoReactionsResponseSchema: GenMessage<ListMemoReactionsResponse> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 21);
+  messageDesc(file_api_v1_memo_service, 29);
 
 /**
  * @generated from message memos.api.v1.UpsertMemoReactionRequest
@@ -999,7 +1378,7 @@ export type UpsertMemoReactionRequest = Message<"memos.api.v1.UpsertMemoReaction
  * Use `create(UpsertMemoReactionRequestSchema)` to create a new message.
  */
 export const UpsertMemoReactionRequestSchema: GenMessage<UpsertMemoReactionRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 22);
+  messageDesc(file_api_v1_memo_service, 30);
 
 /**
  * @generated from message memos.api.v1.DeleteMemoReactionRequest
@@ -1019,7 +1398,7 @@ export type DeleteMemoReactionRequest = Message<"memos.api.v1.DeleteMemoReaction
  * Use `create(DeleteMemoReactionRequestSchema)` to create a new message.
  */
 export const DeleteMemoReactionRequestSchema: GenMessage<DeleteMemoReactionRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 23);
+  messageDesc(file_api_v1_memo_service, 31);
 
 /**
  * MemoShare is an access grant that permits read-only access to a memo via an opaque bearer token.
@@ -1056,7 +1435,7 @@ export type MemoShare = Message<"memos.api.v1.MemoShare"> & {
  * Use `create(MemoShareSchema)` to create a new message.
  */
 export const MemoShareSchema: GenMessage<MemoShare> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 24);
+  messageDesc(file_api_v1_memo_service, 32);
 
 /**
  * @generated from message memos.api.v1.CreateMemoShareRequest
@@ -1083,7 +1462,7 @@ export type CreateMemoShareRequest = Message<"memos.api.v1.CreateMemoShareReques
  * Use `create(CreateMemoShareRequestSchema)` to create a new message.
  */
 export const CreateMemoShareRequestSchema: GenMessage<CreateMemoShareRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 25);
+  messageDesc(file_api_v1_memo_service, 33);
 
 /**
  * @generated from message memos.api.v1.ListMemoSharesRequest
@@ -1103,7 +1482,7 @@ export type ListMemoSharesRequest = Message<"memos.api.v1.ListMemoSharesRequest"
  * Use `create(ListMemoSharesRequestSchema)` to create a new message.
  */
 export const ListMemoSharesRequestSchema: GenMessage<ListMemoSharesRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 26);
+  messageDesc(file_api_v1_memo_service, 34);
 
 /**
  * @generated from message memos.api.v1.ListMemoSharesResponse
@@ -1122,7 +1501,7 @@ export type ListMemoSharesResponse = Message<"memos.api.v1.ListMemoSharesRespons
  * Use `create(ListMemoSharesResponseSchema)` to create a new message.
  */
 export const ListMemoSharesResponseSchema: GenMessage<ListMemoSharesResponse> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 27);
+  messageDesc(file_api_v1_memo_service, 35);
 
 /**
  * @generated from message memos.api.v1.DeleteMemoShareRequest
@@ -1142,7 +1521,7 @@ export type DeleteMemoShareRequest = Message<"memos.api.v1.DeleteMemoShareReques
  * Use `create(DeleteMemoShareRequestSchema)` to create a new message.
  */
 export const DeleteMemoShareRequestSchema: GenMessage<DeleteMemoShareRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 28);
+  messageDesc(file_api_v1_memo_service, 36);
 
 /**
  * @generated from message memos.api.v1.GetSharedMemoRequest
@@ -1161,7 +1540,7 @@ export type GetSharedMemoRequest = Message<"memos.api.v1.GetSharedMemoRequest"> 
  * Use `create(GetSharedMemoRequestSchema)` to create a new message.
  */
 export const GetSharedMemoRequestSchema: GenMessage<GetSharedMemoRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 29);
+  messageDesc(file_api_v1_memo_service, 37);
 
 /**
  * @generated from message memos.api.v1.GetLinkMetadataRequest
@@ -1180,7 +1559,7 @@ export type GetLinkMetadataRequest = Message<"memos.api.v1.GetLinkMetadataReques
  * Use `create(GetLinkMetadataRequestSchema)` to create a new message.
  */
 export const GetLinkMetadataRequestSchema: GenMessage<GetLinkMetadataRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 30);
+  messageDesc(file_api_v1_memo_service, 38);
 
 /**
  * @generated from message memos.api.v1.BatchGetLinkMetadataRequest
@@ -1199,7 +1578,7 @@ export type BatchGetLinkMetadataRequest = Message<"memos.api.v1.BatchGetLinkMeta
  * Use `create(BatchGetLinkMetadataRequestSchema)` to create a new message.
  */
 export const BatchGetLinkMetadataRequestSchema: GenMessage<BatchGetLinkMetadataRequest> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 31);
+  messageDesc(file_api_v1_memo_service, 39);
 
 /**
  * @generated from message memos.api.v1.BatchGetLinkMetadataResponse
@@ -1218,7 +1597,7 @@ export type BatchGetLinkMetadataResponse = Message<"memos.api.v1.BatchGetLinkMet
  * Use `create(BatchGetLinkMetadataResponseSchema)` to create a new message.
  */
 export const BatchGetLinkMetadataResponseSchema: GenMessage<BatchGetLinkMetadataResponse> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 32);
+  messageDesc(file_api_v1_memo_service, 40);
 
 /**
  * @generated from message memos.api.v1.LinkMetadata
@@ -1258,7 +1637,7 @@ export type LinkMetadata = Message<"memos.api.v1.LinkMetadata"> & {
  * Use `create(LinkMetadataSchema)` to create a new message.
  */
 export const LinkMetadataSchema: GenMessage<LinkMetadata> = /*@__PURE__*/
-  messageDesc(file_api_v1_memo_service, 33);
+  messageDesc(file_api_v1_memo_service, 41);
 
 /**
  * Visibility controls who can read a memo.
@@ -1364,6 +1743,43 @@ export const MemoService: GenService<{
     methodKind: "unary";
     input: typeof DeleteMemoRequestSchema;
     output: typeof EmptySchema;
+  },
+  /**
+   * BatchUpdateMemoTags appends and removes authored tags on the named memos.
+   * Each memo is updated independently; per-memo failures do not abort the
+   * batch. The caller must own every named memo. Tag organization edits the
+   * memo content but never triggers partition delivery.
+   *
+   * @generated from rpc memos.api.v1.MemoService.BatchUpdateMemoTags
+   */
+  batchUpdateMemoTags: {
+    methodKind: "unary";
+    input: typeof BatchUpdateMemoTagsRequestSchema;
+    output: typeof BatchUpdateMemoTagsResponseSchema;
+  },
+  /**
+   * RenameTag rewrites an authored tag across the caller's memos, optionally
+   * including descendant paths. Renaming onto an existing tag merges them.
+   * Requires authentication.
+   *
+   * @generated from rpc memos.api.v1.MemoService.RenameTag
+   */
+  renameTag: {
+    methodKind: "unary";
+    input: typeof RenameTagRequestSchema;
+    output: typeof RenameTagResponseSchema;
+  },
+  /**
+   * DeleteTag removes an authored tag, optionally including descendant paths,
+   * from the caller's memos. The memos themselves and their other metadata
+   * are kept. Requires authentication.
+   *
+   * @generated from rpc memos.api.v1.MemoService.DeleteTag
+   */
+  deleteTag: {
+    methodKind: "unary";
+    input: typeof DeleteTagRequestSchema;
+    output: typeof DeleteTagResponseSchema;
   },
   /**
    * SetMemoAttachments replaces the full set of attachments on a memo with the

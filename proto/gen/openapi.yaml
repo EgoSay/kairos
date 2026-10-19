@@ -840,6 +840,62 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/v1/memos/tags:delete:
+        post:
+            tags:
+                - MemoService
+            description: |-
+                DeleteTag removes an authored tag, optionally including descendant paths,
+                 from the caller's memos. The memos themselves and their other metadata
+                 are kept. Requires authentication.
+            operationId: MemoService_DeleteTag
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DeleteTagRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeleteTagResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/v1/memos/tags:rename:
+        post:
+            tags:
+                - MemoService
+            description: |-
+                RenameTag rewrites an authored tag across the caller's memos, optionally
+                 including descendant paths. Renaming onto an existing tag merges them.
+                 Requires authentication.
+            operationId: MemoService_RenameTag
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RenameTagRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RenameTagResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/v1/memos/{memo}:
         get:
             tags:
@@ -1336,6 +1392,35 @@ paths:
                 "200":
                     description: OK
                     content: {}
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/v1/memos:batchUpdateTags:
+        post:
+            tags:
+                - MemoService
+            description: |-
+                BatchUpdateMemoTags appends and removes authored tags on the named memos.
+                 Each memo is updated independently; per-memo failures do not abort the
+                 batch. The caller must own every named memo. Tag organization edits the
+                 memo content but never triggers partition delivery.
+            operationId: MemoService_BatchUpdateMemoTags
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/BatchUpdateMemoTagsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BatchUpdateMemoTagsResponse'
                 default:
                     description: Default error response
                     content:
@@ -3180,6 +3265,64 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/User'
+        BatchUpdateMemoTagsRequest:
+            type: object
+            properties:
+                names:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Optional. The memos to update. At most 200 names. Mutually exclusive with
+                         scope_tag: exactly one scope must be set.
+                         Format: memos/{memo}
+                addTags:
+                    type: array
+                    items:
+                        type: string
+                    description: 'Optional. Tag values to append to every memo, without the # prefix.'
+                removeTags:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Optional. Explicit tag values to remove from every memo, without the #
+                         prefix.
+                scopeTag:
+                    type: string
+                    description: |-
+                        Optional. When set, the batch applies to every memo authoring this tag
+                         instead of a name list. At most 1000 memos are processed per call;
+                         remaining_count reports the rest and a repeated call continues
+                         idempotently.
+                scopeIncludeDescendants:
+                    type: boolean
+                    description: |-
+                        Optional. With scope_tag, also match memos authoring descendant
+                         scope_tag/... paths.
+        BatchUpdateMemoTagsResponse:
+            type: object
+            properties:
+                memos:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Memo'
+                    description: |-
+                        The updated memos, in request order, for every name that succeeded. A memo
+                         that needed no change is returned unchanged and still counts as a success.
+                         Scope-driven batches omit this list; the caller watches failures and
+                         remaining_count.
+                failures:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/MemoTagOperationFailure'
+                    description: The memos that could not be updated.
+                remainingCount:
+                    type: integer
+                    description: |-
+                        The number of scope-matched memos not processed because of the per-call
+                         cap. Zero for name-driven batches. Repeat the call to continue.
+                    format: int32
         Color:
             type: object
             properties:
@@ -3402,6 +3545,66 @@ components:
                 name:
                     type: string
                     description: 'Required. Format: spaces/{space}/invitations/{username}.'
+        DeleteTagRequest:
+            required:
+                - tag
+            type: object
+            properties:
+                tag:
+                    type: string
+                    description: 'Required. The tag value to remove, without the # prefix.'
+                includeDescendants:
+                    type: boolean
+                    description: Optional. Also remove descendant paths (tag/...).
+                validateOnly:
+                    type: boolean
+                    description: Optional. Only report the affected scope; write nothing.
+                updateReferences:
+                    type: boolean
+                    description: |-
+                        Optional. Rewrite saved-view filters that reference the deleted tag so
+                         the tag conditions no longer match. Tag display rules are kept and only
+                         reported. Defaults to true when unset.
+        DeleteTagResponse:
+            type: object
+            properties:
+                affectedMemos:
+                    type: integer
+                    description: |-
+                        The number of memos whose content was (or, for validate_only, would be)
+                         rewritten.
+                    format: int32
+                affectedTags:
+                    type: array
+                    items:
+                        type: string
+                    description: The explicit tag values matched by the operation.
+                affectedViews:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/TagOperationAffectedView'
+                    description: |-
+                        The saved views whose filters reference the deleted tag. Their tag
+                         conditions are rewritten to match nothing unless update_references is
+                         false.
+                affectedTagRules:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        The tag display-rule keys that reference the deleted tag. They are kept
+                         unchanged; removing a display rule is a separate decision.
+                failures:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/MemoTagOperationFailure'
+                    description: The memos that could not be rewritten.
+                remainingCount:
+                    type: integer
+                    description: |-
+                        The number of matched memos not processed because of the per-call cap.
+                         Repeat the call to continue; the operation is idempotent.
+                    format: int32
         FieldMapping:
             type: object
             properties:
@@ -4219,6 +4422,14 @@ components:
                     items:
                         type: string
                     description: Output only. The tags extracted from the content.
+                explicitTags:
+                    readOnly: true
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Output only. The tags authored explicitly in the content, without the
+                         implied ancestor paths that `tags` includes.
                 pinned:
                     type: boolean
                     description: Whether the memo is pinned.
@@ -4396,6 +4607,23 @@ components:
                          If unset, the link never expires.
                     format: date-time
             description: MemoShare is an access grant that permits read-only access to a memo via an opaque bearer token.
+        MemoTagOperationFailure:
+            required:
+                - name
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The resource name of the memo.
+                         Format: memos/{memo}
+                code:
+                    type: string
+                    description: The canonical error code describing the failure (e.g. "aborted").
+                message:
+                    type: string
+                    description: The human-readable failure detail.
+            description: The failure detail of a single memo inside a tag organization operation.
         MemoView:
             required:
                 - title
@@ -4614,6 +4842,73 @@ components:
                     type: string
                     description: When the access token expires.
                     format: date-time
+        RenameTagRequest:
+            required:
+                - oldTag
+                - newTag
+            type: object
+            properties:
+                oldTag:
+                    type: string
+                    description: 'Required. The tag value to rename, without the # prefix.'
+                newTag:
+                    type: string
+                    description: 'Required. The replacement tag value, without the # prefix.'
+                includeDescendants:
+                    type: boolean
+                    description: Optional. Also rewrite descendant paths (old_tag/...).
+                validateOnly:
+                    type: boolean
+                    description: Optional. Only report the affected scope; write nothing.
+                updateReferences:
+                    type: boolean
+                    description: |-
+                        Optional. Rewrite saved-view filters and tag display-rule keys that
+                         reference the renamed tag. Defaults to true when unset.
+        RenameTagResponse:
+            type: object
+            properties:
+                affectedMemos:
+                    type: integer
+                    description: |-
+                        The number of memos whose content was (or, for validate_only, would be)
+                         rewritten.
+                    format: int32
+                affectedTags:
+                    type: array
+                    items:
+                        type: string
+                    description: The explicit tag values matched by the operation.
+                mergesIntoExisting:
+                    type: boolean
+                    description: |-
+                        True when the new tag already exists on other memos; the operation then
+                         merges the two tags.
+                affectedViews:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/TagOperationAffectedView'
+                    description: |-
+                        The saved views whose filters reference the renamed tag. Their filters
+                         are rewritten in place unless update_references is false.
+                affectedTagRules:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        The tag display-rule keys that reference the renamed tag. Exact-match
+                         keys are renamed along; pattern keys are reported but left unchanged.
+                failures:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/MemoTagOperationFailure'
+                    description: The memos that could not be rewritten.
+                remainingCount:
+                    type: integer
+                    description: |-
+                        The number of matched memos not processed because of the per-call cap.
+                         Repeat the call to continue; the operation is idempotent.
+                    format: int32
         SetMemoAttachmentsRequest:
             required:
                 - name
@@ -4875,6 +5170,18 @@ components:
             description: |-
                 S3 configuration for an S3-compatible object store.
                  Reference: https://developers.cloudflare.com/r2/examples/aws/aws-sdk-go/
+        TagOperationAffectedView:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The resource name of the memo view.
+                         Format: users/{user}/views/{view}
+                title:
+                    type: string
+                    description: The title of the memo view.
+            description: A saved memo view affected by a tag organization operation.
         TestInstanceEmailSettingRequest:
             type: object
             properties:

@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/yuin/goldmark"
 	gast "github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -61,6 +63,20 @@ type Service interface {
 
 	// RenameTag renames all occurrences of oldTag to newTag in content
 	RenameTag(content []byte, oldTag, newTag string) (string, error)
+
+	// RenameTagTree renames oldTag and every descendant path (oldTag/...)
+	// to the matching newTag-prefixed path in content
+	RenameTagTree(content []byte, oldTag, newTag string) (string, error)
+
+	// RemoveTags deletes authored tokens for the given tags from content.
+	// When includeDescendants is true, tags nested under a listed tag are
+	// removed as well. Whitespace and lines left empty by removals are
+	// collapsed.
+	RemoveTags(content []byte, tags []string, includeDescendants bool) (string, error)
+
+	// AppendTags appends formatted tag tokens on a new line at the end of
+	// content and verifies they re-extract as authored tags
+	AppendTags(content []byte, tags []string) (string, error)
 }
 
 // service implements the Service interface.
@@ -535,6 +551,28 @@ func uniqueManagedAttachmentReferences(references []ManagedAttachmentReference) 
 
 // RenameTag renames all occurrences of oldTag to newTag in content.
 func (s *service) RenameTag(content []byte, oldTag, newTag string) (string, error) {
+	return s.rewriteTagTokens(content, func(tag string) (string, bool) {
+		return newTag, tag == oldTag
+	})
+}
+
+// RenameTagTree renames oldTag and every descendant path to the matching
+// newTag-prefixed path in content.
+func (s *service) RenameTagTree(content []byte, oldTag, newTag string) (string, error) {
+	return s.rewriteTagTokens(content, func(tag string) (string, bool) {
+		if tag == oldTag {
+			return newTag, true
+		}
+		if suffix, ok := strings.CutPrefix(tag, oldTag+"/"); ok {
+			return newTag + "/" + suffix, true
+		}
+		return "", false
+	})
+}
+
+// rewriteTagTokens replaces the source spelling of every authored tag token
+// for which replacement returns ok, preserving all other bytes.
+func (s *service) rewriteTagTokens(content []byte, replacement func(tag string) (string, bool)) (string, error) {
 	root, err := s.parse(content)
 	if err != nil {
 		return "", err
@@ -543,6 +581,7 @@ func (s *service) RenameTag(content []byte, oldTag, newTag string) (string, erro
 	type sourceRange struct {
 		start int
 		end   int
+		tag   string
 	}
 	var ranges []sourceRange
 	err = gast.Walk(root, func(n gast.Node, entering bool) (gast.WalkStatus, error) {
@@ -551,8 +590,8 @@ func (s *service) RenameTag(content []byte, oldTag, newTag string) (string, erro
 		}
 
 		if tagNode, ok := asMemoTagNode(n); ok {
-			if string(tagNode.Tag) == oldTag && len(tagNode.Source) > 0 {
-				ranges = append(ranges, sourceRange{start: tagNode.Pos(), end: tagNode.Pos() + len(tagNode.Source)})
+			if tag, ok := replacement(string(tagNode.Tag)); ok && len(tagNode.Source) > 0 {
+				ranges = append(ranges, sourceRange{start: tagNode.Pos(), end: tagNode.Pos() + len(tagNode.Source), tag: tag})
 			}
 		}
 
@@ -569,16 +608,215 @@ func (s *service) RenameTag(content []byte, oldTag, newTag string) (string, erro
 	cursor := 0
 	for _, sourceRange := range ranges {
 		output.Write(content[cursor:sourceRange.start])
-		if spelling, ok := mparser.FormatTag(newTag); ok {
+		if spelling, ok := mparser.FormatTag(sourceRange.tag); ok {
 			output.WriteString(spelling)
 		} else {
 			output.WriteByte('#')
-			output.WriteString(newTag)
+			output.WriteString(sourceRange.tag)
 		}
 		cursor = sourceRange.end
 	}
 	output.Write(content[cursor:])
 	return output.String(), nil
+}
+
+type sourceRange struct {
+	start int
+	end   int
+}
+
+// RemoveTags deletes authored tokens for the given tags from content.
+func (s *service) RemoveTags(content []byte, tags []string, includeDescendants bool) (string, error) {
+	root, err := s.parse(content)
+	if err != nil {
+		return "", err
+	}
+
+	wanted := make(map[string]struct{}, len(tags))
+	for _, tag := range tags {
+		wanted[tag] = struct{}{}
+	}
+	matches := func(tag string) bool {
+		if _, ok := wanted[tag]; ok {
+			return true
+		}
+		if includeDescendants {
+			for parent := range wanted {
+				if strings.HasPrefix(tag, parent+"/") {
+					return true
+				}
+			}
+		}
+		return false
+	}
+
+	var tokens []sourceRange
+	err = gast.Walk(root, func(n gast.Node, entering bool) (gast.WalkStatus, error) {
+		if !entering {
+			return gast.WalkContinue, nil
+		}
+		if tagNode, ok := asMemoTagNode(n); ok && matches(string(tagNode.Tag)) && len(tagNode.Source) > 0 {
+			tokens = append(tokens, sourceRange{start: tagNode.Pos(), end: tagNode.Pos() + len(tagNode.Source)})
+		}
+		return gast.WalkContinue, nil
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(tokens) == 0 {
+		return string(content), nil
+	}
+
+	slices.SortFunc(tokens, func(left, right sourceRange) int { return cmp.Compare(left.start, right.start) })
+
+	// A removal that empties its line takes the whole line (and its newline)
+	// with it; a removal inside surviving text absorbs one adjacent run of
+	// horizontal whitespace so no double gaps remain.
+	var spans []sourceRange
+	for _, token := range tokens {
+		lineStart, lineEnd := tagLineSpan(content, token.start)
+		if removalEmptiesLine(content, lineStart, lineEnd, tokens) {
+			if lineEnd < len(content) {
+				spans = append(spans, sourceRange{start: lineStart, end: lineEnd + 1})
+			} else if lineStart > 0 {
+				spans = append(spans, sourceRange{start: lineStart - 1, end: lineEnd})
+			} else {
+				spans = append(spans, sourceRange{start: lineStart, end: lineEnd})
+			}
+			continue
+		}
+		spans = append(spans, absorbTagWhitespace(content, lineStart, lineEnd, token))
+	}
+
+	return applySourceSpans(content, mergeSourceSpans(spans)), nil
+}
+
+// tagLineSpan returns the bounds of the line containing pos, excluding the
+// trailing newline.
+func tagLineSpan(content []byte, pos int) (int, int) {
+	start := bytes.LastIndexByte(content[:pos], '\n') + 1
+	end := len(content)
+	if idx := bytes.IndexByte(content[pos:], '\n'); idx >= 0 {
+		end = pos + idx
+	}
+	return start, end
+}
+
+func isTagWhitespace(b byte) bool {
+	return b == ' ' || b == '\t' || b == '\r'
+}
+
+// removalEmptiesLine reports whether every non-whitespace byte on the line is
+// covered by one of the removal token ranges.
+func removalEmptiesLine(content []byte, lineStart, lineEnd int, tokens []sourceRange) bool {
+	for pos := lineStart; pos < lineEnd; {
+		covered := false
+		for _, token := range tokens {
+			if pos >= token.start && pos < token.end {
+				pos = token.end
+				covered = true
+				break
+			}
+		}
+		if covered {
+			continue
+		}
+		if !isTagWhitespace(content[pos]) {
+			return false
+		}
+		pos++
+	}
+	return true
+}
+
+// absorbTagWhitespace expands a token removal to consume the whitespace gap
+// on one side, preferring the trailing gap when more content follows.
+func absorbTagWhitespace(content []byte, lineStart, lineEnd int, token sourceRange) sourceRange {
+	right := token.end
+	for right < lineEnd && isTagWhitespace(content[right]) {
+		right++
+	}
+	if right < lineEnd {
+		return sourceRange{start: token.start, end: right}
+	}
+	left := token.start
+	for left > lineStart && isTagWhitespace(content[left-1]) {
+		left--
+	}
+	return sourceRange{start: left, end: token.end}
+}
+
+// mergeSourceSpans sorts spans and merges overlapping or adjacent ranges.
+func mergeSourceSpans(spans []sourceRange) []sourceRange {
+	slices.SortFunc(spans, func(left, right sourceRange) int { return cmp.Compare(left.start, right.start) })
+	var merged []sourceRange
+	for _, span := range spans {
+		if len(merged) > 0 && span.start <= merged[len(merged)-1].end {
+			if span.end > merged[len(merged)-1].end {
+				merged[len(merged)-1].end = span.end
+			}
+			continue
+		}
+		merged = append(merged, span)
+	}
+	return merged
+}
+
+// applySourceSpans returns content with every span removed.
+func applySourceSpans(content []byte, spans []sourceRange) string {
+	var output bytes.Buffer
+	output.Grow(len(content))
+	cursor := 0
+	for _, span := range spans {
+		output.Write(content[cursor:span.start])
+		cursor = span.end
+	}
+	output.Write(content[cursor:])
+	return output.String()
+}
+
+// AppendTags appends formatted tag tokens on a new line at the end of content
+// and verifies they re-extract as authored tags.
+func (s *service) AppendTags(content []byte, tags []string) (string, error) {
+	formatted := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		spelling, ok := mparser.FormatTag(tag)
+		if !ok {
+			return "", errors.Errorf("invalid tag name %q", tag)
+		}
+		formatted = append(formatted, spelling)
+	}
+	if len(formatted) == 0 {
+		return string(content), nil
+	}
+
+	tagLine := strings.Join(formatted, " ")
+	text := strings.TrimRight(string(content), " \t")
+	switch {
+	case text == "":
+		text = tagLine
+	case strings.HasSuffix(text, "\n"):
+		text += tagLine
+	default:
+		text += "\n" + tagLine
+	}
+
+	// An unclosed fence or HTML block would silently swallow the appended
+	// line; re-extracting proves the tags became real authored tokens.
+	extracted, err := s.ExtractAll([]byte(text))
+	if err != nil {
+		return "", err
+	}
+	have := make(map[string]struct{}, len(extracted.ExplicitTags))
+	for _, tag := range extracted.ExplicitTags {
+		have[tag] = struct{}{}
+	}
+	for _, tag := range tags {
+		if _, ok := have[tag]; !ok {
+			return "", errors.Errorf("tag %q cannot be appended to this content", tag)
+		}
+	}
+	return text, nil
 }
 
 // uniquePreserveCase returns unique strings from input while preserving case.
