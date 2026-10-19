@@ -2,7 +2,7 @@
 export async function registerJournalShell() {
   if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
   try {
-    await navigator.serviceWorker.register("/journal-sw.js", { scope: "/" });
+    await navigator.serviceWorker.register("/journal-sw.js", { scope: "/", updateViaCache: "none" });
     const registration = await navigator.serviceWorker.ready;
     const urls = performance.getEntriesByType("resource").map((entry) => entry.name);
     registration.active?.postMessage({ type: "journal-cache-static", urls });

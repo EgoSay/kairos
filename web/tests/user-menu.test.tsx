@@ -91,6 +91,14 @@ describe("User menu panel", () => {
     expect(mocks.navigateTo).toHaveBeenCalledWith("/inbox");
   });
 
+  it("opens phone installation and closes the mobile menu", () => {
+    renderMenu();
+    fireEvent.click(screen.getByRole("button", { name: "setting.install-app.label" }));
+    expect(mocks.onClose).toHaveBeenCalledOnce();
+    expect(mocks.setMobileOpen).toHaveBeenCalledWith(false);
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/setting#install-app");
+  });
+
   it("offers guests preferences and About without account pages or a second sign-in", () => {
     mocks.currentUser = undefined;
     renderMenu("/explore");

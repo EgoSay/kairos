@@ -955,6 +955,9 @@
       "you": "你",
       "your-access": "你的访问权限",
       "your-spaces": "你的空间"
+    },
+    "install-app": {
+      "label": "安装到手机"
     }
   },
   "tooltip": {
@@ -1076,5 +1079,30 @@
     "keyboard-hint": "按 Enter 键搜索 · 按 Shift+Enter 键换行",
     "load-error": "无法加载记录",
     "syntax-help": "搜索语法"
+  },
+  "pwa": {
+    "description": "把 Kairos 放到手机主屏幕，想记录时，点开就能写。",
+    "home-screen": "从主屏幕打开",
+    "launch-description": "点开图标，直接进入独立的 Kairos 应用窗口。",
+    "installed": "Kairos 已安装",
+    "installed-description": "从应用图标打开 Kairos，即可开始记录。",
+    "install": "安装 Kairos",
+    "installing": "等待浏览器确认…",
+    "https-required": "请通过 HTTPS 打开本站后安装。局域网中的 HTTP 地址不支持安装应用。",
+    "accepted": "已请求安装，浏览器完成后即可从应用图标打开 Kairos。",
+    "dismissed": "已取消安装。之后仍可从浏览器菜单安装。",
+    "failed": "未能打开安装提示，请尝试浏览器菜单或刷新此页面。",
+    "manual-title": "添加到手机",
+    "manual-description": "没有出现安装按钮时，可以通过浏览器菜单添加。",
+    "ios-open": "用 Safari 打开当前 Kairos 网站。",
+    "ios-share": "打开「分享」菜单，选择「添加到主屏幕」。",
+    "ios-add": "如果出现「作为 Web App 打开」，请开启，然后轻点「添加」。",
+    "android-open": "用 Chrome 打开当前 Kairos 网站。",
+    "android-menu": "打开浏览器菜单，选择「安装应用」或「添加到主屏幕」。",
+    "android-add": "确认安装后，从应用图标打开 Kairos。",
+    "browser-help": "在微信等应用内打开时，请先转到 Safari 或 Chrome。电脑端可使用浏览器地址栏或菜单中的安装选项。具体选项取决于浏览器；普通标签页可能无法识别已有的安装。",
+    "offline-title": "断网时也能记录",
+    "offline-description": "安装后，请先联网打开应用并登录一次。离线草稿保存在此设备，已保存的待同步记录会在重新联网并登录后继续同步。",
+    "draft-warning": "浏览器与已安装应用可能使用不同的存储空间，切换前请先同步已有草稿。未同步的草稿不在服务器备份中，清除应用数据或卸载可能使其丢失。"
   }
 }

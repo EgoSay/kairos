@@ -8,6 +8,7 @@ import {
   type LucideIcon,
   PaletteIcon,
   SettingsIcon,
+  SmartphoneIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { matchPath, useLocation } from "react-router-dom";
@@ -228,6 +229,10 @@ const UserMenu = ({ onClose }: { onClose: () => void }) => {
             <Button variant="ghost" className={rowClass} onClick={() => navigateFromMenu(Routes.SETTING)}>
               <SettingsIcon className={iconClass} />
               {t("common.settings")}
+            </Button>
+            <Button variant="ghost" className={rowClass} onClick={() => navigateFromMenu(`${Routes.SETTING}#install-app`)}>
+              <SmartphoneIcon className={iconClass} />
+              {t("setting.install-app.label")}
             </Button>
           </>
         )}
