@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, screen, render as testingLibraryRender, within } from "@testing-library/react";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AppSidebar, { MobileAppHeader, MobileAppSidebar } from "@/components/AppSidebar";
 import { type MemoFilter } from "@/contexts/MemoFilterContext";
 import { getCollectionCreator, resolveCollectionRoute } from "@/router/routes";
+import { State } from "@/types/proto/api/v1/common_pb";
 
 const authState = vi.hoisted(() => ({
   currentUser: { name: "users/test" } as { name: string; username?: string } | undefined,
@@ -30,6 +31,7 @@ const filteredStatsHook = vi.hoisted(() => vi.fn());
 const attachmentStatsHook = vi.hoisted(() => vi.fn());
 const filterState = vi.hoisted(() => ({ filters: [] as MemoFilter[] }));
 const tagsSectionHook = vi.hoisted(() => vi.fn());
+const journalCalendarHook = vi.hoisted(() => vi.fn());
 
 vi.mock("@/components/MemosLogo", () => ({
   default: ({ size }: { size?: string }) => <span data-logo-size={size}>Kairos logo</span>,
@@ -51,7 +53,12 @@ vi.mock("@/components/CreateSpaceDialog", () => ({
   default: () => null,
 }));
 
-vi.mock("@/components/JournalCalendar", () => ({ default: () => <div>Calendar</div> }));
+vi.mock("@/components/JournalCalendar", () => ({
+  default: (props: unknown) => {
+    journalCalendarHook(props);
+    return <div>Calendar</div>;
+  },
+}));
 
 vi.mock("@/components/StatisticsView", () => ({
   default: () => <div>Calendar</div>,
@@ -216,6 +223,41 @@ describe("App sidebar logo", () => {
     attachmentStatsHook.mockReset().mockReturnValue({ stats: { media: 0, documents: 0, audio: 0, unused: 0 } });
     filterState.filters = [];
     tagsSectionHook.mockClear();
+  });
+
+  it.each([
+    { search: "", filter: 'creator == "users/test"', state: State.NORMAL, includeArchived: true, from: "/" },
+    {
+      search: `?${new URLSearchParams({ scoped: "1", scope: 'creator == "users/other"', state: "normal", archived: "0", from: "/?creator=other" })}`,
+      filter: 'creator == "users/other"',
+      state: State.NORMAL,
+      includeArchived: false,
+      from: "/?creator=other",
+    },
+    {
+      search: `?${new URLSearchParams({ scoped: "1", scope: 'content.contains("历史")', state: "archived", archived: "0", from: "/archived" })}`,
+      filter: 'content.contains("历史")',
+      state: State.ARCHIVED,
+      includeArchived: false,
+      from: "/archived",
+    },
+  ])("keeps day records in the calendar sidebar with scope $filter", ({ search, filter, state, includeArchived, from }) => {
+    render(
+      <MemoryRouter initialEntries={[`/journal/day/2026-09-17${search}`]}>
+        <Routes>
+          <Route path="/journal/day/:date" element={<AppSidebar />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("Calendar")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "journal.daily-review" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "journal.random-walk" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "journal.ai-insights" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "journal.explore" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "memo.layout-list" })).toHaveAttribute("aria-current", "page");
+    expect(journalCalendarHook).toHaveBeenLastCalledWith(
+      expect.objectContaining({ selectedDate: "2026-09-17", returnTo: from, scope: { filter, state, includeArchived } }),
+    );
   });
 
   it("keeps creator, Space and tag filters when returning from the map to the list", () => {

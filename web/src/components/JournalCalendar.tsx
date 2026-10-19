@@ -24,18 +24,23 @@ import { useTranslate } from "@/utils/i18n";
 interface JournalCalendarProps {
   mobile?: boolean;
   onDateSelect?: () => void;
+  selectedDate?: string;
+  /** Keep the original collection as the return destination when switching days. */
+  returnTo?: string;
   /** Reuse the collection's exact query, including archived-only views. */
   scope?: { filter?: string; state: State; includeArchived?: boolean };
 }
 
-export default function JournalCalendar({ mobile = false, onDateSelect, scope }: JournalCalendarProps) {
+export default function JournalCalendar({ mobile = false, onDateSelect, selectedDate, returnTo, scope }: JournalCalendarProps) {
   const t = useTranslate();
   const preferences = useJournalPreferences();
   const update = useUpdateJournalPreferences();
   const timezone = preferences.data?.timezone || "Asia/Shanghai";
   const today = journalDate(new Date(), timezone);
   const [selectedMonth, setSelectedMonth] = useState<string>();
-  const month = selectedMonth ?? today.slice(0, 7);
+  const month =
+    selectedMonth ??
+    (selectedDate && dayjs(selectedDate).format("YYYY-MM-DD") === selectedDate ? selectedDate.slice(0, 7) : today.slice(0, 7));
   const [expanded, setExpanded] = useState(!mobile);
   const visible = preferences.data?.calendarVisible ?? false;
   const location = useLocation();
@@ -64,7 +69,7 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
     scope: filter ?? "",
     archived: includeArchived ? "1" : "0",
     state: state === State.ARCHIVED ? "archived" : "normal",
-    from: location.pathname + location.search,
+    from: returnTo ?? location.pathname + location.search,
   });
   const maxCount = calculateMaxCount(counts);
   const days = buildMonthDays({ month, data: counts, today, weekStartDayOffset: 1 });
@@ -149,14 +154,18 @@ export default function JournalCalendar({ mobile = false, onDateSelect, scope }:
                     <Link
                       key={day.date}
                       to={`${ROUTES.JOURNAL}/day/${day.date}?${dayQuery}`}
-                      onClick={onDateSelect}
+                      onClick={() => {
+                        setSelectedMonth(undefined);
+                        onDateSelect?.();
+                      }}
                       title={t("journal.calendar-day-count", { date: day.date, count: day.count })}
                       aria-label={t("journal.calendar-day-count", { date: day.date, count: day.count })}
-                      aria-current={day.isToday ? "date" : undefined}
+                      aria-current={(selectedDate ? day.date === selectedDate : day.isToday) ? "date" : undefined}
                       className={cn(
                         "flex aspect-square min-h-8 items-center justify-center rounded-sm text-xs tabular-nums hover:ring-1 hover:ring-ring focus-visible:outline-2 focus-visible:outline-offset-1",
                         ACTIVITY_LEVEL_STYLES[preferences.data?.calendarColor ? getActivityLevel(day.count, maxCount) : 0],
                         day.isToday && "font-bold underline underline-offset-4",
+                        day.date === selectedDate && "ring-1 ring-ring",
                       )}
                     >
                       {day.label}
