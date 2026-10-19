@@ -59,12 +59,12 @@ export default function JournalExplore() {
         ))}
       </div>
       <details className="mt-10 px-1 text-sm text-muted-foreground">
-        <summary className="w-fit cursor-pointer rounded-lg py-3 focus-visible:outline-2">回顾与日历偏好</summary>
+        <summary className="w-fit cursor-pointer rounded-lg py-3 focus-visible:outline-2">{t("journal.calendar-prefs")}</summary>
         <div className="space-y-4 py-3">
-          {preferences.isPending && <p role="status">正在读取设置…</p>}
+          {preferences.isPending && <p role="status">{t("journal.settings-loading")}</p>}
           {preferences.isError && (
             <Button variant="outline" onClick={() => preferences.refetch()}>
-              重试读取设置
+              {t("journal.settings-retry")}
             </Button>
           )}
           {preferences.data && (
@@ -76,7 +76,7 @@ export default function JournalExplore() {
                   disabled={update.isPending}
                   onChange={(event) => update.mutate({ calendarVisible: event.target.checked })}
                 />
-                显示活动日历
+                {t("journal.calendar-show")}
               </label>
               <label className="flex min-h-11 items-center gap-3">
                 <input
@@ -85,10 +85,10 @@ export default function JournalExplore() {
                   disabled={update.isPending}
                   onChange={(event) => update.mutate({ calendarColor: event.target.checked })}
                 />
-                按记录数量着色
+                {t("journal.calendar-color")}
               </label>
               <label className="block space-y-2">
-                <span>记录日期时区</span>
+                <span>{t("journal.calendar-timezone")}</span>
                 <select
                   className="min-h-11 w-full rounded-sm border border-border bg-background px-3 text-foreground"
                   value={preferences.data.timezone}
@@ -111,19 +111,19 @@ export default function JournalExplore() {
                   ].map((timezone) => (
                     <option key={timezone} value={timezone}>
                       {timezone}
-                      {timezone === deviceTimezone ? " · 此设备" : ""}
+                      {timezone === deviceTimezone ? t("journal.this-device") : ""}
                     </option>
                   ))}
                 </select>
               </label>
-              <p className="text-xs leading-6">用于日历和回顾的日期划分，不修改记录原文或时间。正在翻看的回顾保持原样，下次进入时应用。</p>
+              <p className="text-xs leading-6">{t("journal.timezone-note")}</p>
               {preferences.data.excludedMemoNames.length > 0 && (
                 <div className="space-y-3">
-                  <p>暂不出现在回顾与漫步中的记录</p>
+                  <p>{t("journal.excluded-records")}</p>
                   {preferences.data.excludedMemoNames.map((name) => (
                     <div key={name} className="flex items-center justify-between gap-3">
                       <Link className="underline underline-offset-4" to={`/${name}`}>
-                        打开原记录
+                        {t("journal.open-original")}
                       </Link>
                       <Button
                         variant="ghost"
@@ -132,7 +132,7 @@ export default function JournalExplore() {
                           update.mutate({ excludedMemoNames: preferences.data?.excludedMemoNames.filter((value) => value !== name) })
                         }
                       >
-                        恢复出现
+                        {t("journal.restore-visible")}
                       </Button>
                     </div>
                   ))}
@@ -142,7 +142,7 @@ export default function JournalExplore() {
           )}
           {update.isError && (
             <p role="alert" className="text-destructive">
-              设置未保存，请重试。
+              {t("journal.preference-save-error")}
             </p>
           )}
         </div>

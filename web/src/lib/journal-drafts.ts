@@ -1,5 +1,6 @@
 import type { EditorState } from "@/components/MemoEditor/state";
 import type { LocalFile } from "@/components/MemoEditor/types/attachment";
+import i18n from "@/i18n";
 import type { MediaMetadata } from "@/types/proto/api/v1/attachment_service_pb";
 
 const DATABASE = "memos-personal-journal";
@@ -32,13 +33,13 @@ function ordered<T>(key: string, action: () => Promise<T>): Promise<T> {
 }
 
 async function database(): Promise<IDBDatabase> {
-  if (typeof indexedDB === "undefined") throw new Error("当前浏览器无法持久保存草稿，请先复制文字并保留原文件。");
+  if (typeof indexedDB === "undefined") throw new Error(i18n.t("journal.drafts-unsupported"));
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DATABASE, 1);
     request.onupgradeneeded = () => request.result.createObjectStore(STORE, { keyPath: "key" });
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-    request.onblocked = () => reject(new Error("本地存储被其他页面占用，请关闭旧页面后重试。"));
+    request.onblocked = () => reject(new Error(i18n.t("journal.drafts-blocked")));
   });
 }
 
@@ -50,7 +51,7 @@ async function transaction<T>(mode: IDBTransactionMode, action: (store: IDBObjec
       const request = action(tx.objectStore(STORE));
       tx.oncomplete = () => resolve(request.result);
       tx.onerror = () => reject(tx.error ?? request.error);
-      tx.onabort = () => reject(tx.error ?? new Error("本地保存未完成，输入仍保留在当前页面。"));
+      tx.onabort = () => reject(tx.error ?? new Error(i18n.t("journal.drafts-abort")));
     });
   } finally {
     db.close();

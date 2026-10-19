@@ -23,8 +23,8 @@ describe("cold offline device drafts", () => {
   it("does not read any local drafts without the remembered owner", () => {
     render(<OfflineJournal />);
     expect(drafts.list).not.toHaveBeenCalled();
-    expect(screen.queryByRole("textbox", { name: "离线记录内容" })).not.toBeInTheDocument();
-    expect(screen.getByText(/已退出登录的本地记录不会在此显示/)).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Offline record content" })).not.toBeInTheDocument();
+    expect(screen.getByText(/signed-out session aren't shown here/)).toBeInTheDocument();
   });
 
   it("reads only this owner's offline draft and keeps the composer key isolated", async () => {
@@ -60,7 +60,7 @@ describe("cold offline device drafts", () => {
     const editor = screen.getByRole("textbox");
     await waitFor(() => expect(editor).toHaveValue("前后"));
     fireEvent.change(editor, { target: { value: "新增前后" } });
-    fireEvent.click(screen.getByRole("button", { name: "保存到此设备" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save to this device" }));
     await waitFor(() => expect(drafts.save.mock.calls.some((args) => args[4] === "pending")).toBe(true));
     const saved = drafts.save.mock.calls.find((args) => args[4] === "pending");
     expect(saved?.[2].localFiles[0].inlineUpload.position).toBe(3);
@@ -74,10 +74,10 @@ describe("cold offline device drafts", () => {
     render(<OfflineJournal owner={owner} />);
     await waitFor(() => expect(screen.getByRole("textbox")).toBeEnabled());
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "断网时的一句话" } });
-    fireEvent.click(screen.getByRole("button", { name: "保存到此设备" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "保存到此设备" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Save to this device" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Save to this device" })).toBeEnabled());
     expect(screen.getByRole("textbox")).toHaveValue("断网时的一句话");
-    expect(screen.getByRole("alert")).toHaveTextContent("保存未完成");
+    expect(screen.getByRole("alert")).toHaveTextContent("Saving didn't finish");
     expect(drafts.remove).not.toHaveBeenCalled();
     expect(drafts.save.mock.calls.some((args) => args[4] === "pending")).toBe(true);
   });
@@ -86,7 +86,7 @@ describe("cold offline device drafts", () => {
     render(<OfflineJournal owner={owner} />);
     await waitFor(() => expect(screen.getByRole("textbox")).toBeEnabled());
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "这条已经保存在设备" } });
-    fireEvent.click(screen.getByRole("button", { name: "保存到此设备" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save to this device" }));
     await waitFor(() => expect(screen.getByRole("textbox")).toHaveValue(""));
     const saved = drafts.save.mock.calls.find((args) => args[4] === "pending");
     expect(saved?.[0]).toMatch(/^pending:users\/one:/);
@@ -101,10 +101,10 @@ describe("cold offline device drafts", () => {
     drafts.list.mockResolvedValue([{ key, kind: "draft", state: { ...createInitialState(), content: "saved once" } }]);
     render(<OfflineJournal owner={owner} />);
     await waitFor(() => expect(screen.getByRole("textbox")).toBeEnabled());
-    fireEvent.click(screen.getByText("本地草稿与待同步记录"));
-    fireEvent.click(screen.getByRole("button", { name: "继续写" }));
+    fireEvent.click(screen.getByText("Local drafts and pending records"));
+    fireEvent.click(screen.getByRole("button", { name: "Keep writing" }));
     await waitFor(() => expect(screen.getByRole("textbox")).toHaveValue("saved once"));
-    fireEvent.click(screen.getByRole("button", { name: "保存到此设备" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save to this device" }));
     await waitFor(() => expect(screen.getByRole("textbox")).toHaveValue(""));
     expect(cacheService.loadDraft(key).content).toBe("");
   });
@@ -114,12 +114,12 @@ describe("cold offline device drafts", () => {
     render(<OfflineJournal owner={owner} />);
     await waitFor(() => expect(screen.getByRole("textbox")).toBeEnabled());
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "正在写的内容" } });
-    fireEvent.click(screen.getByText("本地草稿与待同步记录"));
+    fireEvent.click(screen.getByText("Local drafts and pending records"));
     drafts.save.mockRejectedValue(new Error("storage blocked"));
-    fireEvent.click(screen.getByRole("button", { name: "继续写" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep writing" }));
     await waitFor(() => expect(screen.getByRole("textbox")).toBeEnabled());
     expect(screen.getByRole("textbox")).toHaveValue("正在写的内容");
-    expect(screen.getByRole("alert")).toHaveTextContent("切换草稿前未能完成保存");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't finish saving before switching drafts");
     expect(drafts.remove).not.toHaveBeenCalled();
   });
 });

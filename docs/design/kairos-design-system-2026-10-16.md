@@ -49,7 +49,7 @@ Status: Draft — 2026-10-16。本文档是尚未实现的新设计，实现完�
 | `--moment-ink` | `oklch(0.28 0.05 70)` | 琥珀底上的文字 |
 | `--ring` | `color-mix(primary 50%)` | focus-visible 环 |
 | `--heat` | `var(--primary)` | 日历热力基色（与主色一致） |
-| `--heat-1..4` | `color-mix(heat 13/24/36/50%)` | 热力四档 |
+| `--heat-1..4` | `color-mix(heat 12/22/34/42%)` | 小日历热力四档，搭配不透明正文色 |
 
 语义色（`--destructive` `--success` `--warning`）沿用现有取值，色相不动；只校验对比度。
 
@@ -73,9 +73,12 @@ Status: Draft — 2026-10-16。本文档是尚未实现的新设计，实现完�
 ### 1.4 对比度基线
 
 - 正文 `--ink` on `--bg`/`--card`：≥ 7:1（AAA 目标）。
-- `--ink-2`：≥ 4.5:1；`--ink-3` 只用于非关键信息，≥ 3:1。
+- 普通字号文字（包括 `--ink-2`、`--ink-3`、占位与辅助说明）：≥ 4.5:1；不能因信息次要而降至 3:1。
+- 大号文字（至少 18pt，或至少 14pt 且粗体）：≥ 3:1；用于识别控件及状态的非文字图形、焦点指示与相邻颜色：≥ 3:1。
 - `--primary` on `--card`：≥ 4.5:1；`--primary-ink` on `--primary`：≥ 4.5:1。
-- 实现时逐一实测写入本表；`COLOR_GUIDE.md` 现存的"4.5:1 达标"未经验证的断言以实测为准。
+- 半透明热力底和文字按实际背景合成后测量，覆盖明暗 × 普通/纸面四种主题、侧栏和手机页面。小日历日期不继承弱化侧栏文字色。
+- 内描焦点必须与控件自身底色形成对比；实心按钮使用其配套前景色，不使用与填充相同的 `--ring`。
+- 以实际渲染结果为准，当前实现约定维护在 `web/src/themes/COLOR_GUIDE.md`。标准依据：[WCAG 2.2 文字对比度](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)与[非文字对比度](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)。
 
 ### 1.5 琥珀使用边界
 

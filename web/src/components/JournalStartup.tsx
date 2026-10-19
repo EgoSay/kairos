@@ -1,9 +1,11 @@
 import { type ReactNode, useEffect, useState } from "react";
 import OfflineJournal from "@/components/OfflineJournal";
 import { readJournalOwner } from "@/lib/journal-device";
+import { useTranslate } from "@/utils/i18n";
 
 /** Decide once per cold start; never unmount an in-progress editor on a network event. */
 export default function JournalStartup({ children }: { children: ReactNode }) {
+  const t = useTranslate();
   const [privatePage] = useState(
     () => !/^\/(s|shared|shares|memos\/shares)(\/|$)/.test(location.pathname) && !new URLSearchParams(location.search).has("share_token"),
   );
@@ -37,7 +39,7 @@ export default function JournalStartup({ children }: { children: ReactNode }) {
   if (reachable === undefined)
     return (
       <main className="mx-auto max-w-2xl px-5 py-12 text-sm text-muted-foreground" role="status">
-        正在连接记录…
+        {t("journal.startup-connecting")}
       </main>
     );
   if (!reachable) return <OfflineJournal owner={owner} />;

@@ -57,8 +57,8 @@ describe("cloud backup evidence and configuration gates", () => {
   it("keeps activation disabled until this draft passes both connection and complete trial backup", async () => {
     state.action.mutateAsync.mockResolvedValue({ id: "test-job", status: "running" });
     const page = renderPage(<CloudBackupConfiguration />);
-    expect(screen.getByRole("button", { name: "3. 保存并启用" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "1. 检测实际读写" }));
+    expect(screen.getByRole("button", { name: "3. Save and enable" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "1. Test real read/write" }));
     await waitFor(() => expect(state.action.mutateAsync).toHaveBeenCalledTimes(1));
     state.query.data!.job = { id: "test-job", action: "test", status: "success", startedTs: 1, result: { draftToken: "verified-draft" } };
     page.rerender(
@@ -66,31 +66,31 @@ describe("cloud backup evidence and configuration gates", () => {
         <CloudBackupConfiguration />
       </MemoryRouter>,
     );
-    await waitFor(() => expect(screen.getByRole("button", { name: "2. 完整试备份" })).toBeEnabled());
-    expect(screen.getByRole("button", { name: "3. 保存并启用" })).toBeDisabled();
+    await waitFor(() => expect(screen.getByRole("button", { name: "2. Full trial backup" })).toBeEnabled());
+    expect(screen.getByRole("button", { name: "3. Save and enable" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Bucket"), { target: { value: "another-bucket" } });
-    expect(screen.getByRole("button", { name: "2. 完整试备份" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "2. Full trial backup" })).toBeDisabled();
   });
   it("does not show stale fetched success as current health after a refresh error", async () => {
     state.query.isError = true;
     renderPage(<JournalBackupStatus />);
-    expect(screen.getByRole("heading", { name: "状态未知" })).toBeInTheDocument();
-    expect(screen.getByRole("alert")).toHaveTextContent("之前的成功回执不能证明当前正常");
-    expect(screen.getByRole("button", { name: "立即备份" })).toBeDisabled();
-    await waitFor(() => expect(screen.getByText(/本机保留 2 份草稿/)).toBeInTheDocument());
-    expect(screen.getByText(/应用可用性：待实际实例验证/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Status unknown" })).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("A past success doesn't prove things are healthy now");
+    expect(screen.getByRole("button", { name: "Back up now" })).toBeDisabled();
+    await waitFor(() => expect(screen.getByText(/This device keeps 2 drafts/)).toBeInTheDocument());
+    expect(screen.getByText(/Application usability: Awaiting real-instance verification/)).toBeInTheDocument();
   });
   it("does not send a restore from an old destination receipt to the current repository", () => {
     state.query.data!.history[0].repositoryId = "old";
     renderPage(<JournalBackupStatus />);
-    fireEvent.click(screen.getByText(/备份成功 ·/));
-    expect(screen.getByRole("button", { name: "从此快照隔离恢复并核验" })).toBeDisabled();
+    fireEvent.click(screen.getByText(/Backup succeeded ·/));
+    expect(screen.getByRole("button", { name: "Isolated restore and verify from this snapshot" })).toBeDisabled();
   });
   it("does not claim the cached configuration is healthy while the agent is unavailable", () => {
     state.query.isError = true;
     renderPage(<CloudBackupConfiguration />);
-    expect(screen.getByText(/活动配置：状态未知/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "1. 检测实际读写" })).toBeDisabled();
+    expect(screen.getByText(/Active configuration: Status unknown/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1. Test real read/write" })).toBeDisabled();
   });
   it("shows the actual restored test version separately from the backup identity and never hides the latest failure", () => {
     state.query.data!.history[0].instanceVersion = "1.0.1-backup";
@@ -112,16 +112,16 @@ describe("cloud backup evidence and configuration gates", () => {
       },
     ];
     const page = renderPage(<JournalBackupStatus />);
-    expect(screen.getByText(/备份时应用标识：1.0.1-backup/)).toBeInTheDocument();
-    expect(screen.getByText(/实际测试版本：1.1.0 · 提交：actual-test-commit/)).toBeInTheDocument();
-    expect(screen.getByText(/应用可用性：已验证/)).toBeInTheDocument();
+    expect(screen.getByText(/App version at backup: 1.0.1-backup/)).toBeInTheDocument();
+    expect(screen.getByText(/Tested version: 1.1.0 · Commit: actual-test-commit/)).toBeInTheDocument();
+    expect(screen.getByText(/Application usability: Verified/)).toBeInTheDocument();
     state.query.data!.restores[0].applicationVerification!.status = "failed";
     page.rerender(
       <MemoryRouter>
         <JournalBackupStatus />
       </MemoryRouter>,
     );
-    expect(screen.getByText(/应用可用性：最近检查未通过/)).toBeInTheDocument();
-    expect(screen.queryByText(/应用可用性：已验证/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Application usability: Last check failed/)).toBeInTheDocument();
+    expect(screen.queryByText(/Application usability: Verified/)).not.toBeInTheDocument();
   });
 });

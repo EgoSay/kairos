@@ -35,6 +35,11 @@ Each cva component also exports its variant types, e.g. `ButtonVariant`,
 `ButtonSize`, `BadgeVariant`, `BadgeShape`, `TabsVariant` — use these instead of
 re-deriving `VariantProps`.
 
+Keyboard focus uses a 2px inset outline. Solid `default` and `destructive`
+buttons override its color with their paired foreground token; an inset outline
+in the fill color would disappear. Check both normal and hovered focus states
+in all four themes when changing these variants.
+
 ## Layering (z-index tiers)
 
 Defined once as Tailwind tokens in `themes/default.css` (`--z-index-*`) and used

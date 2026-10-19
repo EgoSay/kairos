@@ -1,6 +1,23 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
+import { buildMemoCreatorFilter } from "@/lib/resource-names";
 import { State } from "@/types/proto/api/v1/common_pb";
 import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
+
+/** Keep the day feed and its calendar on the same collection, including archived records. */
+export function readJournalDayContext(search: URLSearchParams, owner: string) {
+  const scoped = search.get("scoped") === "1";
+  const state = scoped && search.get("state") === "archived" ? State.ARCHIVED : State.NORMAL;
+  const requestedFrom = search.get("from") ?? "";
+  return {
+    scoped,
+    scope: {
+      filter: scoped ? (search.get("scope") ?? undefined) : buildMemoCreatorFilter(owner),
+      state,
+      includeArchived: state !== State.ARCHIVED && (!scoped || search.get("archived") === "1"),
+    },
+    from: requestedFrom.startsWith("/") && !requestedFrom.startsWith("//") && !requestedFrom.includes("\\") ? requestedFrom : "/",
+  };
+}
 
 /** A calendar date in the user's chosen zone, independent of the device's zone. */
 export function journalDate(date: Date, timezone: string): string {

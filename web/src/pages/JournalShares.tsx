@@ -43,6 +43,7 @@ function ShareEditor({
   onSaved: () => void;
   initialSelection?: string[];
 }) {
+  const t = useTranslate();
   const [title, setTitle] = useState(existing?.title ?? "");
   const [mode, setMode] = useState<"fixed" | "dynamic">(existing?.mode ?? "fixed");
   const [scope, setScope] = useState<"manual" | "filter">(existing && existing.filter.memoNames.length === 0 ? "filter" : "manual");
@@ -66,7 +67,7 @@ function ShareEditor({
     staleTime: 0,
   });
   const request: ShareRequest = {
-    title: title.trim() || "一段生活",
+    title: title.trim() || t("journal.share-default-title"),
     mode,
     filter: {
       from: scope === "filter" ? from : "",
@@ -101,10 +102,10 @@ function ShareEditor({
     [before.data, preview, previewCurrent],
   );
   const validate = () => {
-    if (scope === "manual" && selected.length === 0) return "先选一些想分享的记录。";
-    if (scope === "filter" && !from && !to && request.filter.tags.length === 0) return "请选择一个时期或填写标签。";
-    if (scope === "filter" && from && to && from > to) return "结束日期不能早于开始日期。";
-    if (expires && (!Number.isFinite(request.expiresTs) || request.expiresTs * 1000 <= Date.now())) return "失效时间需要晚于现在。";
+    if (scope === "manual" && selected.length === 0) return t("journal.share-error-empty-selection");
+    if (scope === "filter" && !from && !to && request.filter.tags.length === 0) return t("journal.share-error-empty-filter");
+    if (scope === "filter" && from && to && from > to) return t("journal.share-error-date-order");
+    if (expires && (!Number.isFinite(request.expiresTs) || request.expiresTs * 1000 <= Date.now())) return t("journal.share-error-expiry");
     return "";
   };
   const previewShare = async () => {
@@ -122,7 +123,7 @@ function ShareEditor({
       });
       setPreview({ key, items: value.items, digest: value.previewDigest });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "预览未能生成，请重试。");
+      setError(cause instanceof Error ? cause.message : t("journal.share-preview-error"));
     } finally {
       setBusy(false);
     }
@@ -139,35 +140,43 @@ function ShareEditor({
       setPasscode("");
       onSaved();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "分享未保存，请重试。");
+      setError(cause instanceof Error ? cause.message : t("journal.share-save-error"));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <section className="space-y-7 rounded-xl border border-border/60 bg-card p-5 sm:p-7" aria-label={existing ? "编辑分享" : "创建分享"}>
+    <section
+      className="space-y-7 rounded-xl border border-border/60 bg-card p-5 sm:p-7"
+      aria-label={existing ? t("journal.share-edit") : t("journal.share-create")}
+    >
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-medium">{existing ? "编辑分享" : "创建分享"}</h2>
+        <h2 className="text-lg font-medium">{existing ? t("journal.share-edit") : t("journal.share-create")}</h2>
         <Button variant="ghost" disabled={busy} onClick={onClose}>
-          取消
+          {t("common.cancel")}
         </Button>
       </div>
       <fieldset disabled={busy} className="space-y-6">
         <label className="block space-y-2 text-sm">
-          <span>分享名称</span>
-          <Input value={title} maxLength={120} onChange={(event) => setTitle(event.target.value)} placeholder="一段生活" />
+          <span>{t("journal.share-name")}</span>
+          <Input
+            value={title}
+            maxLength={120}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder={t("journal.share-default-title")}
+          />
         </label>
         <fieldset className="space-y-3">
-          <legend className="mb-2 text-sm">选择范围</legend>
+          <legend className="mb-2 text-sm">{t("journal.share-scope")}</legend>
           <div className="flex flex-wrap gap-5 text-sm">
             <label className="flex min-h-11 items-center gap-2">
               <input type="radio" name="share-scope" checked={scope === "manual"} onChange={() => setScope("manual")} />
-              自己挑选
+              {t("journal.share-scope-manual")}
             </label>
             <label className="flex min-h-11 items-center gap-2">
               <input type="radio" name="share-scope" checked={scope === "filter"} onChange={() => setScope("filter")} />
-              时期或标签
+              {t("journal.share-scope-filter")}
             </label>
           </div>
           {scope === "manual" ? (
@@ -176,61 +185,57 @@ function ShareEditor({
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block space-y-2 text-sm">
-                  <span>开始日期（可留空）</span>
+                  <span>{t("journal.share-from")}</span>
                   <Input type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
                 </label>
                 <label className="block space-y-2 text-sm">
-                  <span>结束日期（含当天，可留空）</span>
+                  <span>{t("journal.share-to")}</span>
                   <Input type="date" value={to} onChange={(event) => setTo(event.target.value)} />
                 </label>
               </div>
-              <p className="text-xs text-muted-foreground">记录日期时区：{request.filter.timezone}</p>
+              <p className="text-xs text-muted-foreground">{t("journal.share-timezone", { timezone: request.filter.timezone })}</p>
               <label className="block space-y-2 text-sm">
-                <span>标签，用逗号分隔（可留空）</span>
-                <Input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="旅行, 日常" />
+                <span>{t("journal.share-tags")}</span>
+                <Input value={tags} onChange={(event) => setTags(event.target.value)} placeholder={t("journal.share-tags-placeholder")} />
               </label>
               <div className="flex flex-wrap items-center gap-5 text-sm">
                 <label className="flex min-h-11 items-center gap-2">
                   <input type="radio" name="share-tag-mode" checked={tagMode === "any"} onChange={() => setTagMode("any")} />
-                  匹配任一标签
+                  {t("journal.share-tag-any")}
                 </label>
                 <label className="flex min-h-11 items-center gap-2">
                   <input type="radio" name="share-tag-mode" checked={tagMode === "all"} onChange={() => setTagMode("all")} />
-                  匹配全部标签
+                  {t("journal.share-tag-all")}
                 </label>
               </div>
               <label className="flex min-h-11 items-center gap-2 text-sm">
                 <input type="checkbox" checked={includeSubtags} onChange={(event) => setIncludeSubtags(event.target.checked)} />
-                包含子标签
+                {t("journal.share-include-subtags")}
               </label>
-              <p className="text-sm leading-6 text-muted-foreground">
-                同时设置时期和标签时，分享两者都符合的记录。你可以在预览里排除其中几条。
-              </p>
+              <p className="text-sm leading-6 text-muted-foreground">{t("journal.share-filter-note")}</p>
             </div>
           )}
         </fieldset>
         <fieldset className="space-y-2">
-          <legend className="mb-2 text-sm">后续内容如何变化</legend>
+          <legend className="mb-2 text-sm">{t("journal.share-mode-legend")}</legend>
           <label className="flex min-h-11 items-center gap-2 text-sm">
             <input type="radio" name="share-mode" checked={mode === "fixed"} onChange={() => setMode("fixed")} />
-            固定快照
+            {t("journal.share-mode-fixed")}
           </label>
-          <p className="pl-5 text-sm leading-6 text-muted-foreground">保留发布时的内容；修改原文后，只有再次预览并更新分享才会改变。</p>
+          <p className="pl-5 text-sm leading-6 text-muted-foreground">{t("journal.share-mode-fixed-desc")}</p>
           <label className="flex min-h-11 items-center gap-2 text-sm">
             <input type="radio" name="share-mode" checked={mode === "dynamic"} onChange={() => setMode("dynamic")} />
-            跟随范围更新
+            {t("journal.share-mode-dynamic")}
           </label>
           <p className="pl-5 text-sm leading-6 text-muted-foreground">
-            {scope === "filter"
-              ? "以后新增的符合范围的记录也会被看到，原文修改会同步展示。"
-              : "只跟随所选记录的内容更新，不会自动加入其他记录。"}
+            {scope === "filter" ? t("journal.share-mode-dynamic-filter") : t("journal.share-mode-dynamic-manual")}
           </p>
         </fieldset>
         <details className="rounded-lg border border-border/60 px-4">
-          <summary className="cursor-pointer py-4 text-sm">提取码与有效期</summary>
+          <summary className="cursor-pointer py-4 text-sm">{t("journal.share-access")}</summary>
           <div className="space-y-4 pb-4">
             <label className="block space-y-2 text-sm">
-              <span>{existing?.hasPasscode ? "新提取码（留空保留原提取码）" : "提取码（可留空）"}</span>
+              <span>{existing?.hasPasscode ? t("journal.share-passcode-new") : t("journal.share-passcode")}</span>
               <Input
                 type="password"
                 autoComplete="new-password"
@@ -251,11 +256,11 @@ function ShareEditor({
                     setPasscode("");
                   }}
                 />
-                移除原提取码
+                {t("journal.share-passcode-remove")}
               </label>
             )}
             <label className="block space-y-2 text-sm">
-              <span>失效时间（此设备时间，可留空）</span>
+              <span>{t("journal.share-expiry")}</span>
               <Input type="datetime-local" value={expires} onChange={(event) => setExpires(event.target.value)} />
             </label>
           </div>
@@ -263,9 +268,9 @@ function ShareEditor({
       </fieldset>
       {excluded.length > 0 && (
         <div className="text-sm text-muted-foreground">
-          已排除 {excluded.length} 条记录。
+          {t("journal.share-excluded", { count: excluded.length })}
           <Button variant="ghost" disabled={busy} onClick={() => setExcluded([])}>
-            清空排除
+            {t("journal.share-excluded-clear")}
           </Button>
         </div>
       )}
@@ -276,26 +281,26 @@ function ShareEditor({
       )}
       {existing && before.isError && (
         <div role="alert" className="text-sm text-destructive">
-          无法读取当前分享，暂不能更新。
+          {t("journal.share-load-error")}
           <Button variant="ghost" onClick={() => before.refetch()}>
-            重试
+            {t("journal.retry")}
           </Button>
         </div>
       )}
       <Button variant="outline" disabled={busy} onClick={() => void previewShare()}>
-        {busy ? "正在处理…" : "预览访客会看到的内容"}
+        {busy ? t("journal.share-busy") : t("journal.share-preview")}
       </Button>
       {preview && (
-        <section className="space-y-5 border-t border-border pt-6" aria-label="分享预览">
-          <h3 className="font-medium">{previewCurrent ? `访客将看到 ${preview.items.length} 条记录` : "范围已修改，请重新预览"}</h3>
+        <section className="space-y-5 border-t border-border pt-6" aria-label={t("journal.share-preview-label")}>
+          <h3 className="font-medium">
+            {previewCurrent ? t("journal.share-preview-count", { count: preview.items.length }) : t("journal.share-preview-stale")}
+          </h3>
           {diff && (
             <p className="text-sm text-muted-foreground">
-              相较当前分享：新增 {diff.added} 条，移除 {diff.removed} 条，内容变化 {diff.changed} 条。
+              {t("journal.share-diff", { added: diff.added, removed: diff.removed, changed: diff.changed })}
             </p>
           )}
-          {existing?.mode === "fixed" && (
-            <p className="text-sm leading-6 text-muted-foreground">更新会重新保存这次预览中的原文和媒体，覆盖上次快照。</p>
-          )}
+          {existing?.mode === "fixed" && <p className="text-sm leading-6 text-muted-foreground">{t("journal.share-update-note")}</p>}
           {previewCurrent && (
             <>
               <div className="max-h-[36rem] space-y-4 overflow-y-auto">
@@ -308,22 +313,24 @@ function ShareEditor({
                         disabled={busy}
                         onClick={() => setExcluded((previous) => [...new Set([...previous, item.memoName as string])])}
                       >
-                        排除这条
+                        {t("journal.share-exclude-item")}
                       </Button>
                     )}
                   </div>
                 ))}
               </div>
-              {preview.items.length === 0 && <p className="text-sm text-muted-foreground">当前范围没有可分享的记录。</p>}
+              {preview.items.length === 0 && <p className="text-sm text-muted-foreground">{t("journal.share-preview-empty")}</p>}
               <div className="space-y-3">
                 <p className="text-sm leading-6 text-muted-foreground">
-                  持有链接{passcode || (existing?.hasPasscode && !clearPasscode) ? "和提取码" : ""}的人可以查看这些内容。
+                  {t("journal.share-access-note", {
+                    credential: passcode || (existing?.hasPasscode && !clearPasscode) ? t("journal.share-access-passcode") : "",
+                  })}
                 </p>
                 <Button
                   disabled={busy || preview.items.length === 0 || Boolean(existing && !before.isSuccess)}
                   onClick={() => void publish()}
                 >
-                  {existing ? "确认更新分享" : "创建分享链接"}
+                  {existing ? t("journal.share-update") : t("journal.share-publish")}
                 </Button>
               </div>
             </>
@@ -368,7 +375,7 @@ export default function JournalShares() {
       setCopied(share.id);
       setCopyError("");
     } catch {
-      setCopyError("复制未完成，可以直接选中下方链接复制。");
+      setCopyError(t("journal.share-copy-error"));
     }
   };
   return (
@@ -385,7 +392,7 @@ export default function JournalShares() {
         {!editing && (
           <Button variant="outline" onClick={() => setEditing("new")}>
             <PlusIcon className="size-4" />
-            新建
+            {t("common.create")}
           </Button>
         )}
       </header>
@@ -406,14 +413,14 @@ export default function JournalShares() {
       )}
       {shares.isPending && (
         <p role="status" className="text-sm text-muted-foreground">
-          正在读取分享…
+          {t("journal.shares-loading")}
         </p>
       )}
       {shares.isError && (
         <div role="alert">
-          <p>分享暂时无法读取。</p>
+          <p>{t("journal.shares-error")}</p>
           <Button variant="outline" onClick={() => shares.refetch()}>
-            重试
+            {t("journal.retry")}
           </Button>
         </div>
       )}
@@ -427,9 +434,7 @@ export default function JournalShares() {
           {copyError}
         </p>
       )}
-      {shares.data?.length === 0 && !editing && (
-        <p className="py-10 text-sm text-muted-foreground">还没有创建分享。原始记录始终留在自己的空间。</p>
-      )}
+      {shares.data?.length === 0 && !editing && <p className="py-10 text-sm text-muted-foreground">{t("journal.shares-empty")}</p>}
       <div className="space-y-4">
         {shares.data?.map((share) => (
           <article key={share.id} className="rounded-xl border border-border/60 bg-card p-5">
@@ -437,12 +442,12 @@ export default function JournalShares() {
               <h2 className="min-w-0 break-words font-medium">{share.title}</h2>
               <span className="text-xs text-muted-foreground">
                 {share.paused
-                  ? "已停用"
+                  ? t("journal.share-paused")
                   : share.expiresTs && share.expiresTs * 1000 <= Date.now()
-                    ? "已到期"
+                    ? t("journal.share-expired")
                     : share.mode === "fixed"
-                      ? "固定快照"
-                      : "跟随范围更新"}
+                      ? t("journal.share-mode-fixed")
+                      : t("journal.share-mode-dynamic")}
               </span>
             </div>
             <a
@@ -456,31 +461,31 @@ export default function JournalShares() {
             <div className="mt-4 flex flex-wrap gap-2">
               <Button variant="ghost" onClick={() => void copy(share)}>
                 <CopyIcon className="size-4" />
-                {copied === share.id ? "已复制" : "复制链接"}
+                {copied === share.id ? t("journal.share-copied") : t("journal.share-copy")}
               </Button>
               <Button variant="ghost" disabled={change.isPending} onClick={() => setEditing(share)}>
-                编辑与更新
+                {t("journal.share-edit-action")}
               </Button>
               <Button variant="ghost" disabled={change.isPending} onClick={() => change.mutate({ share })}>
-                {share.paused ? "恢复分享" : "停用"}
+                {share.paused ? t("journal.share-resume") : t("journal.share-pause")}
               </Button>
               <Button
                 variant="ghost"
                 disabled={change.isPending}
                 onClick={() => {
-                  if (window.confirm("重新生成链接后，旧链接会立即失效。继续吗？")) change.mutate({ share, rotate: true });
+                  if (window.confirm(t("journal.share-rotate-confirm"))) change.mutate({ share, rotate: true });
                 }}
               >
-                重新生成链接
+                {t("journal.share-rotate")}
               </Button>
               <Button
                 variant="ghost"
                 disabled={change.isPending}
                 onClick={() => {
-                  if (window.confirm("撤销这个分享链接？原始记录会保留，链接将无法继续访问。")) change.mutate({ share, remove: true });
+                  if (window.confirm(t("journal.share-revoke-confirm"))) change.mutate({ share, remove: true });
                 }}
               >
-                撤销链接
+                {t("journal.share-revoke")}
               </Button>
             </div>
           </article>

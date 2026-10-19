@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useJournalPreferences, useUpdateJournalPreferences } from "@/hooks/useJournalQueries";
 import { ROUTES } from "@/router/routes";
+import { useTranslate } from "@/utils/i18n";
 
 /** Both the original record and quiet readers expose the same optional actions. */
 export default function JournalReviewActions({ name }: { name: string }) {
+  const t = useTranslate();
   const navigate = useNavigate();
   const preferences = useJournalPreferences();
   const update = useUpdateJournalPreferences();
@@ -21,14 +23,15 @@ export default function JournalReviewActions({ name }: { name: string }) {
           const names = new Set(preferences.data.excludedMemoNames);
           if (excluded) names.delete(name);
           else names.add(name);
-          update.mutate({ excludedMemoNames: [...names] }, { onError: () => toast.error("设置未保存，请重试。") });
+          update.mutate({ excludedMemoNames: [...names] }, { onError: () => toast.error(t("journal.review-action-error")) });
         }}
       >
         <EyeOffIcon />
-        {excluded ? "恢复在回顾与漫步中出现" : "暂不在回顾与漫步中出现"}
+        {excluded ? t("journal.review-include") : t("journal.review-exclude")}
       </DropdownMenuItem>
       <DropdownMenuItem className="min-h-11" onClick={() => navigate(`${ROUTES.JOURNAL_INSIGHTS}?${new URLSearchParams({ memo: name })}`)}>
-        <SparklesIcon />用 AI 看看这条
+        <SparklesIcon />
+        {t("journal.review-ai")}
       </DropdownMenuItem>
     </>
   );

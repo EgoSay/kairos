@@ -33,27 +33,29 @@ export default function JournalTrash() {
   return (
     <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8 sm:px-8">
       <Link to="/" className="text-sm text-muted-foreground underline">
-        回到记录
+        {t("journal.back-to-records")}
       </Link>
       <header>
         <h1 className="text-2xl">{t("journal.trash")}</h1>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">在这里保留 30 天。恢复后记录只对你可见，旧分享和同步不会恢复。</p>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("journal.trash-description")}</p>
       </header>
-      {records.isPending && <p role="status">正在读取…</p>}
+      {records.isPending && <p role="status">{t("journal.loading")}</p>}
       {records.isError && <p role="alert">{records.error.message}</p>}
-      {!records.isPending && !records.data?.memos.length && <p className="text-muted-foreground">这里暂时没有记录。</p>}
+      {!records.isPending && !records.data?.memos.length && <p className="text-muted-foreground">{t("journal.trash-empty")}</p>}
       {records.data?.memos.map((raw) => {
         const memo = fromJson(MemoSchema, raw);
         return (
           <article className="space-y-3 rounded-xl border p-5" key={memo.name}>
-            <p className="whitespace-pre-wrap break-words leading-7">{memo.content || "媒体记录"}</p>
-            {memo.attachments.length > 0 && <p className="text-sm text-muted-foreground">{memo.attachments.length} 个附件会随记录恢复</p>}
+            <p className="whitespace-pre-wrap break-words leading-7">{memo.content || t("journal.media-record")}</p>
+            {memo.attachments.length > 0 && (
+              <p className="text-sm text-muted-foreground">{t("journal.trash-attachments-restore", { count: memo.attachments.length })}</p>
+            )}
             <div className="flex gap-3">
               <Button variant="outline" disabled={action.isPending} onClick={() => action.mutate({ name: memo.name })}>
-                恢复
+                {t("common.restore")}
               </Button>
               <Button variant="ghost" disabled={action.isPending} onClick={() => setPurge(memo.name)}>
-                彻底删除
+                {t("journal.trash-delete")}
               </Button>
             </div>
           </article>
@@ -72,21 +74,19 @@ export default function JournalTrash() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>彻底删除这条记录？</DialogTitle>
-            <DialogDescription>
-              正文、附件原件和最近版本将从当前资料库移除，无法在此恢复。独立备份、已下载或已外发的副本不受影响。
-            </DialogDescription>
+            <DialogTitle>{t("journal.trash-delete-title")}</DialogTitle>
+            <DialogDescription>{t("journal.trash-delete-description")}</DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setPurge(undefined)}>
-              保留
+              {t("journal.trash-keep")}
             </Button>
             <Button
               variant="destructive"
               disabled={action.isPending}
               onClick={() => purge && action.mutate({ name: purge, permanent: true })}
             >
-              彻底删除
+              {t("journal.trash-delete")}
             </Button>
           </div>
         </DialogContent>

@@ -26,7 +26,7 @@ import {
   UserRoundIcon,
 } from "lucide-react";
 import { useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import JournalCalendar from "@/components/JournalCalendar";
 import { MAP_MEMO_FILTER } from "@/components/MapView/useMapMemos";
 import { MemoDetailSidebar } from "@/components/MemoDetailSidebar";
@@ -48,6 +48,7 @@ import useMediaQuery from "@/hooks/useMediaQuery";
 import { useMemoFilters } from "@/hooks/useMemoFilters";
 import { useNotifications } from "@/hooks/useUserQueries";
 import { combineCELFilters } from "@/lib/cel-filter";
+import { readJournalDayContext } from "@/lib/journal";
 import { cn } from "@/lib/utils";
 import { collectionNavigationPath, ROUTES } from "@/router/routes";
 import { State } from "@/types/proto/api/v1/common_pb";
@@ -285,6 +286,7 @@ const MemoDetailSidebarContent = () => {
 const RouteSidebarContent = () => {
   const location = useLocation();
   const kind = getSidebarRouteKind(location.pathname);
+  if (kind === "journal-day") return <JournalDaySidebarContent />;
   if (kind === "journal") return <JournalSidebarContent />;
   if (kind === "home" || kind === "archived" || kind === "explore") {
     return <CollectionSidebarContent context={kind} />;
@@ -298,6 +300,20 @@ const RouteSidebarContent = () => {
   if (kind === "memo") return <MemoDetailSidebarContent />;
   if (kind === "common") return <CommonSidebarContent />;
   return null;
+};
+
+const JournalDaySidebarContent = () => {
+  const t = useTranslate();
+  const user = useCurrentUser();
+  const { date } = useParams();
+  const [search] = useSearchParams();
+  const { scope, from } = readJournalDayContext(search, user?.name ?? "");
+  const { setMobileOpen } = useAppSidebar();
+  return (
+    <SidebarSection ariaLabel={t("common.statistics")}>
+      <JournalCalendar scope={scope} selectedDate={date} returnTo={from} onDateSelect={() => setMobileOpen(false)} />
+    </SidebarSection>
+  );
 };
 
 const JournalSidebarContent = () => {
@@ -403,7 +419,7 @@ const GlobalNavigation = () => {
   const currentUser = useCurrentUser();
   const { setQuickFindOpen, setMobileOpen } = useAppSidebar();
   const routeKind = getSidebarRouteKind(location.pathname);
-  const timelineActive = routeKind === "home" || routeKind === "explore";
+  const timelineActive = routeKind === "home" || routeKind === "explore" || routeKind === "journal-day";
   const destinations = NAV_DESTINATIONS.filter((destination) => currentUser || !destination.signedInOnly);
   // The current page shows its label; anywhere else, Timeline does.
   const expandedKind = destinations.find((destination) => destination.kind === routeKind)?.kind ?? "timeline";
@@ -424,7 +440,7 @@ const GlobalNavigation = () => {
             expanded={expandedKind === "timeline"}
             className={cn(timelineActive && "rounded-e-none pe-0")}
           />
-          {timelineActive && <MemoDisplaySettingMenu anchor={timelineRef} />}
+          {timelineActive && routeKind !== "journal-day" && <MemoDisplaySettingMenu anchor={timelineRef} />}
         </div>
         {destinations.map((destination) => (
           <NavPill
@@ -448,11 +464,8 @@ const GlobalNavigation = () => {
           <Link
             to={ROUTES.JOURNAL}
             onClick={() => setMobileOpen(false)}
-            aria-current={routeKind === "journal" && !location.pathname.includes("/day/") ? "page" : undefined}
-            className={cn(
-              SIDEBAR_ROW_CLASSES,
-              sidebarRowStateClasses(routeKind === "journal" && !location.pathname.includes("/day/") ? "current" : "idle"),
-            )}
+            aria-current={routeKind === "journal" ? "page" : undefined}
+            className={cn(SIDEBAR_ROW_CLASSES, sidebarRowStateClasses(routeKind === "journal" ? "current" : "idle"))}
           >
             <SidebarRowIconSlot icon={CompassIcon} />
             <span>{t("journal.explore")}</span>
@@ -533,7 +546,7 @@ export const MobileAppHeader = () => {
   const { setMobileOpen } = useAppSidebar();
   const user = useCurrentUser();
   const location = useLocation();
-  const journalActive = location.pathname.startsWith(ROUTES.JOURNAL) && !location.pathname.includes("/day/");
+  const journalActive = getSidebarRouteKind(location.pathname) === "journal";
   return (
     <header className="sticky top-0 z-20 flex h-12 w-full shrink-0 items-center justify-start gap-1 border-b border-border/70 bg-background/90 px-2 backdrop-blur-md md:hidden">
       <Button

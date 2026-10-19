@@ -2,6 +2,7 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 import { getRequestToken, memoServiceClient } from "@/connect";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { memoDetailQueryOptions, memoKeys } from "@/hooks/useMemoQueries";
+import i18n from "@/i18n";
 import { isJournalCandidate } from "@/lib/journal";
 import { buildMemoCreatorFilter } from "@/lib/resource-names";
 import { State } from "@/types/proto/api/v1/common_pb";
@@ -30,7 +31,7 @@ export async function journalRequest<T>(path: string, options: RequestInit = {})
   const response = await fetch(`/api/v1/journal${path}`, { ...options, headers, credentials: "same-origin" });
   if (!response.ok) {
     const body = await response.json().catch(() => undefined);
-    throw new Error(typeof body?.message === "string" ? body.message : "暂时无法读取，请重试。");
+    throw new Error(typeof body?.message === "string" ? body.message : i18n.t("journal.request-error"));
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -111,7 +112,7 @@ export function useJournalCandidates(date: string, timezone: string, excludedMem
         );
         result.push(...page.memos.filter((memo) => isJournalCandidate(memo, user?.name ?? "", date, timezone, excluded)));
         pageToken = page.nextPageToken;
-        if (pageToken && seenTokens.has(pageToken)) throw new Error("记录分页未能完成，请重试。");
+        if (pageToken && seenTokens.has(pageToken)) throw new Error(i18n.t("journal.pagination-error"));
         seenTokens.add(pageToken);
       } while (pageToken);
       return [...new Map(result.map((memo) => [memo.name, memo])).values()];

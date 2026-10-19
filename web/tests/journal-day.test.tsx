@@ -48,7 +48,7 @@ describe("journal day ListMemos request contract", () => {
       expect(request.includeArchived).toBe(true);
       expect(request.orderBy).toBe("create_time desc");
     }
-    expect(await screen.findByText("这一天没有记录。")).toBeInTheDocument();
+    expect(await screen.findByText("No records on this day.")).toBeInTheDocument();
   });
 
   it.each([
@@ -76,7 +76,7 @@ describe("journal day ListMemos request contract", () => {
 
   it("rejects an invalid date without asking the API to execute a made-up range", () => {
     renderDay("2025-02-30");
-    expect(screen.getByText("这个日期无效。")).toBeInTheDocument();
+    expect(screen.getByText("This date isn't valid.")).toBeInTheDocument();
     expect(listMemos).not.toHaveBeenCalled();
   });
 });

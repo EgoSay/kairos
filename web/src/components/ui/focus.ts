@@ -1,6 +1,7 @@
 /**
  * The kit's one focus treatment: a 2px inset outline in the ring color, drawn only for
  * keyboard focus. Outline, not `ring-*`, so it never adds to the box or reads as a border.
+ * Solid buttons override the color with their paired foreground so the inset stays visible.
  * Kit buttons carry it from their base; raw elements that act as controls (calendar grid
  * cells, the reaction chip) take it from here.
  */

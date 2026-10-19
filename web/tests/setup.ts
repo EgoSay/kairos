@@ -1,6 +1,13 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
+import i18n from "@/i18n";
+import enTranslation from "@/locales/en.json";
+
+// i18next lazily imports locale JSON, so components that call useTranslate()
+// would suspend on their first render and race synchronous getBy* queries.
+// Registering the English bundle up front keeps every test render synchronous.
+i18n.addResourceBundle("en", "translation", enTranslation, true, true);
 
 // With `globals: false`, @testing-library/react does not auto-register a
 // cleanup hook, so unmount rendered trees between tests explicitly. This keeps

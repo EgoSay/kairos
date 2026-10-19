@@ -39,19 +39,19 @@ export default function JournalShared() {
           referrerPolicy: "no-referrer",
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error("这个分享暂时无法打开。若有提取码，可以在下方填写后重试。");
+        if (!response.ok) throw new Error(t("journal.shared-open-error"));
         const data = (await response.json()) as SharedCollection;
         if (!controller.signal.aborted) {
           code.current = value;
           setCollection(data);
         }
       } catch (cause) {
-        if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "暂时无法打开分享，请重试。");
+        if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : t("journal.shared-open-failed"));
       } finally {
         if (currentRequest.current === controller) setBusy(false);
       }
     },
-    [token],
+    [token, t],
   );
   useEffect(() => {
     code.current = "";
@@ -82,12 +82,12 @@ export default function JournalShared() {
     <main className="min-h-dvh bg-background px-5 py-12 text-foreground sm:py-20 [&_button]:min-h-11">
       <div className="mx-auto max-w-2xl">
         <header className="mb-10">
-          <p className="mb-4 text-xs tracking-widest text-muted-foreground">生活片段</p>
+          <p className="mb-4 text-xs tracking-widest text-muted-foreground">{t("journal.shared-kicker")}</p>
           <h1 className="break-words font-content text-3xl font-medium">{collection?.title || t("journal.shared-collection")}</h1>
         </header>
         {busy && (
           <p role="status" className="text-sm text-muted-foreground">
-            正在打开分享…
+            {t("journal.shared-opening")}
           </p>
         )}
         {error && (
@@ -103,11 +103,11 @@ export default function JournalShared() {
               }}
             >
               <label className="block space-y-2 text-sm">
-                <span>提取码</span>
+                <span>{t("journal.shared-passcode")}</span>
                 <Input type="password" autoComplete="off" value={passcode} onChange={(event) => setPasscode(event.target.value)} />
               </label>
               <Button type="submit" disabled={busy}>
-                打开分享
+                {t("journal.shared-open")}
               </Button>
             </form>
           </div>
@@ -115,7 +115,7 @@ export default function JournalShared() {
         {collection && (
           <>
             {collection.items.length === 0 ? (
-              <p className="text-sm text-muted-foreground">这里暂时没有可查看的记录。</p>
+              <p className="text-sm text-muted-foreground">{t("journal.shared-empty")}</p>
             ) : (
               <JournalSharedContent items={collection.items} timezone={collection.timezone} />
             )}

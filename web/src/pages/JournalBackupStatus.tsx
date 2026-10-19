@@ -41,91 +41,113 @@ export default function JournalBackupStatus() {
       <header className="space-y-3">
         <h1 className="font-content text-3xl">{t("journal.backup-status")}</h1>
         <Link className="inline-block min-h-11 py-3 text-sm underline" to="/journal/backup">
-          配置备份与个人档案
+          {t("journal.status-config-link")}
         </Link>
       </header>
       {user?.role !== User_Role.ADMIN ? (
-        <p>只有管理员可以查看整实例备份状态。</p>
+        <p>{t("journal.status-admin-only")}</p>
       ) : (
         <>
-          {query.isPending && <p role="status">正在读取服务器备份回执…</p>}
+          {query.isPending && <p role="status">{t("journal.status-loading")}</p>}
           {query.isError && (
             <p role="alert" className="rounded-xl border border-destructive p-4 text-sm text-destructive">
-              状态读取失败：{query.error.message}。之前的成功回执不能证明当前正常。
+              {t("journal.status-error", { message: query.error.message })}
             </p>
           )}
           <section className="space-y-2 rounded-xl border p-5">
-            <h2 className="font-medium">当前设备待同步内容</h2>
+            <h2 className="font-medium">{t("journal.status-device-drafts")}</h2>
             <p className="text-sm">
-              {draftCount === undefined ? "本机草稿状态未知" : `本机保留 ${draftCount} 份草稿或待同步记录`}。这些内容不计入服务器备份。
+              {draftCount === undefined ? t("journal.status-drafts-unknown") : t("journal.status-drafts-count", { count: draftCount })}
+              {t("journal.status-drafts-suffix")}
             </p>
-            <p className="text-xs text-muted-foreground">其他设备的本地草稿需在对应设备检查。</p>
+            <p className="text-xs text-muted-foreground">{t("journal.status-drafts-note")}</p>
           </section>
           {data && (
             <>
               <section className="space-y-3 rounded-xl border p-5">
-                <h2 className="text-lg font-medium">{query.isError ? "状态未知" : (backupStateLabel[data.state] ?? "状态未知")}</h2>
-                <p className="text-sm">数据保护时间点：{backupTime(data.lastSuccess?.sourceTs)}</p>
-                <p className="text-sm">最近成功完成：{backupTime(data.lastSuccess?.completedTs)}</p>
-                <p className="text-sm">下次自动执行：{data.enabled ? data.nextRun || "等待服务器调度回执" : "已暂停"}</p>
+                <h2 className="text-lg font-medium">{query.isError ? t("journal.status-unknown") : t(backupStateLabel(data.state))}</h2>
+                <p className="text-sm">{t("journal.status-protection-point", { time: backupTime(data.lastSuccess?.sourceTs) })}</p>
+                <p className="text-sm">{t("journal.status-last-success", { time: backupTime(data.lastSuccess?.completedTs) })}</p>
+                <p className="text-sm">
+                  {t("journal.status-next-run", {
+                    value: data.enabled ? data.nextRun || t("journal.status-next-run-pending") : t("journal.status-paused"),
+                  })}
+                </p>
                 {data.currentTask && (
                   <p role="status" className="text-sm">
-                    当前阶段：{data.currentTask.phase === "upload" ? "加密上传" : "一致性快照与媒体核对"} · 开始于{" "}
-                    {backupTime(data.currentTask.startedTs)}
+                    {t("journal.status-current-phase", {
+                      phase: data.currentTask.phase === "upload" ? t("journal.status-phase-upload") : t("journal.status-phase-snapshot"),
+                      time: backupTime(data.currentTask.startedTs),
+                    })}
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  来源：{data.source} · 更新于 {backupTime(data.updatedTs)}
+                  {t("journal.status-source", { source: data.source, time: backupTime(data.updatedTs) })}
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Button disabled={busy || query.isError} onClick={() => run("run")}>
-                    立即备份
+                    {t("journal.status-run-now")}
                   </Button>
                   <Button variant="outline" disabled={busy || query.isError} onClick={() => run(data.enabled ? "pause" : "enable")}>
-                    {data.enabled ? "暂停自动备份" : "启用自动备份"}
+                    {data.enabled ? t("journal.status-pause") : t("journal.status-enable")}
                   </Button>
                   <Button variant="outline" disabled={busy || query.isError} onClick={() => run("check")}>
-                    完整读取校验
+                    {t("journal.status-verify")}
                   </Button>
                 </div>
               </section>
               <section className="grid gap-5 rounded-xl border p-5 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <h2 className="font-medium">独立监控</h2>
+                  <h2 className="font-medium">{t("journal.status-monitor")}</h2>
                   <p className="text-sm">
                     {data.monitor.configured
-                      ? `回执投递：${data.monitor.stale ? "回执已过期" : data.monitor.delivery?.status === "success" ? "最近投递成功" : "失败或尚无回执"}`
-                      : "未配置独立监控回执"}
+                      ? t("journal.status-monitor-delivery", {
+                          state: data.monitor.stale
+                            ? t("journal.status-monitor-stale")
+                            : data.monitor.delivery?.status === "success"
+                              ? t("journal.status-monitor-ok")
+                              : t("journal.status-monitor-failed"),
+                        })
+                      : t("journal.status-monitor-unset")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    最近投递：{backupTime(data.monitor.delivery?.completedTs ?? data.monitor.delivery?.attemptTs)}
-                    。投递成功与备份成功分别记录；应用离线时由独立监控判断心跳缺失。
+                    {t("journal.status-monitor-note", {
+                      time: backupTime(data.monitor.delivery?.completedTs ?? data.monitor.delivery?.attemptTs),
+                    })}
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <h2 className="font-medium">独立副本</h2>
+                  <h2 className="font-medium">{t("journal.status-replica")}</h2>
                   <p className="text-sm">
                     {data.independentReplica.status === "success"
                       ? data.independentReplica.stale
-                        ? "副本保护时间已过期"
-                        : "已有新鲜副本回执"
-                      : "状态未知，不能认为已复制"}
+                        ? t("journal.status-replica-stale")
+                        : t("journal.status-replica-fresh")
+                      : t("journal.status-replica-unknown")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    保护时间：{backupTime(data.independentReplica.sourceTs)}。主备份成功不会自动证明另一台设备的副本已更新。
+                    {t("journal.status-replica-note", { time: backupTime(data.independentReplica.sourceTs) })}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    与主备份保护时间相差：
-                    {data.independentReplica.lagSeconds == null ? "未知" : `${Math.ceil(data.independentReplica.lagSeconds / 60)} 分钟`}。
+                    {t("journal.status-replica-lag", {
+                      value:
+                        data.independentReplica.lagSeconds == null
+                          ? t("journal.status-unknown-value")
+                          : t("journal.status-lag-minutes", { count: Math.ceil(data.independentReplica.lagSeconds / 60) }),
+                    })}
                   </p>
                 </div>
               </section>
               {data.job && (
                 <section aria-live="polite" className="space-y-2 rounded-xl border p-5">
-                  <h2 className="font-medium">最近管理任务</h2>
+                  <h2 className="font-medium">{t("journal.status-recent-job")}</h2>
                   <p className="text-sm">
                     {data.job.action} ·{" "}
-                    {data.job.status === "running" ? "执行中" : data.job.status === "success" ? "任务完成，请查看对应阶段结果" : "未完成"}
+                    {data.job.status === "running"
+                      ? t("journal.status-job-running")
+                      : data.job.status === "success"
+                        ? t("journal.status-job-done")
+                        : t("journal.status-job-incomplete")}
                   </p>
                   {data.job.error && (
                     <p role="alert" className="text-sm text-destructive">
@@ -135,12 +157,9 @@ export default function JournalBackupStatus() {
                 </section>
               )}
               <section className="space-y-4">
-                <h2 className="text-lg font-medium">备份历史与恢复</h2>
-                <p className="text-xs leading-5 text-muted-foreground">
-                  展示最近 100
-                  条服务器回执。隔离恢复只写入全新目录，撤销旧令牌与分享并暂停外发，不替换线上数据。文件完整性与实际应用可用性分别验收。
-                </p>
-                {data.history.length === 0 && <p className="text-sm">暂无备份历史。</p>}
+                <h2 className="text-lg font-medium">{t("journal.status-history-title")}</h2>
+                <p className="text-xs leading-5 text-muted-foreground">{t("journal.status-history-note")}</p>
+                {data.history.length === 0 && <p className="text-sm">{t("journal.status-history-empty")}</p>}
                 {data.history.map((item, index) => {
                   const repositoryId = item.repositoryId ?? data.config.repositoryId;
                   const restore = data.restores.find(
@@ -149,12 +168,12 @@ export default function JournalBackupStatus() {
                   const verification = restore?.applicationVerification;
                   const verificationState =
                     verification?.status === "failed"
-                      ? "最近检查未通过"
+                      ? t("journal.status-verify-failed")
                       : verification?.status === "running"
-                        ? "正在实际实例验证"
+                        ? t("journal.status-verify-running")
                         : restore?.applicationVerified
-                          ? "已验证"
-                          : "待实际实例验证";
+                          ? t("journal.status-verified")
+                          : t("journal.status-verify-pending");
                   const checked =
                     item.snapshotId &&
                     (data.integrity?.repositoryId ?? data.config.repositoryId) === repositoryId &&
@@ -163,50 +182,67 @@ export default function JournalBackupStatus() {
                   return (
                     <details key={`${item.snapshotId ?? item.attemptTs}-${index}`} className="rounded-xl border p-4">
                       <summary className="min-h-11 cursor-pointer text-sm leading-6">
-                        {item.status === "success" ? "备份成功" : "备份失败"} · {backupTime(item.sourceTs ?? item.attemptTs)}{" "}
-                        {item.counts ? `· ${item.counts.memo ?? 0} 条记录 / ${item.counts.attachment ?? 0} 个附件` : ""}
+                        {item.status === "success" ? t("journal.status-backup-ok") : t("journal.status-backup-failed")} ·{" "}
+                        {backupTime(item.sourceTs ?? item.attemptTs)}{" "}
+                        {item.counts
+                          ? `· ${t("journal.status-backup-counts", { memos: item.counts.memo ?? 0, attachments: item.counts.attachment ?? 0 })}`
+                          : ""}
                       </summary>
                       <div className="space-y-3 pt-3 text-sm">
-                        <p className="break-all">快照：{item.snapshotId ?? "未产生完整快照"}</p>
-                        <p className="break-all">备份时应用标识：{item.instanceVersion ?? "历史回执未记录"}</p>
-                        <p>范围：数据库、受管附件、保留的历史原件；不含浏览器草稿和任意外链。</p>
-                        <p>
-                          大小：{item.bytes === undefined ? "历史回执未记录" : `${(item.bytes / 1048576).toFixed(2)} MiB`} · 耗时：
-                          {item.durationSeconds ?? "未知"} 秒
+                        <p className="break-all">
+                          {t("journal.status-snapshot", { id: item.snapshotId ?? t("journal.status-no-snapshot") })}
                         </p>
-                        <p>完整读取校验：{checked ? backupTime(data.integrity?.checkedTs) : "此快照尚无完整读取校验证据"}</p>
+                        <p className="break-all">
+                          {t("journal.status-instance-version", { version: item.instanceVersion ?? t("journal.status-not-recorded") })}
+                        </p>
+                        <p>{t("journal.status-scope")}</p>
                         <p>
-                          隔离恢复：{restore?.manifestVerified ? `文件与数据库通过（${backupTime(restore.restoredTs)}）` : "尚未验证"} ·
-                          应用可用性：{verificationState}
+                          {t("journal.status-size-duration", {
+                            size: item.bytes === undefined ? t("journal.status-not-recorded") : `${(item.bytes / 1048576).toFixed(2)} MiB`,
+                            seconds: item.durationSeconds ?? t("journal.status-unknown-value"),
+                          })}
+                        </p>
+                        <p>
+                          {t("journal.status-integrity", {
+                            time: checked ? backupTime(data.integrity?.checkedTs) : t("journal.status-no-integrity"),
+                          })}
+                        </p>
+                        <p>
+                          {t("journal.status-isolated-restore", {
+                            state: restore?.manifestVerified
+                              ? t("journal.status-manifest-ok", { time: backupTime(restore.restoredTs) })
+                              : t("journal.status-not-verified"),
+                            verification: verificationState,
+                          })}
                         </p>
                         {verification && (
                           <div className="space-y-1 text-xs text-muted-foreground">
-                            <p>最近应用检查：{backupTime(verification.completedTs ?? verification.startedTs)}</p>
+                            <p>
+                              {t("journal.status-verify-last", { time: backupTime(verification.completedTs ?? verification.startedTs) })}
+                            </p>
                             <p className="break-all">
-                              实际测试版本：{verification.testedVersion ?? "尚无完整回执"} · 提交：{verification.testedCommit ?? "尚未确认"}
+                              {t("journal.status-verify-version", {
+                                version: verification.testedVersion ?? t("journal.status-no-receipt"),
+                                commit: verification.testedCommit ?? t("journal.status-unconfirmed"),
+                              })}
                             </p>
                             {verification.sourceIndexMigration && (
-                              <p>
-                                已核对标签索引迁移：{verification.sourceIndexMigration.migratedRows}{" "}
-                                条；仅派生索引变化，原始记录字段和附件核对通过。
-                              </p>
+                              <p>{t("journal.status-index-migration", { count: verification.sourceIndexMigration.migratedRows })}</p>
                             )}
                             {verification.message && <p className="text-destructive">{verification.message}</p>}
-                            <p>仅针对这次隔离恢复及所列测试版本，不代表所有历史备份或当前线上版本已通过。</p>
+                            <p>{t("journal.status-verify-scope-note")}</p>
                           </div>
                         )}
                         {item.errorType && (
-                          <p className="text-destructive">
-                            {item.message ?? `失败类型：${item.errorType}。请检查凭据、存储空间、网络和原件覆盖。`}
-                          </p>
+                          <p className="text-destructive">{item.message ?? t("journal.status-failure-type", { type: item.errorType })}</p>
                         )}
-                        {!currentDestination && <p>这是旧目的地的回执，请使用对应仓库和独立保管的恢复密钥。</p>}
+                        {!currentDestination && <p>{t("journal.status-old-destination")}</p>}
                         <Button
                           variant="outline"
                           disabled={busy || query.isError || item.status !== "success" || !item.snapshotId || !currentDestination}
                           onClick={() => run("restore", item.snapshotId)}
                         >
-                          从此快照隔离恢复并核验
+                          {t("journal.status-restore-verify")}
                         </Button>
                       </div>
                     </details>

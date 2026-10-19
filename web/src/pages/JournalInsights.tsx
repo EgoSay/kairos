@@ -70,7 +70,7 @@ export default function JournalInsights() {
       });
       if (!request.signal.aborted) setResult(next);
     } catch (e) {
-      if (!request.signal.aborted) setError(e instanceof Error ? e.message : "暂时无法生成洞察，请稍后重试。");
+      if (!request.signal.aborted) setError(e instanceof Error ? e.message : t("journal.insights-generate-error"));
     } finally {
       if (controller.current === request) setBusy(false);
     }
@@ -82,7 +82,7 @@ export default function JournalInsights() {
       setSaved(true);
       void client.invalidateQueries({ queryKey: ["journal", user?.name, "insights"] });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "没有保存成功。");
+      setError(e instanceof Error ? e.message : t("journal.insights-save-error"));
     }
   };
   return (
@@ -93,29 +93,31 @@ export default function JournalInsights() {
       </Link>
       <header>
         <h1 className="font-content text-3xl font-medium">{t("journal.ai-insights")}</h1>
-        <p className="mt-3 text-sm leading-7 text-muted-foreground">选几条记录，换个角度看看。原来的文字始终留在那里。</p>
+        <p className="mt-3 text-sm leading-7 text-muted-foreground">{t("journal.insights-tagline")}</p>
       </header>
       <details className="rounded-lg border border-border/60 p-4" open={!configQuery.data?.config.providerId || undefined}>
-        <summary className="cursor-pointer text-sm">{provider ? `当前服务：${provider.title}` : "配置 AI 服务"}</summary>
+        <summary className="cursor-pointer text-sm">
+          {provider ? t("journal.insights-current-provider", { title: provider.title }) : t("journal.insights-configure")}
+        </summary>
         <div className="mt-4 space-y-3 text-sm">
-          {configQuery.isError && <p role="alert">服务设置读取失败，请刷新重试。</p>}
+          {configQuery.isError && <p role="alert">{t("journal.insights-config-error")}</p>}
           {!configQuery.data?.providers.length && (
             <p>
-              先在
+              {t("journal.insights-setup-prefix")}
               <Link className="underline" to="/setting#ai">
-                设置中添加 OpenAI 兼容服务
+                {t("journal.insights-setup-link")}
               </Link>
-              ，然后选择服务和模型。
+              {t("journal.insights-setup-suffix")}
             </p>
           )}
           <label className="block space-y-2">
-            <span>服务</span>
+            <span>{t("journal.insights-provider")}</span>
             <select
               className="min-h-11 w-full rounded-sm border bg-background px-3"
               value={settings.providerId}
               onChange={(e) => setConfig({ ...settings, providerId: e.target.value })}
             >
-              <option value="">选择服务</option>
+              <option value="">{t("journal.insights-provider-select")}</option>
               {configQuery.data?.providers.map((entry) => (
                 <option key={entry.id} value={entry.id}>
                   {entry.title}
@@ -124,22 +126,20 @@ export default function JournalInsights() {
             </select>
           </label>
           <label className="block space-y-2">
-            <span>模型名称</span>
+            <span>{t("journal.insights-model")}</span>
             <Input
               value={settings.model}
               onChange={(e) => setConfig({ ...settings, model: e.target.value })}
-              placeholder="服务提供的模型名称"
+              placeholder={t("journal.insights-model-placeholder")}
             />
           </label>
-          <p className="leading-6 text-muted-foreground">
-            点击“开始看看”后，所选正文和日期会发送到该服务。不会发送照片、原音或其他记录。取消不能撤回已经发送的内容。
-          </p>
+          <p className="leading-6 text-muted-foreground">{t("journal.insights-send-notice")}</p>
           <Button
             variant="outline"
             disabled={!settings.providerId || !settings.model || saveConfig.isPending}
             onClick={() => saveConfig.mutate(settings)}
           >
-            保存设置
+            {t("journal.insights-save-settings")}
           </Button>
           {saveConfig.isError && (
             <p role="alert" className="text-destructive">
@@ -158,12 +158,14 @@ export default function JournalInsights() {
       />
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          {provider ? `将交给 ${provider.title} 阅读 ${selected.length} 条记录的正文与日期。` : "请先选择并保存服务与模型。"}
+          {provider
+            ? t("journal.insights-send-summary", { title: provider.title, count: selected.length })
+            : t("journal.insights-provider-required")}
         </p>
         {busy ? (
           <div className="flex items-center gap-4">
             <span role="status" className="text-sm">
-              正在读这几条记录…
+              {t("journal.insights-reading")}
             </span>
             <Button
               variant="ghost"
@@ -172,12 +174,12 @@ export default function JournalInsights() {
                 setBusy(false);
               }}
             >
-              取消
+              {t("common.cancel")}
             </Button>
           </div>
         ) : (
           <Button disabled={selected.length === 0 || selected.length > 30 || !provider} onClick={generate}>
-            开始看看
+            {t("journal.insights-start")}
           </Button>
         )}
         {error && (
@@ -188,33 +190,36 @@ export default function JournalInsights() {
       </div>
       {result && (
         <section className="space-y-4 rounded-xl border border-border bg-muted/20 p-6">
-          <p className="text-xs tracking-wider text-muted-foreground">AI 洞察 · 一种可能的阅读角度</p>
+          <p className="text-xs tracking-wider text-muted-foreground">{t("journal.insights-result-label")}</p>
           <p className="whitespace-pre-wrap leading-8">{result.text}</p>
           <div className="flex flex-wrap gap-3">
             {result.citations.map((name, i) => (
               <Link key={name} className="text-sm underline underline-offset-4" to={`/${name}`}>
-                查看来源 {i + 1}
+                {t("journal.insights-view-source", { n: i + 1 })}
               </Link>
             ))}
           </div>
           <Button variant="ghost" disabled={saved} onClick={save}>
-            {saved ? "已保存" : "保存这次洞察"}
+            {saved ? t("journal.insights-saved") : t("journal.insights-save")}
           </Button>
-          <p className="text-xs text-muted-foreground">未保存的结果会在离开后消失。</p>
+          <p className="text-xs text-muted-foreground">{t("journal.insights-unsaved-note")}</p>
         </section>
       )}
       <details onToggle={(e) => setShowHistory(e.currentTarget.open)}>
-        <summary className="cursor-pointer py-3 text-sm text-muted-foreground">保存过的洞察</summary>
-        {history.isError && <p role="alert">暂时无法读取，请重试。</p>}
-        {history.data?.length === 0 && <p className="py-5 text-sm text-muted-foreground">这里还没有保存的洞察。</p>}
+        <summary className="cursor-pointer py-3 text-sm text-muted-foreground">{t("journal.insights-history")}</summary>
+        {history.isError && <p role="alert">{t("journal.load-error")}</p>}
+        {history.data?.length === 0 && <p className="py-5 text-sm text-muted-foreground">{t("journal.insights-history-empty")}</p>}
         {history.data?.map((item) => (
           <article key={item.id} className="space-y-3 border-t py-5">
-            <p className="text-xs text-muted-foreground">AI 洞察{item.stale ? " · 来源已更新" : ""}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("journal.insights-label")}
+              {item.stale ? t("journal.insights-stale") : ""}
+            </p>
             <p className="whitespace-pre-wrap leading-7">{item.text}</p>
             <div className="flex gap-3">
               {item.citations.map((name, i) => (
                 <Link className="text-sm underline" key={name} to={`/${name}`}>
-                  来源 {i + 1}
+                  {t("journal.insights-source", { n: i + 1 })}
                 </Link>
               ))}
               <Button
@@ -228,7 +233,7 @@ export default function JournalInsights() {
                   }
                 }}
               >
-                删除
+                {t("common.delete")}
               </Button>
             </div>
           </article>

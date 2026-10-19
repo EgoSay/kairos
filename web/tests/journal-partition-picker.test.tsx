@@ -36,9 +36,9 @@ describe("optional journal partition picker", () => {
   it("offers an icon-only optional control and selects a real partition through its menu", async () => {
     const onChange = vi.fn();
     render(<PartitionPicker value="" onChange={onChange} />);
-    const trigger = screen.getByRole("button", { name: "记录所属分区：选择分区（可选）" });
+    const trigger = screen.getByRole("button", { name: "Record partition: Pick a partition (optional)" });
     expect(trigger.textContent).toBe("");
-    expect(trigger).toHaveAttribute("title", "选择分区（可选）");
+    expect(trigger).toHaveAttribute("title", "Pick a partition (optional)");
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
     fireEvent.click(trigger);
     fireEvent.click(await screen.findByRole("menuitem", { name: "随笔" }));
@@ -49,17 +49,17 @@ describe("optional journal partition picker", () => {
   it("shows the selected partition and lets the owner remove the assignment", async () => {
     const onChange = vi.fn();
     render(<PartitionPicker value="a" onChange={onChange} />);
-    const trigger = screen.getByRole("button", { name: "记录所属分区：生活" });
+    const trigger = screen.getByRole("button", { name: "Record partition: 生活" });
     expect(trigger).toHaveTextContent("生活");
     fireEvent.click(trigger);
-    fireEvent.click(await screen.findByRole("menuitem", { name: "不放入分区" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "No partition" }));
     expect(onChange).toHaveBeenCalledExactlyOnceWith("");
   });
 
   it("keeps an existing assignment visible while partition names are still loading", () => {
     queries.partitions.mockReturnValue({ data: undefined, isPending: true });
     render(<PartitionPicker value="a" onChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "记录所属分区：原分区" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Record partition: Original partition" })).toBeDisabled();
   });
 
   it("reports the sync flag again when switching directly between two already cached partitions", () => {
@@ -74,7 +74,7 @@ describe("optional journal partition picker", () => {
     onSyncChange.mockClear();
     rerender(<PartitionPicker value="b" onChange={onChange} onSyncChange={onSyncChange} />);
     expect(onSyncChange).toHaveBeenCalledExactlyOnceWith(false);
-    expect(screen.getByRole("button", { name: "记录所属分区：随笔" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Record partition: 随笔" })).toBeInTheDocument();
   });
 
   it("discloses only enabled destinations and signals that complete saving will synchronize", () => {
@@ -87,7 +87,7 @@ describe("optional journal partition picker", () => {
     );
     const onSyncChange = vi.fn();
     render(<PartitionPicker value="a" onChange={vi.fn()} onSyncChange={onSyncChange} />);
-    expect(screen.getByText("完整保存后同步到：个人博客、个人相册")).toBeInTheDocument();
+    expect(screen.getByText("Fully saved records will sync to: 个人博客 and 个人相册")).toBeInTheDocument();
     expect(screen.queryByText(/已停用的社媒/)).not.toBeInTheDocument();
     expect(onSyncChange).toHaveBeenLastCalledWith(true);
   });
@@ -96,8 +96,8 @@ describe("optional journal partition picker", () => {
     queries.targets.mockReturnValue(cachedTargets([{ name: "个人博客", enabled: true }]));
     const onSyncChange = vi.fn();
     render(<PartitionPicker value="a" onChange={vi.fn()} onSyncChange={onSyncChange} suspended />);
-    expect(screen.getByText("同步已暂停，重新选择分区后启用。")).toBeInTheDocument();
-    expect(screen.queryByText(/完整保存后同步到/)).not.toBeInTheDocument();
+    expect(screen.getByText("Sync is paused and resumes after you pick a partition again.")).toBeInTheDocument();
+    expect(screen.queryByText(/Fully saved records will sync to/)).not.toBeInTheDocument();
     expect(onSyncChange).toHaveBeenLastCalledWith(false);
   });
 
@@ -106,15 +106,15 @@ describe("optional journal partition picker", () => {
     const onSyncChange = vi.fn();
     render(<PartitionPicker value="a" onChange={vi.fn()} onSyncChange={onSyncChange} />);
     expect(onSyncChange).toHaveBeenLastCalledWith(false);
-    if (state === "loading") expect(screen.getByText("正在确认同步设置…")).toBeInTheDocument();
-    else expect(screen.getByRole("alert")).toHaveTextContent("暂时无法读取同步设置。");
-    expect(screen.queryByText(/完整保存后同步到/)).not.toBeInTheDocument();
+    if (state === "loading") expect(screen.getByText("Checking sync settings…")).toBeInTheDocument();
+    else expect(screen.getByRole("alert")).toHaveTextContent("Couldn't load sync settings right now.");
+    expect(screen.queryByText(/Fully saved records will sync to/)).not.toBeInTheDocument();
   });
 
   it("cannot open or change the assignment while saving disables the picker", () => {
     const onChange = vi.fn();
     render(<PartitionPicker value="a" onChange={onChange} disabled />);
-    const trigger = screen.getByRole("button", { name: "记录所属分区：生活" });
+    const trigger = screen.getByRole("button", { name: "Record partition: 生活" });
     expect(trigger).toBeDisabled();
     fireEvent.click(trigger);
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
@@ -124,7 +124,7 @@ describe("optional journal partition picker", () => {
   it("cannot change an already open menu when saving starts", async () => {
     const onChange = vi.fn();
     const { rerender } = render(<PartitionPicker value="a" onChange={onChange} />);
-    fireEvent.click(screen.getByRole("button", { name: "记录所属分区：生活" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record partition: 生活" }));
     await screen.findByRole("menuitem", { name: "随笔" });
     rerender(<PartitionPicker value="a" onChange={onChange} disabled />);
     const option = screen.queryByRole("menuitem", { name: "随笔" });

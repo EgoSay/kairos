@@ -7,11 +7,13 @@ import { memoServiceClient } from "@/connect";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useJournalPreferences } from "@/hooks/useJournalQueries";
 import { memoKeys } from "@/hooks/useMemoQueries";
+import i18n from "@/i18n";
 import { buildTimestampRangeFilter } from "@/lib/calendar-utils";
 import { combineCELFilters } from "@/lib/cel-filter";
 import { journalDayRange } from "@/lib/journal";
 import { buildMemoCreatorFilter } from "@/lib/resource-names";
 import { State } from "@/types/proto/api/v1/common_pb";
+import { useTranslate } from "@/utils/i18n";
 
 /** Explicit source selection; changing a query never expands the selected set. */
 export default function JournalSourcePicker({
@@ -25,6 +27,7 @@ export default function JournalSourcePicker({
   disabled?: boolean;
   allowArchived?: boolean;
 }) {
+  const t = useTranslate();
   const user = useCurrentUser();
   const preferences = useJournalPreferences();
   const timezone = preferences.data?.timezone || "Asia/Shanghai";
@@ -66,13 +69,13 @@ export default function JournalSourcePicker({
     enabled: Boolean(user),
   });
   return (
-    <section className="space-y-4 [&_button]:min-h-11" aria-label="选择原始记录">
+    <section className="space-y-4 [&_button]:min-h-11" aria-label={t("journal.source-label")}>
       <form
         className="space-y-3"
         onSubmit={(e) => {
           e.preventDefault();
           if (draftFrom && draftTo && draftFrom > draftTo) {
-            setDateError("结束日期不能早于开始日期。");
+            setDateError(t("journal.source-date-error"));
             return;
           }
           setDateError("");
@@ -81,29 +84,29 @@ export default function JournalSourcePicker({
       >
         <div className="flex gap-2">
           <Input
-            aria-label="查找记录"
-            placeholder="查找一段文字…"
+            aria-label={t("journal.source-search-label")}
+            placeholder={t("journal.source-search-placeholder")}
             value={draftQuery}
             onChange={(e) => setDraftQuery(e.target.value)}
             disabled={disabled}
           />
           <Button type="submit" variant="outline" disabled={disabled}>
-            查找
+            {t("journal.source-search")}
           </Button>
         </div>
         <details className="text-sm text-muted-foreground">
-          <summary className="cursor-pointer py-2">按日期范围查找</summary>
+          <summary className="cursor-pointer py-2">{t("journal.source-date-range")}</summary>
           <div className="grid gap-3 py-3 sm:grid-cols-2">
             <label className="space-y-2">
-              <span>从哪一天</span>
+              <span>{t("journal.source-from")}</span>
               <Input type="date" value={draftFrom} disabled={disabled} onChange={(event) => setDraftFrom(event.target.value)} />
             </label>
             <label className="space-y-2">
-              <span>到哪一天（含当天）</span>
+              <span>{t("journal.source-to")}</span>
               <Input type="date" value={draftTo} disabled={disabled} onChange={(event) => setDraftTo(event.target.value)} />
             </label>
           </div>
-          <p className="text-xs">按记录日期 · {timezone}，填写后点击查找。</p>
+          <p className="text-xs">{t("journal.source-date-note", { timezone })}</p>
         </details>
         {dateError && (
           <p role="alert" className="text-sm text-destructive">
@@ -112,25 +115,25 @@ export default function JournalSourcePicker({
         )}
       </form>
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-        <span>已选 {selected.length} 条</span>
+        <span>{t("journal.source-selected", { count: selected.length })}</span>
         {allowArchived && (
           <label className="flex min-h-11 cursor-pointer items-center gap-2">
             <input type="checkbox" checked={archived} disabled={disabled} onChange={(e) => setArchived(e.target.checked)} />
-            查找归档记录
+            {t("journal.source-archived")}
           </label>
         )}
         {selected.length > 0 && (
           <Button variant="ghost" disabled={disabled} onClick={() => onChange([])}>
-            清空选择
+            {t("journal.source-clear")}
           </Button>
         )}
       </div>
-      {records.isPending && <p role="status">正在读取记录…</p>}
+      {records.isPending && <p role="status">{t("journal.source-loading")}</p>}
       {records.isError && (
         <div role="alert">
-          <p>暂时无法打开记录。</p>
+          <p>{t("journal.source-error")}</p>
           <Button variant="outline" onClick={() => records.refetch()}>
-            重试
+            {t("journal.retry")}
           </Button>
         </div>
       )}
@@ -151,17 +154,21 @@ export default function JournalSourcePicker({
               />
               <span className="min-w-0">
                 <time className="mb-1 block text-xs text-muted-foreground">
-                  {memo.createTime ? timestampDate(memo.createTime).toLocaleDateString("zh-CN", { timeZone: timezone }) : "日期未知"}
+                  {memo.createTime
+                    ? timestampDate(memo.createTime).toLocaleDateString(i18n.language || "en", { timeZone: timezone })
+                    : t("journal.source-date-unknown")}
                 </time>
-                <span className="line-clamp-3 whitespace-pre-wrap text-sm leading-relaxed">{memo.content || "照片或声音记录"}</span>
+                <span className="line-clamp-3 whitespace-pre-wrap text-sm leading-relaxed">
+                  {memo.content || t("journal.source-media")}
+                </span>
               </span>
             </label>
           ))}
-        {records.data?.pages[0]?.memos.length === 0 && <p className="p-5 text-sm text-muted-foreground">没有找到记录。</p>}
+        {records.data?.pages[0]?.memos.length === 0 && <p className="p-5 text-sm text-muted-foreground">{t("journal.source-empty")}</p>}
       </div>
       {records.hasNextPage && (
         <Button variant="ghost" disabled={records.isFetchingNextPage} onClick={() => records.fetchNextPage()}>
-          再往前找找
+          {t("journal.source-more")}
         </Button>
       )}
     </section>
