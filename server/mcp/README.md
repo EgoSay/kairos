@@ -167,12 +167,12 @@ a personal access token as a bearer credential. Example client config:
 The server exposes a curated allowlist (`curatedOperationIDs` in `catalog.go`),
 centered on memos and attachments, plus the space service (memos carry a
 placement and a `SPACE` audience, so agents must be able to discover and
-administer spaces and answer invitations) and three read-only orientation
-tools: `user_list_memo_views` (surfaces a user's named CEL filters for reuse
-with `memo_list_memos`), `user_list_all_user_stats` (tag vocabulary and usage
-counts for planning tag organization) and `auth_get_current_user` (a "whoami"
-so an agent can resolve its own user — the single allowed auth/identity
-operation):
+administer spaces and answer invitations), the saved memo views (a user's
+named CEL filters — agents manage them end to end and reuse their filter
+strings with `memo_list_memos`), and two read-only orientation tools:
+`user_list_all_user_stats` (tag vocabulary and usage counts for planning tag
+organization) and `auth_get_current_user` (a "whoami" so an agent can resolve
+its own user — the single allowed auth/identity operation):
 
 | OpenAPI operation | MCP tool |
 | --- | --- |
@@ -198,6 +198,10 @@ operation):
 | `AttachmentService_GetAttachment` | `attachment_get_attachment` |
 | `AttachmentService_DeleteAttachment` | `attachment_delete_attachment` |
 | `UserService_ListMemoViews` | `user_list_memo_views` |
+| `UserService_GetMemoView` | `user_get_memo_view` |
+| `UserService_CreateMemoView` | `user_create_memo_view` |
+| `UserService_UpdateMemoView` | `user_update_memo_view` |
+| `UserService_DeleteMemoView` | `user_delete_memo_view` |
 | `UserService_ListAllUserStats` | `user_list_all_user_stats` |
 | `AuthService_GetCurrentUser` | `auth_get_current_user` |
 | `SpaceService_ListSpaces` | `space_list_spaces` |
@@ -237,9 +241,10 @@ operations (`memo_batch_update_memo_tags`, `memo_rename_tag`,
 `memo_delete_tag`) are POST but report `IdempotentHint: true` — each call
 re-plans its rewrite from the memo's current content — and `DestructiveHint:
 true` because they rewrite memo content across the scope, including merges.
-`MemoService_UpdateMemo`, `SpaceService_UpdateSpace`, and
-`SpaceService_UpdateSpaceMember` also report `DestructiveHint: true` because
-they overwrite existing fields (a member's role included).
+`MemoService_UpdateMemo`, `SpaceService_UpdateSpace`,
+`SpaceService_UpdateSpaceMember`, and `UserService_UpdateMemoView` also report
+`DestructiveHint: true` because they overwrite existing fields (a member's
+role included; the view's mask names which fields are replaced).
 `SpaceService_DeleteSpace` is destructive by method, and the API
 also deletes every memo placed in the space.
 

@@ -2780,7 +2780,9 @@ paths:
                     type: string
                 - name: updateMask
                   in: query
-                  description: Optional. The list of fields to update.
+                  description: |-
+                    Optional. The fields to update: title, filter, or icon. On REST calls the
+                     gateway infers the mask from the body fields present when it is omitted.
                   schema:
                     type: string
                     format: field-mask

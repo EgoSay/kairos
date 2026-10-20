@@ -11,8 +11,18 @@ import (
 )
 
 func TestCuratedOperationIDsStayMemoFocused(t *testing.T) {
-	require.Len(t, curatedOperationIDs, 40)
+	require.Len(t, curatedOperationIDs, 44)
 
+	// Saved memo views (listed and managed) plus all-user tag stats are the
+	// only user resources exposed through MCP.
+	allowedUserOps := map[string]bool{
+		"UserService_ListMemoViews":    true,
+		"UserService_GetMemoView":      true,
+		"UserService_CreateMemoView":   true,
+		"UserService_UpdateMemoView":   true,
+		"UserService_DeleteMemoView":   true,
+		"UserService_ListAllUserStats": true,
+	}
 	for _, operationID := range curatedOperationIDs {
 		require.NotContains(t, operationID, "Admin")
 		// AuthService_GetCurrentUser is the single allowed auth op (read-only
@@ -20,9 +30,7 @@ func TestCuratedOperationIDsStayMemoFocused(t *testing.T) {
 		if operationID != "AuthService_GetCurrentUser" {
 			require.NotContains(t, operationID, "AuthService_")
 		}
-		// Saved memo views and all-user tag stats are the only user resources
-		// exposed through MCP.
-		if operationID != "UserService_ListMemoViews" && operationID != "UserService_ListAllUserStats" {
+		if !allowedUserOps[operationID] {
 			require.NotContains(t, operationID, "UserService_")
 		}
 		require.NotContains(t, operationID, "AIService_")
@@ -370,6 +378,67 @@ func TestBuildToolFromOperationExposesTagOrganizationTools(t *testing.T) {
 
 	stats, _ := buildToolFromOperation(registry["UserService_ListAllUserStats"])
 	require.True(t, stats.Annotations.ReadOnlyHint)
+}
+
+func TestBuildToolFromOperationExposesMemoViewTools(t *testing.T) {
+	spec, err := loadOpenAPISpec("../../proto/gen/openapi.yaml")
+	require.NoError(t, err)
+	registry, err := buildOperationRegistry(spec)
+	require.NoError(t, err)
+
+	tools, operations, err := buildCuratedTools(registry)
+	require.NoError(t, err)
+	require.Len(t, tools, len(curatedOperationIDs))
+	require.Len(t, operations, len(curatedOperationIDs))
+
+	for operationID, toolName := range map[string]string{
+		"UserService_GetMemoView":    "user_get_memo_view",
+		"UserService_CreateMemoView": "user_create_memo_view",
+		"UserService_UpdateMemoView": "user_update_memo_view",
+		"UserService_DeleteMemoView": "user_delete_memo_view",
+	} {
+		tool, ok := operations[toolName]
+		require.True(t, ok, operationID)
+		require.Equal(t, operationID, tool.OperationID)
+	}
+
+	get, _ := buildToolFromOperation(registry["UserService_GetMemoView"])
+	require.True(t, get.Annotations.ReadOnlyHint)
+
+	// Create keeps the resource's own required fields (title, filter) but drops
+	// name: the server assigns the view's id, so a caller-supplied name is dead.
+	create, _ := buildToolFromOperation(registry["UserService_CreateMemoView"])
+	require.False(t, create.Annotations.ReadOnlyHint)
+	createInput, ok := create.InputSchema.(jsonSchema)
+	require.True(t, ok)
+	createProps := schemaProperties(createInput["properties"])
+	require.Contains(t, createProps, "validateOnly")
+	createBody := schemaProperties(schemaProperties(createProps["body"])["properties"])
+	require.NotContains(t, createBody, "name")
+
+	// Update is a mask-driven partial: the body clears the resource-level
+	// required list, drops name (path-bound), and must not be empty.
+	update, _ := buildToolFromOperation(registry["UserService_UpdateMemoView"])
+	require.True(t, *update.Annotations.DestructiveHint)
+	updateInput, ok := update.InputSchema.(jsonSchema)
+	require.True(t, ok)
+	updateProps := schemaProperties(updateInput["properties"])
+	require.Contains(t, updateProps, "updateMask")
+	updateBody := schemaProperties(schemaProperties(updateProps["body"]))
+	require.NotContains(t, updateBody, "required")
+	require.NotContains(t, schemaProperties(updateBody["properties"]), "name")
+	require.Error(t, validateToolArguments(updateInput, map[string]any{
+		"user": "steven", "view": "abc", "body": map[string]any{},
+	}))
+	require.NoError(t, validateToolArguments(updateInput, map[string]any{
+		"user": "steven", "view": "abc",
+		"updateMask": "title",
+		"body":       map[string]any{"title": "renamed"},
+	}))
+
+	del, _ := buildToolFromOperation(registry["UserService_DeleteMemoView"])
+	require.True(t, *del.Annotations.DestructiveHint)
+	require.True(t, del.Annotations.IdempotentHint)
 }
 
 func TestBuildCuratedToolsHasUniqueNames(t *testing.T) {

@@ -1417,7 +1417,7 @@ export type CreateMemoViewRequest = Message<"memos.api.v1.CreateMemoViewRequest"
   parent: string;
 
   /**
-   * Required. The memo view to create.
+   * Required. The memo view to create; the server assigns its name.
    *
    * @generated from field: memos.api.v1.MemoView memo_view = 2;
    */
@@ -1450,7 +1450,8 @@ export type UpdateMemoViewRequest = Message<"memos.api.v1.UpdateMemoViewRequest"
   memoView?: MemoView | undefined;
 
   /**
-   * Optional. The list of fields to update.
+   * Optional. The fields to update: title, filter, or icon. On REST calls the
+   * gateway infers the mask from the body fields present when it is omitted.
    *
    * @generated from field: google.protobuf.FieldMask update_mask = 2;
    */

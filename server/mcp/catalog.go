@@ -35,6 +35,13 @@ var curatedOperationIDs = []string{
 	"AttachmentService_GetAttachment",
 	"AttachmentService_DeleteAttachment",
 	"UserService_ListMemoViews",
+	// Saved views are the reusable-filter surface: agents compose CEL filters
+	// against memo_list_memos and keep the good ones. Create carries a
+	// validate_only dry-run; update is mask-driven; delete frees the name.
+	"UserService_GetMemoView",
+	"UserService_CreateMemoView",
+	"UserService_UpdateMemoView",
+	"UserService_DeleteMemoView",
 	// Tag statistics let an agent discover the caller's tag vocabulary and
 	// usage counts before organizing them (e.g. spotting merge candidates).
 	"UserService_ListAllUserStats",
@@ -114,6 +121,19 @@ var requestBodySchemaOverrides = map[string]requestBodySchemaOverride{
 	"MemoService_UpsertMemoReaction": {
 		required:          []string{"reaction"},
 		omittedProperties: []string{"name"},
+	},
+	// The server assigns the view's name on create; the field is ignored in
+	// the body, so drop it instead of letting callers pass a dead value.
+	"UserService_CreateMemoView": {
+		omittedProperties: []string{"name"},
+	},
+	// Partial view update: the name comes from the path and any subset of the
+	// mutable fields is a valid body. Like UpdateSpace, an omitted updateMask
+	// is inferred by the REST gateway from the fields present.
+	"UserService_UpdateMemoView": {
+		clearRequired:     true,
+		omittedProperties: []string{"name"},
+		minProperties:     1,
 	},
 	// UpdateSpace requires an update mask, which the REST gateway infers from
 	// the fields present in the body. The space name comes from the path.
@@ -383,6 +403,8 @@ var destructiveOperationIDs = map[string]bool{
 	"MemoService_DeleteTag":           true,
 	"SpaceService_UpdateSpace":        true,
 	"SpaceService_UpdateSpaceMember":  true,
+	// A view update overwrites the fields named by its mask.
+	"UserService_UpdateMemoView": true,
 }
 
 // annotationsForOperation derives the method-based annotations and then applies
