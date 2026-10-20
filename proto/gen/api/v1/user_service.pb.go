@@ -2398,7 +2398,7 @@ type CreateMemoViewRequest struct {
 	// Required. The parent resource where this memo view will be created.
 	// Format: users/{user}
 	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
-	// Required. The memo view to create.
+	// Required. The memo view to create; the server assigns its name.
 	MemoView *MemoView `protobuf:"bytes,2,opt,name=memo_view,json=memoView,proto3" json:"memo_view,omitempty"`
 	// Optional. If set, validate the request, but do not actually create the memo view.
 	ValidateOnly  bool `protobuf:"varint,3,opt,name=validate_only,json=validateOnly,proto3" json:"validate_only,omitempty"`
@@ -2461,7 +2461,8 @@ type UpdateMemoViewRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Required. The memo view resource which replaces the resource on the server.
 	MemoView *MemoView `protobuf:"bytes,1,opt,name=memo_view,json=memoView,proto3" json:"memo_view,omitempty"`
-	// Optional. The list of fields to update.
+	// Optional. The fields to update: title, filter, or icon. On REST calls the
+	// gateway infers the mask from the body fields present when it is omitted.
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

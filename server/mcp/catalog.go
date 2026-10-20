@@ -24,11 +24,27 @@ var curatedOperationIDs = []string{
 	"MemoService_DeleteMemoReaction",
 	"MemoService_ListMemoRelations",
 	"MemoService_SetMemoRelations",
+	// Tag organization: rewrite tags across the caller's memos by explicit
+	// names or by a tag scope. validate_only previews are part of the same
+	// operations, so agents can inspect impact before committing.
+	"MemoService_BatchUpdateMemoTags",
+	"MemoService_RenameTag",
+	"MemoService_DeleteTag",
 	"AttachmentService_ListAttachments",
 	"AttachmentService_CreateAttachment",
 	"AttachmentService_GetAttachment",
 	"AttachmentService_DeleteAttachment",
 	"UserService_ListMemoViews",
+	// Saved views are the reusable-filter surface: agents compose CEL filters
+	// against memo_list_memos and keep the good ones. Create carries a
+	// validate_only dry-run; update is mask-driven; delete frees the name.
+	"UserService_GetMemoView",
+	"UserService_CreateMemoView",
+	"UserService_UpdateMemoView",
+	"UserService_DeleteMemoView",
+	// Tag statistics let an agent discover the caller's tag vocabulary and
+	// usage counts before organizing them (e.g. spotting merge candidates).
+	"UserService_ListAllUserStats",
 	// The only allowed auth/identity operation: a read-only "whoami" so agents
 	// can resolve the current user (e.g. for UserService_ListMemoViews).
 	"AuthService_GetCurrentUser",
@@ -105,6 +121,19 @@ var requestBodySchemaOverrides = map[string]requestBodySchemaOverride{
 	"MemoService_UpsertMemoReaction": {
 		required:          []string{"reaction"},
 		omittedProperties: []string{"name"},
+	},
+	// The server assigns the view's name on create; the field is ignored in
+	// the body, so drop it instead of letting callers pass a dead value.
+	"UserService_CreateMemoView": {
+		omittedProperties: []string{"name"},
+	},
+	// Partial view update: the name comes from the path and any subset of the
+	// mutable fields is a valid body. Like UpdateSpace, an omitted updateMask
+	// is inferred by the REST gateway from the fields present.
+	"UserService_UpdateMemoView": {
+		clearRequired:     true,
+		omittedProperties: []string{"name"},
+		minProperties:     1,
 	},
 	// UpdateSpace requires an update mask, which the REST gateway infers from
 	// the fields present in the body. The space name comes from the path.
@@ -354,6 +383,11 @@ func extractSchemaDefs(schema jsonSchema) map[string]any {
 var idempotentOperationIDs = map[string]bool{
 	"MemoService_SetMemoAttachments": true,
 	"MemoService_SetMemoRelations":   true,
+	// Tag rewrites re-derive the plan from the memo's current content on every
+	// CAS attempt, so repeating an identical call converges to the same state.
+	"MemoService_BatchUpdateMemoTags": true,
+	"MemoService_RenameTag":           true,
+	"MemoService_DeleteTag":           true,
 }
 
 // destructiveOperationIDs lists mutating operations that can overwrite or
@@ -362,8 +396,15 @@ var destructiveOperationIDs = map[string]bool{
 	"MemoService_UpdateMemo":         true,
 	"MemoService_SetMemoAttachments": true,
 	"MemoService_SetMemoRelations":   true,
-	"SpaceService_UpdateSpace":       true,
-	"SpaceService_UpdateSpaceMember": true,
+	// Tag operations rewrite the content of every memo in scope, including
+	// irreversible merges when renaming onto an existing tag.
+	"MemoService_BatchUpdateMemoTags": true,
+	"MemoService_RenameTag":           true,
+	"MemoService_DeleteTag":           true,
+	"SpaceService_UpdateSpace":        true,
+	"SpaceService_UpdateSpaceMember":  true,
+	// A view update overwrites the fields named by its mask.
+	"UserService_UpdateMemoView": true,
 }
 
 // annotationsForOperation derives the method-based annotations and then applies
