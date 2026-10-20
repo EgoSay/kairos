@@ -11,7 +11,7 @@ import (
 )
 
 func TestCuratedOperationIDsStayMemoFocused(t *testing.T) {
-	require.Len(t, curatedOperationIDs, 36)
+	require.Len(t, curatedOperationIDs, 40)
 
 	for _, operationID := range curatedOperationIDs {
 		require.NotContains(t, operationID, "Admin")
@@ -20,8 +20,9 @@ func TestCuratedOperationIDsStayMemoFocused(t *testing.T) {
 		if operationID != "AuthService_GetCurrentUser" {
 			require.NotContains(t, operationID, "AuthService_")
 		}
-		// Saved memo views are the only user resource exposed through MCP.
-		if operationID != "UserService_ListMemoViews" {
+		// Saved memo views and all-user tag stats are the only user resources
+		// exposed through MCP.
+		if operationID != "UserService_ListMemoViews" && operationID != "UserService_ListAllUserStats" {
 			require.NotContains(t, operationID, "UserService_")
 		}
 		require.NotContains(t, operationID, "AIService_")
@@ -327,6 +328,48 @@ func TestBuildToolFromOperationMarksUpdateMemoDestructive(t *testing.T) {
 	require.False(t, tool.Annotations.ReadOnlyHint)
 	require.True(t, *tool.Annotations.DestructiveHint)
 	require.False(t, tool.Annotations.IdempotentHint)
+}
+
+func TestBuildToolFromOperationExposesTagOrganizationTools(t *testing.T) {
+	spec, err := loadOpenAPISpec("../../proto/gen/openapi.yaml")
+	require.NoError(t, err)
+	registry, err := buildOperationRegistry(spec)
+	require.NoError(t, err)
+
+	tools, operations, err := buildCuratedTools(registry)
+	require.NoError(t, err)
+	require.Len(t, tools, len(curatedOperationIDs))
+	require.Len(t, operations, len(curatedOperationIDs))
+
+	// Tag vocabulary discovery stays read-only; the three organization
+	// operations are POST but idempotent (CAS re-planning) and destructive
+	// (they rewrite memo content, including merges).
+	for operationID, toolName := range map[string]string{
+		"MemoService_BatchUpdateMemoTags": "memo_batch_update_memo_tags",
+		"MemoService_RenameTag":           "memo_rename_tag",
+		"MemoService_DeleteTag":           "memo_delete_tag",
+		"UserService_ListAllUserStats":    "user_list_all_user_stats",
+	} {
+		tool, ok := operations[toolName]
+		require.True(t, ok, operationID)
+		require.Equal(t, operationID, tool.OperationID)
+	}
+
+	batch, _ := buildToolFromOperation(registry["MemoService_BatchUpdateMemoTags"])
+	require.True(t, batch.Annotations.IdempotentHint)
+	require.True(t, *batch.Annotations.DestructiveHint)
+	require.False(t, batch.Annotations.ReadOnlyHint)
+
+	rename, _ := buildToolFromOperation(registry["MemoService_RenameTag"])
+	require.True(t, rename.Annotations.IdempotentHint)
+	require.True(t, *rename.Annotations.DestructiveHint)
+
+	del, _ := buildToolFromOperation(registry["MemoService_DeleteTag"])
+	require.True(t, del.Annotations.IdempotentHint)
+	require.True(t, *del.Annotations.DestructiveHint)
+
+	stats, _ := buildToolFromOperation(registry["UserService_ListAllUserStats"])
+	require.True(t, stats.Annotations.ReadOnlyHint)
 }
 
 func TestBuildCuratedToolsHasUniqueNames(t *testing.T) {
