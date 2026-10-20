@@ -1,10 +1,11 @@
-import { MergeIcon, MoreHorizontalIcon, PencilIcon, TagsIcon, Trash2Icon } from "lucide-react";
+import { FolderInputIcon, MoreHorizontalIcon, PencilIcon, TagsIcon, Trash2Icon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useTranslate } from "@/utils/i18n";
 
-/** The four user-level tag operations; each opens a focused TagActionDialog. */
-export type TagAction = "rename" | "merge" | "delete" | "batch";
+/** The four user-level tag operations; each opens a focused TagActionDialog.
+ * Rename absorbs merge (an existing target merges) and move absorbs reparenting. */
+export type TagAction = "rename" | "move" | "delete" | "batch";
 
 interface Props {
   tag: string;
@@ -28,9 +29,9 @@ const TagActionsMenu = ({ tag, onAction, className, "aria-label": ariaLabel }: P
           <PencilIcon className="text-muted-foreground" strokeWidth={1.8} />
           {t("tagOps.action-rename")}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onAction(tag, "merge")}>
-          <MergeIcon className="text-muted-foreground" strokeWidth={1.8} />
-          {t("tagOps.action-merge")}
+        <DropdownMenuItem onClick={() => onAction(tag, "move")}>
+          <FolderInputIcon className="text-muted-foreground" strokeWidth={1.8} />
+          {t("tagOps.action-move")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onAction(tag, "batch")}>
           <TagsIcon className="text-muted-foreground" strokeWidth={1.8} />

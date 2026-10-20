@@ -1,16 +1,17 @@
 import { create } from "@bufbuild/protobuf";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { HashIcon, SearchIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { memoServiceClient } from "@/connect";
 import { useDebouncedEffect } from "@/hooks";
 import { useBatchUpdateMemoTags, useDeleteTag, useRenameTag } from "@/hooks/useMemoTagMutations";
 import { useTagCounts } from "@/hooks/useUserQueries";
+import { cn } from "@/lib/utils";
 import { BatchUpdateMemoTagsRequestSchema, DeleteTagRequestSchema, RenameTagRequestSchema } from "@/types/proto/api/v1/memo_service_pb";
 import { useTranslate } from "@/utils/i18n";
 import { formatTag } from "@/utils/tag-grammar";
@@ -42,6 +43,9 @@ const parseTagInput = (input: string): string[] => [
   ),
 ];
 
+/** Sentinel for "no parent" in the move dialog — not a valid tag, so no collision. */
+const ROOT_PARENT = "\0top";
+
 // One action, one small dialog. The tag is already known from where the user
 // clicked; the preview arrives on its own once the form is valid, so the only
 // button left is the one that executes.
@@ -51,20 +55,15 @@ const TagActionDialog = ({ tag, action, onClose }: Props) => {
   const deleteTag = useDeleteTag();
   const batchUpdate = useBatchUpdateMemoTags();
   const { data: tagCount = {} } = useTagCounts(true);
-  const mergeTargets = useMemo(
-    () =>
-      Object.entries(tagCount)
-        .filter(([value]) => value !== tag)
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
-    [tagCount, tag],
-  );
 
   const [newName, setNewName] = useState("");
   const [debouncedName, setDebouncedName] = useState("");
-  const [mergeTarget, setMergeTarget] = useState("");
+  const [moveQuery, setMoveQuery] = useState("");
+  const [moveParent, setMoveParent] = useState("");
   const [addInput, setAddInput] = useState("");
   const [removeInput, setRemoveInput] = useState("");
-  const [descendants, setDescendants] = useState(false);
+  // Moving a node in the tag tree carries its subtree along by default.
+  const [descendants, setDescendants] = useState(action === "move");
   const [updateReferences, setUpdateReferences] = useState(true);
   const busy = renameTag.isPending || deleteTag.isPending || batchUpdate.isPending;
 
@@ -78,7 +77,32 @@ const TagActionDialog = ({ tag, action, onClose }: Props) => {
 
   const addTags = parseTagInput(addInput);
   const removeTags = parseTagInput(removeInput);
-  const target = action === "merge" ? mergeTarget : newName.trim();
+  const target = newName.trim();
+  const targetExists = target !== "" && tagCount[target] !== undefined;
+
+  // Move (reparent) keeps the leaf name: `work/deep` under `life` becomes
+  // `life/deep`. The current parent is offered but greyed out — choosing it is
+  // a no-op. A tag can never move under itself or its own subtree.
+  const leaf = tag.split("/").pop() ?? tag;
+  const currentParent = tag.includes("/") ? tag.slice(0, tag.lastIndexOf("/")) : ROOT_PARENT;
+  // "Up one level" reparents to the grandparent — for `a/b/c` that is `a`,
+  // for `a/b` it is the top level (which the row then replaces).
+  const grandParent =
+    currentParent === ROOT_PARENT ? "" : currentParent.includes("/") ? currentParent.slice(0, currentParent.lastIndexOf("/")) : ROOT_PARENT;
+  const invalidParent = (value: string) => value === tag || value.startsWith(`${tag}/`);
+  const moveParentRows = useMemo(() => {
+    const needle = moveQuery.trim().toLowerCase().replace(/^#/, "");
+    return Object.entries(tagCount)
+      .filter(([value]) => !invalidParent(value) && (!needle || value.toLowerCase().includes(needle)))
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagCount, moveQuery, tag]);
+  // A typed name that isn't an existing row becomes the new parent verbatim.
+  const typedParent = parseTagInput(moveQuery)[0] ?? "";
+  const typedParentValid = typedParent !== "" && formatTag(typedParent) !== undefined && !invalidParent(typedParent);
+  const typedParentIsNew = typedParentValid && tagCount[typedParent] === undefined;
+  const effectiveParent = moveParent !== "" ? moveParent : typedParentValid ? typedParent : "";
+  const moveNewTag = effectiveParent === "" ? "" : effectiveParent === ROOT_PARENT ? leaf : `${effectiveParent}/${leaf}`;
 
   // Live validation keeps the confirm button honest without a dead disabled state:
   // the reason is always visible under the offending field once it has input.
@@ -88,24 +112,27 @@ const TagActionDialog = ({ tag, action, onClose }: Props) => {
       if (formatTag(target) === undefined) return t("tagOps.target-invalid");
       if (target === tag) return t("tagOps.same-tag");
     }
+    if (action === "move" && effectiveParent !== "" && moveNewTag === tag) {
+      return t("tagOps.move-same-position");
+    }
     if (action === "batch") {
       if (addTags.length === 0 && removeTags.length === 0) return undefined;
       if (addTags.some((value) => removeTags.includes(value))) return t("tagOps.conflict");
       if ([...addTags, ...removeTags].some((value) => formatTag(value) === undefined)) return t("tagOps.target-invalid");
     }
     return undefined;
-  }, [action, target, tag, addTags, removeTags, t]);
+  }, [action, target, tag, addTags, removeTags, effectiveParent, moveNewTag, t]);
 
   const formValid =
     action === "delete" ||
     (action === "rename" && target !== "" && formatTag(target) !== undefined && target !== tag) ||
-    (action === "merge" && mergeTarget !== "") ||
+    (action === "move" && effectiveParent !== "" && moveNewTag !== tag) ||
     (action === "batch" && (addTags.length > 0 || removeTags.length > 0) && !error);
 
   // Impact previews are read-only (validateOnly), so they ride a plain query:
   // keystrokes and checkbox flips refetch automatically, no preview button.
   useDebouncedEffect(() => setDebouncedName(newName.trim()), 350, [newName]);
-  const previewTarget = action === "rename" ? debouncedName : mergeTarget;
+  const previewTarget = action === "rename" ? debouncedName : moveNewTag;
   const previewReady = action === "rename" ? formValid && debouncedName === newName.trim() : formValid;
   const preview = useQuery<Impact>({
     queryKey: ["tag-action-preview", action, tag, previewTarget, descendants],
@@ -164,14 +191,13 @@ const TagActionDialog = ({ tag, action, onClose }: Props) => {
     }
   };
 
-  const confirmLabel =
-    action === "rename"
-      ? t("tagOps.confirm-rename")
-      : action === "merge"
-        ? t("tagOps.confirm-merge")
-        : action === "delete"
-          ? t("tagOps.confirm-delete")
-          : t("tagOps.apply");
+  const confirmLabel = {
+    // Renaming onto an existing tag is a merge — say so on the button.
+    rename: targetExists ? t("tagOps.confirm-merge") : t("tagOps.confirm-rename"),
+    move: t("tagOps.confirm-move"),
+    delete: t("tagOps.confirm-delete"),
+    batch: t("tagOps.apply"),
+  }[action];
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -190,24 +216,92 @@ const TagActionDialog = ({ tag, action, onClose }: Props) => {
             <div>
               <label className="mb-1 block text-sm font-medium">{t("tagOps.new-name")}</label>
               <Input className="font-mono" value={newName} onChange={(event) => setNewName(event.target.value)} autoFocus />
+              {target !== "" && formatTag(target) !== undefined && target !== tag && (
+                <p className={cn("mt-1 text-xs", targetExists ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
+                  {targetExists ? t("tagOps.target-exists", { count: tagCount[target] }) : t("tagOps.target-new")}
+                </p>
+              )}
             </div>
           )}
 
-          {action === "merge" && (
+          {action === "move" && (
             <div>
-              <label className="mb-1 block text-sm font-medium">{t("tagOps.merge-target")}</label>
-              <Select value={mergeTarget} onValueChange={setMergeTarget}>
-                <SelectTrigger className="w-full font-mono">
-                  <SelectValue placeholder={t("tagOps.merge-placeholder")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {mergeTargets.map(([value, amount]) => (
-                    <SelectItem key={value} value={value}>
-                      #{value} <span className="text-muted-foreground">{amount}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <SearchIcon className="absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="ps-8 font-mono"
+                  value={moveQuery}
+                  onChange={(event) => {
+                    setMoveQuery(event.target.value);
+                    setMoveParent("");
+                  }}
+                  placeholder={t("tagOps.move-search")}
+                  autoFocus
+                />
+              </div>
+              <div className="mt-1.5 flex max-h-48 flex-col gap-0.5 overflow-y-auto rounded-md border border-border p-1">
+                {currentParent !== ROOT_PARENT && (
+                  <button
+                    type="button"
+                    onClick={() => setMoveParent(grandParent)}
+                    className={cn(
+                      "flex items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-muted/60",
+                      moveParent === grandParent && "bg-accent",
+                    )}
+                  >
+                    {t("tagOps.move-up-one")}
+                    <span className="font-mono text-2xs text-muted-foreground">
+                      {grandParent === ROOT_PARENT ? t("tagOps.move-root") : `#${grandParent}`}
+                    </span>
+                  </button>
+                )}
+                {/* For a two-level tag "上一级" already lands on top level; skip the duplicate. */}
+                {(currentParent === ROOT_PARENT || grandParent !== ROOT_PARENT) && (
+                  <button
+                    type="button"
+                    disabled={currentParent === ROOT_PARENT}
+                    onClick={() => setMoveParent(ROOT_PARENT)}
+                    className={cn(
+                      "flex items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-muted/60 disabled:opacity-45",
+                      moveParent === ROOT_PARENT && "bg-accent",
+                    )}
+                  >
+                    {t("tagOps.move-root")}
+                    {currentParent === ROOT_PARENT && <span className="text-2xs text-muted-foreground">{t("tagOps.move-current")}</span>}
+                  </button>
+                )}
+                {moveParentRows.map(([value, amount]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    disabled={value === currentParent}
+                    onClick={() => {
+                      setMoveParent(value);
+                      setMoveQuery("");
+                    }}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-sm px-2 py-1.5 text-left font-mono text-sm hover:bg-muted/60 disabled:opacity-45",
+                      moveParent === value && "bg-accent",
+                    )}
+                  >
+                    <HashIcon className="size-3.5 shrink-0 text-muted-foreground/70" strokeWidth={1.8} />
+                    <span className="min-w-0 flex-1 truncate">{value}</span>
+                    {value === currentParent ? (
+                      <span className="text-2xs text-muted-foreground">{t("tagOps.move-current")}</span>
+                    ) : (
+                      <span className="text-2xs tabular-nums text-muted-foreground/60">{amount}</span>
+                    )}
+                  </button>
+                ))}
+                {typedParentIsNew && (
+                  <p className="px-2 py-1.5 font-mono text-xs text-muted-foreground">{t("tagOps.move-create", { parent: typedParent })}</p>
+                )}
+              </div>
+              {moveNewTag !== "" && moveNewTag !== tag && (
+                <p className="mt-1.5 font-mono text-xs text-muted-foreground">
+                  #{tag} → #{moveNewTag}
+                </p>
+              )}
             </div>
           )}
 
@@ -252,7 +346,7 @@ const TagActionDialog = ({ tag, action, onClose }: Props) => {
                   {previewData.affectedTags.length > 1 && (
                     <li className="font-mono text-xs">{previewData.affectedTags.map((value) => `#${value}`).join(" ")}</li>
                   )}
-                  {previewData.mergesIntoExisting && action === "rename" && (
+                  {previewData.mergesIntoExisting && (action === "rename" || action === "move") && (
                     <li className="text-amber-600 dark:text-amber-400">{t("tagOps.preview-merge")}</li>
                   )}
                   {previewData.remainingCount > 0 && <li>{t("tagOps.preview-remaining", { count: previewData.remainingCount })}</li>}

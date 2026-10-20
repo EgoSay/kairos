@@ -1593,7 +1593,6 @@
   "tagOps": {
     "action-batch": "Adjust tags",
     "action-delete": "Delete",
-    "action-merge": "Merge into",
     "action-rename": "Rename",
     "add-label": "Add tags",
     "add-placeholder": "tag, another/tag…",
@@ -1609,8 +1608,6 @@
     "failures-title": "{{count}} records failed",
     "manage-done": "Tag updated",
     "manage-entry": "Manage tags",
-    "merge-placeholder": "Choose the tag to merge into",
-    "merge-target": "Merge into tag",
     "partial-failures": "{{count}} records failed; retry the operation to finish",
     "partial-tags": "Only on some selected: {{tags}}",
     "preview-memos": "{{count}} records will be rewritten",
@@ -1628,11 +1625,9 @@
     "target-invalid": "Enter a valid tag name",
     "descendants-batch": "Also apply to nested tags",
     "descendants-delete": "Also remove nested tags",
-    "descendants-merge": "Also merge nested tags",
     "descendants-rename": "Also rename nested tags (tag/…)",
     "dialog-batch-title": "Batch-adjust tags",
     "dialog-delete-title": "Delete tag",
-    "dialog-merge-title": "Merge tag",
     "dialog-rename-title": "Rename tag",
     "manager-description": "Every tag in one place — rename, merge, delete, or adjust the records carrying it.",
     "manager-empty": "No matching tags",
@@ -1643,6 +1638,18 @@
     "preview-loading": "Checking impact…",
     "row-actions": "Actions for {{tag}}",
     "scope-count": "used on {{count}} records",
-    "update-refs-count": "Also update {{count}} saved views / display rules"
+    "update-refs-count": "Also update {{count}} saved views / display rules",
+    "action-move": "Move to…",
+    "dialog-move-title": "Move tag",
+    "move-root": "Top level (no parent)",
+    "move-same-position": "Already at that position",
+    "confirm-move": "Move tag",
+    "descendants-move": "Move nested tags along",
+    "move-search": "Search, or type a new parent",
+    "move-up-one": "Up one level",
+    "move-current": "Current",
+    "move-create": "New parent #{{parent}}",
+    "target-exists": "existing tag · {{count}} records",
+    "target-new": "a new tag"
   }
 }

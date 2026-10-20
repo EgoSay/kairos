@@ -36,8 +36,8 @@ const dynamicKeyParts: Record<string, readonly string[]> = {
   "memo.${}-description": ["layout-auto", "layout-columns", "layout-list"],
   "setting.notification.requirement-${}": ["gmail", "optional", "recommended", "required"],
   "space.icon.${}": ["emoji", "icons"],
-  "tagOps.descendants-${}": ["batch", "delete", "merge", "rename"],
-  "tagOps.dialog-${}-title": ["batch", "delete", "merge", "rename"],
+  "tagOps.descendants-${}": ["batch", "delete", "move", "rename"],
+  "tagOps.dialog-${}-title": ["batch", "delete", "move", "rename"],
 };
 
 const collectReferences = (files: Record<string, string>) => {
