@@ -12,7 +12,6 @@ import (
 	"github.com/EgoSay/kairos/core/access"
 	"github.com/EgoSay/kairos/core/memopayload"
 	"github.com/EgoSay/kairos/core/memotag"
-	"github.com/EgoSay/kairos/internal/ratelimit"
 	v1pb "github.com/EgoSay/kairos/proto/gen/api/v1"
 	"github.com/EgoSay/kairos/store"
 )
@@ -68,7 +67,7 @@ func (s *APIV1Service) BatchUpdateMemoTags(ctx context.Context, request *v1pb.Ba
 	if scoped {
 		return s.batchUpdateScopedTags(ctx, user, request)
 	}
-	if err := s.throttleAndCharge(ratelimit.ScopeWriteUser, userKey(user.ID), len(request.Names)); err != nil {
+	if err := s.chargeProgrammaticWrite(ctx, user.ID, len(request.Names)); err != nil {
 		return nil, err
 	}
 
@@ -124,7 +123,7 @@ func (s *APIV1Service) batchUpdateScopedTags(ctx context.Context, user *store.Us
 	if err != nil {
 		return nil, err
 	}
-	if err := s.throttleAndCharge(ratelimit.ScopeWriteUser, userKey(user.ID), tagOperationCost(len(scope.memos))); err != nil {
+	if err := s.chargeProgrammaticWrite(ctx, user.ID, tagOperationCost(len(scope.memos))); err != nil {
 		return nil, err
 	}
 
@@ -190,8 +189,12 @@ func (s *APIV1Service) RenameTag(ctx context.Context, request *v1pb.RenameTagReq
 	if err != nil {
 		return nil, err
 	}
-	if err := s.throttleAndCharge(ratelimit.ScopeWriteUser, userKey(user.ID), tagOperationCost(len(scope.memos))); err != nil {
-		return nil, err
+	// Previews are read-only: they must not drain the caller's write budget,
+	// or a few keystrokes of exploring options would block the commit itself.
+	if !request.ValidateOnly {
+		if err := s.chargeProgrammaticWrite(ctx, user.ID, tagOperationCost(len(scope.memos))); err != nil {
+			return nil, err
+		}
 	}
 
 	response := &v1pb.RenameTagResponse{
@@ -253,8 +256,10 @@ func (s *APIV1Service) DeleteTag(ctx context.Context, request *v1pb.DeleteTagReq
 	if err != nil {
 		return nil, err
 	}
-	if err := s.throttleAndCharge(ratelimit.ScopeWriteUser, userKey(user.ID), tagOperationCost(len(scope.memos))); err != nil {
-		return nil, err
+	if !request.ValidateOnly {
+		if err := s.chargeProgrammaticWrite(ctx, user.ID, tagOperationCost(len(scope.memos))); err != nil {
+			return nil, err
+		}
 	}
 
 	response := &v1pb.DeleteTagResponse{

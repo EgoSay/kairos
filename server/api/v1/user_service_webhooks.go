@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/EgoSay/kairos/internal/ratelimit"
 	"github.com/EgoSay/kairos/internal/webhook"
 	v1pb "github.com/EgoSay/kairos/proto/gen/api/v1"
 	storepb "github.com/EgoSay/kairos/proto/gen/store"
@@ -65,7 +64,7 @@ func (s *APIV1Service) CreateUserWebhook(ctx context.Context, request *v1pb.Crea
 	if currentUser == nil {
 		return nil, status.Errorf(codes.Unauthenticated, "user not authenticated")
 	}
-	if err := s.throttleAndCharge(ratelimit.ScopeWriteUser, userKey(currentUser.ID), 1); err != nil {
+	if err := s.chargeProgrammaticWrite(ctx, currentUser.ID, 1); err != nil {
 		return nil, err
 	}
 	if currentUser.ID != userID {

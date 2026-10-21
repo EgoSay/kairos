@@ -12,7 +12,6 @@ import (
 
 	"github.com/EgoSay/kairos/filter"
 	"github.com/EgoSay/kairos/internal/random"
-	"github.com/EgoSay/kairos/internal/ratelimit"
 	v1pb "github.com/EgoSay/kairos/proto/gen/api/v1"
 	storepb "github.com/EgoSay/kairos/proto/gen/store"
 	"github.com/EgoSay/kairos/server/auth"
@@ -136,7 +135,7 @@ func (s *APIV1Service) CreateMemoView(ctx context.Context, request *v1pb.CreateM
 	if err := s.requireCallerIs(ctx, user); err != nil {
 		return nil, err
 	}
-	if err := s.throttleAndCharge(ratelimit.ScopeWriteUser, userKey(auth.GetUserID(ctx)), 1); err != nil {
+	if err := s.chargeProgrammaticWrite(ctx, auth.GetUserID(ctx), 1); err != nil {
 		return nil, err
 	}
 

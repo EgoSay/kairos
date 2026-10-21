@@ -339,7 +339,12 @@ const TagActionDialog = ({ tag, action, onClose }: Props) => {
           {action !== "batch" && formValid && (
             <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
               {preview.isPending && <p className="text-muted-foreground">{t("tagOps.preview-loading")}</p>}
-              {preview.isError && <p className="text-destructive">{t("tagOps.preview-failed")}</p>}
+              {preview.isError && (
+                <p className="text-destructive">
+                  {t("tagOps.preview-failed")}
+                  {preview.error?.message && <span className="mt-0.5 block text-xs text-muted-foreground">{preview.error.message}</span>}
+                </p>
+              )}
               {previewData && (
                 <ul className="list-disc ps-5 text-muted-foreground">
                   <li>{t("tagOps.preview-memos", { count: previewData.affectedMemos })}</li>
