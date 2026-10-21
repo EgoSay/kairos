@@ -145,6 +145,16 @@ func (s *APIV1Service) charge(scope ratelimit.Scope, key string, cost int) {
 	s.RateLimiter.Hit(scope, key, cost)
 }
 
+// chargeProgrammaticWrite bills the write budget only for programmatic
+// credentials (PATs, including MCP traffic). Session-token callers carry
+// claims and are never metered — a person's own UI must not rate-limit them.
+func (s *APIV1Service) chargeProgrammaticWrite(ctx context.Context, userID int32, cost int) error {
+	if auth.GetUserClaims(ctx) != nil {
+		return nil
+	}
+	return s.throttleAndCharge(ratelimit.ScopeWriteUser, userKey(userID), cost)
+}
+
 // throttleAndCharge admits and records in one atomic step, for activities
 // where every attempt counts.
 func (s *APIV1Service) throttleAndCharge(scope ratelimit.Scope, key string, cost int) error {

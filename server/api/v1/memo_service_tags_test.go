@@ -6,15 +6,18 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/EgoSay/kairos/core/partition"
+	"github.com/EgoSay/kairos/internal/ratelimit"
 	"github.com/EgoSay/kairos/internal/webhook"
 	v1pb "github.com/EgoSay/kairos/proto/gen/api/v1"
 	storepb "github.com/EgoSay/kairos/proto/gen/store"
+	"github.com/EgoSay/kairos/server/auth"
 	"github.com/EgoSay/kairos/store"
 )
 
@@ -319,4 +322,37 @@ func TestTagOperationsRejectCrossUserAndInvalid(t *testing.T) {
 	require.Equal(t, codes.InvalidArgument, status.Code(err))
 	_, err = svc.RenameTag(ctx, &v1pb.RenameTagRequest{OldTag: "a b", NewTag: "b"})
 	require.Equal(t, codes.InvalidArgument, status.Code(err))
+}
+
+func TestTagOperationPreviewsDoNotConsumeWriteBudget(t *testing.T) {
+	svc := newIntegrationService(t)
+	owner := createSpaceTestUser(context.Background(), t, svc, "tag-owner", store.RoleUser)
+	ctx := userCtx(context.Background(), owner.ID)
+
+	// A one-unit budget: creating the memo already spends it. Contexts built
+	// by userCtx carry no claims, so they exercise the programmatic path.
+	policy := ratelimit.DefaultPolicy()
+	policy[ratelimit.ScopeWriteUser] = ratelimit.Rule{Limit: 1, Window: time.Minute}
+	svc.RateLimiter = ratelimit.NewMemoryLimiter(policy)
+	createTagTestMemo(ctx, t, svc, "tag-p1", "memo #work")
+
+	// validate_only previews are read-only; exploring options must still
+	// succeed after the write budget is spent.
+	for range 3 {
+		_, err := svc.RenameTag(ctx, &v1pb.RenameTagRequest{OldTag: "work", NewTag: "job", ValidateOnly: true})
+		require.NoError(t, err)
+		_, err = svc.DeleteTag(ctx, &v1pb.DeleteTagRequest{Tag: "work", ValidateOnly: true})
+		require.NoError(t, err)
+	}
+
+	// The committed write is still metered — and now refused.
+	_, err := svc.RenameTag(ctx, &v1pb.RenameTagRequest{OldTag: "work", NewTag: "job"})
+	require.Equal(t, codes.ResourceExhausted, status.Code(err))
+
+	// Session callers carry claims and are never write-metered: the UI must
+	// not rate-limit its owner.
+	sessionCtx := auth.SetUserClaimsInContext(ctx, &auth.UserClaims{UserID: owner.ID})
+	createTagTestMemo(sessionCtx, t, svc, "tag-p2", "memo #work")
+	_, err = svc.DeleteTag(sessionCtx, &v1pb.DeleteTagRequest{Tag: "work"})
+	require.NoError(t, err)
 }

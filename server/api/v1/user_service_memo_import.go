@@ -23,6 +23,7 @@ import (
 	"github.com/EgoSay/kairos/internal/ratelimit"
 	v1pb "github.com/EgoSay/kairos/proto/gen/api/v1"
 	storepb "github.com/EgoSay/kairos/proto/gen/store"
+	"github.com/EgoSay/kairos/server/auth"
 	"github.com/EgoSay/kairos/store"
 )
 
@@ -174,7 +175,9 @@ func (s *APIV1Service) ImportMemoExport(ctx context.Context, user *store.User, a
 		}
 		// An imported memo counts against the same write budget as one
 		// created through CreateMemo, so an archive cannot bypass it.
-		s.charge(ratelimit.ScopeWriteUser, userKey(user.ID), 1)
+		if auth.GetUserClaims(ctx) == nil {
+			s.charge(ratelimit.ScopeWriteUser, userKey(user.ID), 1)
+		}
 	}
 	for _, written := range importer.written {
 		if err := ctx.Err(); err != nil {

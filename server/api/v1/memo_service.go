@@ -18,7 +18,6 @@ import (
 	"github.com/EgoSay/kairos/core/access"
 	"github.com/EgoSay/kairos/core/journal"
 	"github.com/EgoSay/kairos/core/memopayload"
-	"github.com/EgoSay/kairos/internal/ratelimit"
 	v1pb "github.com/EgoSay/kairos/proto/gen/api/v1"
 	storepb "github.com/EgoSay/kairos/proto/gen/store"
 	"github.com/EgoSay/kairos/store"
@@ -34,7 +33,7 @@ func (s *APIV1Service) CreateMemo(ctx context.Context, request *v1pb.CreateMemoR
 	if user == nil {
 		return nil, status.Errorf(codes.Unauthenticated, "user not authenticated")
 	}
-	if err := s.throttleAndCharge(ratelimit.ScopeWriteUser, userKey(user.ID), 1); err != nil {
+	if err := s.chargeProgrammaticWrite(ctx, user.ID, 1); err != nil {
 		return nil, err
 	}
 	if request.Memo == nil {
