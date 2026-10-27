@@ -7,6 +7,8 @@ behavior. New and unimplemented designs may still be added or revised.
 
 Active design specifications (decided direction, not yet implemented):
 
+- [随机漫步：沿着记录发现关联](random-walk-associations.md) — #38，已确认产品方案 v0.2；后台自动维护关系、直接进入、原文优先与即时阅读，开发中。
+- [随机漫步：技术设计](random-walk-technical-design.md) — #38，技术方案 v0.2；Cloudflare Workers AI、语义表示、关联证据、增量任务、局部结果与前端预取；开发中，待本地验收。
 - [Kairos 设计系统规范](kairos-design-system-2026-10-16.md) — 配色（松绿）、字体分层（文楷内容层）、圆角/阴影/空间/文案/Token/组件状态的完整规范与迁移优先级；视觉依据为 `prototypes/` 方向 B。
 - [Kairos 视图编排器](kairos-view-composer-2026-10-19.md) — #25（R14）的设计方案：规范 CEL 语法 + 分句识别器双向桥、单一 ViewComposerDialog 四入口、动态/固定时间语义边界与 residual 旧表达式保留机制。
 - [记录多选批量调整标签与统一标签管理](tag-organization.md) — R13：多选批量增删标签 + 标签管理（重命名/合并/层级/删除），服务端批量 RPC + AST 正文改写，标签整理不触发分区外发。
