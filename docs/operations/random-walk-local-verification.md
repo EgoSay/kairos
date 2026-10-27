@@ -1,6 +1,6 @@
 # 随机漫步本地验收（2026-10-27）
 
-状态：A+C 连续原文与可选地图已实现，3081 验收实例已更新至 `ccfae4930` 并完成 ego lite 浏览器验收。该代码提交的 13 项 GitHub CI 全部通过；真实 Cloudflare 联调、全部性能目标和 Evan 本人验收仍待完成。跟踪 [Issue #38](https://github.com/EgoSay/kairos/issues/38)，方案 [PR #39](https://github.com/EgoSay/kairos/pull/39)，实现 [PR #40](https://github.com/EgoSay/kairos/pull/40)。未合并、未发布生产。
+状态：Evan 已明确通过 A+C 本地验收并授权合并与上线，正在准备 `1.8.0`。3081 验收实例为 `ccfae4930`，该代码与后续文档提交的 13 项 GitHub CI 均已通过。真实 Cloudflare 联调与全部性能目标仍待完成；上线授权不等于这些指标已通过。跟踪 [Issue #38](https://github.com/EgoSay/kairos/issues/38)，方案 [PR #39](https://github.com/EgoSay/kairos/pull/39)，实现 [PR #40](https://github.com/EgoSay/kairos/pull/40)。发布结果在完成后另行留存回执。
 
 ## 实现范围
 
@@ -98,4 +98,4 @@ Evan 已选择 A+C，并授权正式改动和验收。实现提交 `ccfae4930` �
 1. 提供可用的 Cloudflare 账户 ID / Workers AI Token 所在本地配置路径并核实 Workers Free 计划，先以获准虚构样本运行真实嵌入与判边；不自动上传私人记录。
 2. 独立中文评估样本检查跨场景关联、错误连线、长文召回及无关系样本，记录真实费用和首次回填时间。
 3. 继续压低冷启动时延，并在无浏览器节流干扰的目标设备上确认首帧指标。
-4. Evan 在 `http://127.0.0.1:3081/journal/wander` 验收 A+C 的连续原文、提示与地图，再决定后续调整。以上未完成事项保持可见，不以测试或 PR 替代验收。
+4. Evan 已在本轮明确通过 A+C 本地验收并要求合并发布；按 release 技能完成主分支、版本标签、备份、部署与线上核验。Cloudflare 联调及性能待办继续保留，不因上线而冒称完成。
