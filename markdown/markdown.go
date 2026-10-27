@@ -439,6 +439,8 @@ func (s *service) ExtractAll(content []byte) (*ExtractedData, error) {
 			data.LinkDestinations = append(data.LinkDestinations, string(link.Destination))
 		case *gast.AutoLink:
 			data.LinkDestinations = append(data.LinkDestinations, string(link.URL(content)))
+		default:
+			// Other nodes do not contribute Markdown link destinations.
 		}
 		if imageNode, ok := n.(*gast.Image); ok {
 			destination := string(imageNode.Destination)
