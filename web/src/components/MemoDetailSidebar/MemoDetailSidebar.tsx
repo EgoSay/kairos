@@ -81,7 +81,7 @@ const BacklinkRow = ({
       onClick={(event) => {
         if (reader.enabled && isOrdinaryActivation(event)) {
           event.preventDefault();
-          reader.open(relatedMemo.name, event.currentTarget);
+          reader.open(relatedMemo.name, event.currentTarget, relation.relatedMemo?.name);
         }
       }}
     >

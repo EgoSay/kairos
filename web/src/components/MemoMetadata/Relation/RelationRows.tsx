@@ -63,6 +63,7 @@ const RelationRows = ({ items, parentPage, enabled }: RelationRowsProps) => {
             key={getRelationMemoName(relation, direction)}
             memo={resolvedMemos[memo.name] ?? { ...memo, snippet: "正在读取关联记录…" }}
             parentPage={parentPage}
+            sourceName={direction === "referencing" ? relation.memo?.name : relation.relatedMemo?.name}
             icon={DIRECTION_ICONS[direction]}
             trailing={<span className={METADATA_ROW_DETAIL_CLASSES}>{directionLabels[direction]}</span>}
           />

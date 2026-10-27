@@ -1,9 +1,8 @@
 import { create } from "@bufbuild/protobuf";
 import { undo } from "@codemirror/commands";
 import { EditorView } from "@codemirror/view";
-import { Code, ConnectError } from "@connectrpc/connect";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { createRef, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Editor from "@/components/MemoEditor/Editor";
@@ -36,26 +35,23 @@ beforeEach(() => {
 });
 
 describe("live record reference", () => {
-  it("never renders cached private text before a fresh check, or after access is denied", async () => {
+  it("renders only an accessible arrow without fetching or exposing cached text", () => {
     const queryClient = client();
     queryClient.setQueryData(memoKeys.detail(memo.name), memo);
-    mocks.near = false;
-    mocks.getMemo.mockRejectedValue(new ConnectError("denied", Code.PermissionDenied));
-    const { rerender } = render(<RecordReference name={memo.name} href="/memos/one" />, { wrapper: wrapper(queryClient) });
+    render(<RecordReference name={memo.name} href="/memos/one" />, { wrapper: wrapper(queryClient) });
     expect(screen.queryByText("原始正文")).not.toBeInTheDocument();
     expect(mocks.getMemo).not.toHaveBeenCalled();
-    mocks.near = true;
-    rerender(<RecordReference name={memo.name} href="/memos/one" />);
-    expect(screen.queryByText("原始正文")).not.toBeInTheDocument();
-    await screen.findByText("记录不可用");
-    expect(queryClient.getQueryData(memoKeys.detail(memo.name))).toBeNull();
+    const link = screen.getByRole("link", { name: "查看关联记录" });
+    expect(link.textContent).toBe("");
+    expect(link).toHaveAttribute("href", "/memos/one");
+    fireEvent.click(link);
+    expect(mocks.open).toHaveBeenCalledWith(memo.name, link, undefined, undefined);
   });
 
-  it("keeps the authored label, ordinary activation and modified-link behavior", async () => {
+  it("keeps the authored label, ordinary activation and modified-link behavior", () => {
     render(<RecordReference name={memo.name} href="/memos/one" label="我的命名" sourceName="memos/source" />, {
       wrapper: wrapper(client()),
     });
-    await waitFor(() => expect(mocks.getMemo).toHaveBeenCalled());
     const link = screen.getByRole("link", { name: "我的命名" });
     fireEvent.click(link);
     expect(mocks.open).toHaveBeenCalledWith(memo.name, link, "memos/source", undefined);
@@ -68,16 +64,6 @@ describe("live record reference", () => {
   it("does not resolve references when the share reader is disabled", () => {
     render(<RecordReference name={memo.name} href="/memos/one" />, { wrapper: wrapper(client(), false) });
     expect(mocks.getMemo).not.toHaveBeenCalled();
-  });
-
-  it("retains a readable link on failure and resolves the original excerpt after retry", async () => {
-    mocks.getMemo.mockRejectedValueOnce(new ConnectError("failed", Code.InvalidArgument));
-    render(<RecordReference name={memo.name} href="/memos/one" />, { wrapper: wrapper(client()) });
-    await screen.findByText("暂时无法读取");
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/memos/one");
-    fireEvent.click(screen.getByRole("button", { name: "重试" }));
-    await screen.findByText("原始正文");
-    expect(screen.queryByRole("button", { name: "重试" })).not.toBeInTheDocument();
   });
 
   it("keeps widget Markdown, selection and undo across reading and source mode", async () => {
@@ -93,7 +79,7 @@ describe("live record reference", () => {
       onSubmit: vi.fn(),
     };
     const { container, rerender } = render(<Editor {...props} />, { wrapper: wrapper(client()) });
-    await screen.findByText("原始正文");
+    await screen.findByRole("link", { name: "查看关联记录" });
     const view = EditorView.findFromDOM(container.querySelector(".cm-content")!)!;
     act(() => view.dispatch({ selection: { anchor: original.length } }));
     fireEvent.click(screen.getByRole("link"));
@@ -112,7 +98,7 @@ describe("live record reference", () => {
     });
     expect(ref.current?.getMarkdown()).toBe(original);
     rerender(<Editor {...props} contentIsExternal={false} />);
-    await screen.findByText("原始正文");
+    await screen.findByRole("link", { name: "查看关联记录" });
     expect(container.querySelectorAll(".cm-record-reference")).toHaveLength(1);
   });
 });

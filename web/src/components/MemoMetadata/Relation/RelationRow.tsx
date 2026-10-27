@@ -9,6 +9,7 @@ import { METADATA_ROW_CLASSES, METADATA_ROW_LABEL_CLASSES, METADATA_ROW_TEXT_CLA
 interface RelationRowProps {
   memo: MemoRelation_Memo;
   parentPage?: string;
+  sourceName?: string;
   icon?: LucideIcon;
   /**
    * "row" is a complete row that is its own focus target; "label" is the focusable body
@@ -20,7 +21,7 @@ interface RelationRowProps {
 }
 
 /** One related memo as a metadata row: a glyph in the leading slot and the snippet. */
-const RelationRow = ({ memo, parentPage, icon = LinkIcon, variant = "row", trailing }: RelationRowProps) => {
+const RelationRow = ({ memo, parentPage, sourceName, icon = LinkIcon, variant = "row", trailing }: RelationRowProps) => {
   const reader = useRecordReading();
   return (
     <Link
@@ -31,7 +32,7 @@ const RelationRow = ({ memo, parentPage, icon = LinkIcon, variant = "row", trail
       onClick={(event) => {
         if (reader.enabled && isOrdinaryActivation(event)) {
           event.preventDefault();
-          reader.open(memo.name, event.currentTarget);
+          reader.open(memo.name, event.currentTarget, sourceName);
         }
       }}
     >

@@ -23,10 +23,10 @@ server provider; no editor-open or keystroke triggers an external lookup.
 Association uses the same debounced candidate query and rows as Quick Find.
 Selecting a candidate updates draft metadata only; the relation is committed
 with the memo save. The `[[` shortcut opens that picker and removes its trigger
-only after a successful selection. Same-instance memo URLs render original
-excerpts through permission-checked CodeMirror widgets while retaining the
+only after a successful selection. Same-instance memo URLs render compact circular
+arrows through CodeMirror widgets, with authored link labels preserved, while retaining the
 authored Markdown and undo history. Opening one uses the shared reading dialog
-and closing it returns to the same editor selection. Saving synchronizes content
+for permission-checked full content, and closing it returns to the same editor selection. Saving synchronizes content
 references independently of manually selected associations; removing a body link
 never removes a manual association to the same record.
 

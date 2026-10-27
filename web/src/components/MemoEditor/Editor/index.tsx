@@ -229,7 +229,6 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
             name={reference.name}
             href={reference.href}
             label={reference.label}
-            block={reference.block}
             restoreFocus={() => view.focus()}
             onResize={() => view.requestMeasure()}
           />,

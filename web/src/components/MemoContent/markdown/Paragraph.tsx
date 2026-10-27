@@ -75,7 +75,9 @@ export const Paragraph = ({ children, className, node, sourceName, ...props }: P
   const recordName = singleHref && memoNameFromURL(singleHref, reader.origins);
   if (recordName && singleHref) {
     return reader.enabled ? (
-      <RecordReference name={recordName} href={singleHref} block={blockDepth === 0} sourceName={sourceName} />
+      <p className={cn(markdownStyles.paragraph, className)} {...props}>
+        <RecordReference name={recordName} href={singleHref} sourceName={sourceName} />
+      </p>
     ) : (
       <p className={cn(markdownStyles.paragraph, className)} {...props}>
         {children}

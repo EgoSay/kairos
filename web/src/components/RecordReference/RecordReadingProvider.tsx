@@ -8,6 +8,7 @@ import RecordReadingDialog from "./RecordReadingDialog";
 export interface ReadingEntry {
   name: string;
   scrollTop: number;
+  sourceName?: string;
 }
 
 /** One reading stack per route/account. Share routes never use ambient owner credentials. */
@@ -17,7 +18,7 @@ export default function RecordReadingProvider({ children }: PropsWithChildren) {
   const user = useCurrentUser();
   const owner = `${user?.name ?? "guest"}:${location.key}`;
   const enabled = !location.pathname.startsWith("/memos/shares/");
-  const [session, setSession] = useState<{ owner: string; entries: ReadingEntry[]; sourceName?: string }>();
+  const [session, setSession] = useState<{ owner: string; entries: ReadingEntry[] }>();
   const trigger = useRef<HTMLElement | null>(null);
   const restore = useRef<(() => void) | undefined>(undefined);
   const scroll = useRef<HTMLDivElement | null>(null);
@@ -31,11 +32,11 @@ export default function RecordReadingProvider({ children }: PropsWithChildren) {
           const entries = previous.entries.map((entry, index) =>
             index === previous.entries.length - 1 ? { ...entry, scrollTop: scroll.current?.scrollTop ?? 0 } : entry,
           );
-          return { ...previous, entries: [...entries, { name, scrollTop: 0 }] };
+          return { ...previous, entries: [...entries, { name, sourceName: sourceName ?? previous.entries.at(-1)?.name, scrollTop: 0 }] };
         }
         trigger.current = element ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
         restore.current = restoreFocus;
-        return { owner, entries: [{ name, scrollTop: 0 }], sourceName };
+        return { owner, entries: [{ name, sourceName, scrollTop: 0 }] };
       });
     },
     [enabled, owner],
@@ -48,7 +49,6 @@ export default function RecordReadingProvider({ children }: PropsWithChildren) {
       {active && (
         <RecordReadingDialog
           entries={active.entries}
-          sourceName={active.sourceName}
           scrollRef={scroll}
           onClose={() => setSession(undefined)}
           onBack={() => setSession((previous) => (previous ? { ...previous, entries: previous.entries.slice(0, -1) } : previous))}
