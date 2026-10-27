@@ -32,8 +32,9 @@ share grants are separate versioned `journal_document` records.
 
 All persistence uses owner-scoped compare-and-swap documents. HTTP auth,
 passcodes, safe media transformation and provider calls remain transport or
-provider responsibilities. These features never run an automatic full-archive
-AI job or create prompts, streaks, goals or notification tasks.
+provider responsibilities. This package does not run automatic AI jobs or create prompts, streaks, goals or
+notification tasks. Explicitly enabled background associations belong to
+`core/recordgraph/`, which applies these same exclusions and withdrawal rules.
 
 - Agent query criteria compile into the shared memo filter contract. Local day
   boundaries use calendar arithmetic across DST; strings remain literal and tag

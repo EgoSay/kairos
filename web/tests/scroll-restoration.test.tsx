@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "@/App";
 import { useUserLocale } from "@/hooks/useUserLocale";
 
+vi.mock("@/hooks/useWanderQueries", () => ({ useWanderWarmup: () => undefined }));
+
 vi.mock("@/contexts/InstanceContext", () => ({
   useInstance: () => ({
     profile: { needsSetup: false },

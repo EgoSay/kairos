@@ -50,6 +50,7 @@ func (s *APIV1Service) registerJournalRoutes(ctx context.Context, e *echo.Echo) 
 			return next(c)
 		}
 	})
+	s.registerJournalWanderRoutes(ctx, group)
 	group.GET("/preferences", s.journalPreferences)
 	group.PATCH("/preferences", s.journalUpdatePreferences)
 	group.GET("/review", s.journalReview)

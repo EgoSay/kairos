@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   DEFAULT_SETTING_SECTION,
@@ -61,7 +61,9 @@ const Setting = () => {
     <section className="w-full min-h-full">
       <div className="mx-auto w-full max-w-5xl px-4 pb-12 pt-4 sm:px-6 md:pt-8">
         <div className="min-w-0">
-          <ActiveSection />
+          <Suspense fallback={<div className="min-h-32" aria-busy="true" />}>
+            <ActiveSection />
+          </Suspense>
         </div>
       </div>
     </section>

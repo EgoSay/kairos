@@ -6,6 +6,7 @@ import { attachmentKeys } from "@/hooks/useAttachmentQueries";
 import { memoKeys } from "@/hooks/useMemoQueries";
 import { spaceKeys } from "@/hooks/useSpaceQueries";
 import { userKeys } from "@/hooks/useUserQueries";
+import { resetWander, wanderKeys } from "@/hooks/useWanderQueries";
 
 /**
  * Reconnection parameters for SSE connection.
@@ -58,7 +59,7 @@ export function useSSEConnectionStatus(): SSEConnectionStatus {
 }
 
 interface SSEChangeEvent {
-  type: typeof MEMO_CHANGED_SSE_EVENT_TYPE | typeof SPACE_CHANGED_SSE_EVENT_TYPE;
+  type: typeof MEMO_CHANGED_SSE_EVENT_TYPE | typeof SPACE_CHANGED_SSE_EVENT_TYPE | "graph.changed";
 }
 
 type SSESyncMessage =
@@ -103,6 +104,7 @@ export function useLiveMemoRefresh() {
     };
 
     const publishStatus = (status: SSEConnectionStatus) => {
+      if (status !== "connected" && getSSEStatus() === "connected") resetWander(queryClient);
       setSSEStatus(status);
       postSyncMessage({ kind: "status", status });
     };
@@ -282,6 +284,7 @@ export function useLiveMemoRefresh() {
             }
             hasConnectedOnceRef.current = true;
           }
+          if (message.status !== "connected" && getSSEStatus() === "connected") resetWander(queryClient);
           setSSEStatus(message.status);
           break;
         case "status-request":
@@ -461,6 +464,9 @@ async function consumeSSEStream(body: ReadableStream<Uint8Array>, signal: AbortS
 
 function handleSSEEvent(event: SSEChangeEvent, queryClient: ReturnType<typeof useQueryClient>) {
   switch (event.type) {
+    case "graph.changed":
+      void queryClient.invalidateQueries({ queryKey: wanderKeys.all });
+      break;
     case MEMO_CHANGED_SSE_EVENT_TYPE:
       invalidateLiveMemoQueries(queryClient);
       break;
@@ -478,6 +484,7 @@ function invalidateAllLiveQueries(queryClient: ReturnType<typeof useQueryClient>
 }
 
 function invalidateLiveMemoQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  resetWander(queryClient);
   queryClient.invalidateQueries({ queryKey: memoKeys.all, refetchType: "active" });
   queryClient.invalidateQueries({ queryKey: userKeys.stats(), refetchType: "active" });
   queryClient.invalidateQueries({ queryKey: attachmentKeys.lists(), refetchType: "active" });

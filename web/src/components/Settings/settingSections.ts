@@ -19,24 +19,27 @@ import {
   WebhookIcon,
 } from "lucide-react";
 import { type ComponentType } from "react";
-import AccessTokenSection from "@/components/Settings/AccessTokenSection";
-import AgentSection from "@/components/Settings/AgentSection";
-import AISection from "@/components/Settings/AISection";
-import InstallAppSection from "@/components/Settings/InstallAppSection";
-import InstanceSection from "@/components/Settings/InstanceSection";
-import MemberSection from "@/components/Settings/MemberSection";
-import MemoExportSection from "@/components/Settings/MemoExportSection";
-import MemoRelatedSettings from "@/components/Settings/MemoRelatedSettings";
-import MyAccountSection from "@/components/Settings/MyAccountSection";
-import NotificationSection from "@/components/Settings/NotificationSection";
-import PreferencesSection from "@/components/Settings/PreferencesSection";
-import ResourceStatsSection from "@/components/Settings/ResourceStatsSection";
-import SpacesSection from "@/components/Settings/SpacesSection";
-import SSOSection from "@/components/Settings/SSOSection";
-import StorageSection from "@/components/Settings/StorageSection";
-import TagsSection from "@/components/Settings/TagsSection";
-import WebhookSection from "@/components/Settings/WebhookSection";
 import { InstanceSetting_Key } from "@/types/proto/api/v1/instance_service_pb";
+import { lazyWithReload } from "@/utils/lazy";
+
+// Sidebar navigation reads this catalogue without loading every settings screen.
+const AccessTokenSection = lazyWithReload(() => import("@/components/Settings/AccessTokenSection"));
+const AgentSection = lazyWithReload(() => import("@/components/Settings/AgentSection"));
+const AISection = lazyWithReload(() => import("@/components/Settings/AISection"));
+const InstallAppSection = lazyWithReload(() => import("@/components/Settings/InstallAppSection"));
+const InstanceSection = lazyWithReload(() => import("@/components/Settings/InstanceSection"));
+const MemberSection = lazyWithReload(() => import("@/components/Settings/MemberSection"));
+const MemoExportSection = lazyWithReload(() => import("@/components/Settings/MemoExportSection"));
+const MemoRelatedSettings = lazyWithReload(() => import("@/components/Settings/MemoRelatedSettings"));
+const MyAccountSection = lazyWithReload(() => import("@/components/Settings/MyAccountSection"));
+const NotificationSection = lazyWithReload(() => import("@/components/Settings/NotificationSection"));
+const PreferencesSection = lazyWithReload(() => import("@/components/Settings/PreferencesSection"));
+const ResourceStatsSection = lazyWithReload(() => import("@/components/Settings/ResourceStatsSection"));
+const SpacesSection = lazyWithReload(() => import("@/components/Settings/SpacesSection"));
+const SSOSection = lazyWithReload(() => import("@/components/Settings/SSOSection"));
+const StorageSection = lazyWithReload(() => import("@/components/Settings/StorageSection"));
+const TagsSection = lazyWithReload(() => import("@/components/Settings/TagsSection"));
+const WebhookSection = lazyWithReload(() => import("@/components/Settings/WebhookSection"));
 
 export type SettingSectionKey =
   | "my-account"

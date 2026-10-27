@@ -1,6 +1,7 @@
 import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { useEffect } from "react";
 import { Outlet, ScrollRestoration } from "react-router-dom";
+import { useWanderWarmup } from "@/hooks/useWanderQueries";
 import { useInstance } from "./contexts/InstanceContext";
 import { TimelineViewProvider } from "./contexts/ViewContext";
 import useNavigateTo from "./hooks/useNavigateTo";
@@ -9,6 +10,7 @@ import { useUserTheme } from "./hooks/useUserTheme";
 import { cleanupExpiredOAuthState } from "./utils/oauth";
 
 const App = () => {
+  useWanderWarmup();
   const navigateTo = useNavigateTo();
   const { profile: instanceProfile, profileLoaded, generalSetting: instanceGeneralSetting } = useInstance();
 

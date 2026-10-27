@@ -2,6 +2,7 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 import { getRequestToken, memoServiceClient } from "@/connect";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { memoDetailQueryOptions, memoKeys } from "@/hooks/useMemoQueries";
+import { resetWander } from "@/hooks/useWanderQueries";
 import i18n from "@/i18n";
 import { isJournalCandidate } from "@/lib/journal";
 import { buildMemoCreatorFilter } from "@/lib/resource-names";
@@ -57,6 +58,7 @@ export function useUpdateJournalPreferences() {
         body: JSON.stringify(patch),
       }),
     onSuccess: (preferences) => {
+      resetWander(client);
       client.setQueryData(journalKeys.preferences(user?.name ?? ""), preferences);
       void client.invalidateQueries({ queryKey: journalKeys.all });
     },

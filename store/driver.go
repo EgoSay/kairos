@@ -8,6 +8,16 @@ import (
 // Driver is an interface for store driver.
 // It contains all methods that store database driver should implement.
 type Driver interface {
+	ReserveGraphBudget(ctx context.Context, account, day string, amount, limit int64) (bool, error)
+	RefundGraphBudget(ctx context.Context, account, day string, amount int64) error
+	ReadGraphBudget(ctx context.Context, account, day string) (int64, error)
+	ListGraphSources(ctx context.Context, find *FindGraphSource) ([]*GraphSource, error)
+	ClaimGraphSource(ctx context.Context, source *GraphSource, now int64) (bool, error)
+	PublishGraphSource(ctx context.Context, publication *GraphPublication) error
+	DeferGraphSource(ctx context.Context, source *GraphSource) error
+	ListGraphEdges(ctx context.Context, owner, memoID int32, profile string, limit int) ([]*GraphEdge, error)
+	GraphEpoch(ctx context.Context, owner int32) (int64, error)
+	CountGraphSources(ctx context.Context, owner int32, profile string) (GraphCounts, error)
 	GetJournalDocument(ctx context.Context, ownerID int32, kind, key string) (*JournalDocument, error)
 	ListJournalDocuments(ctx context.Context, find *FindJournalDocument) ([]*JournalDocument, error)
 	PutJournalDocument(ctx context.Context, doc *JournalDocument, expectedVersion int64) (*JournalDocument, error)

@@ -1,6 +1,6 @@
 # 随机漫步：技术设计
 
-Status: In progress — 技术方案 v0.2，2026-10-27；Cloudflare Workers AI 方案已确认，进入开发及本地验收，尚未实现。跟踪：[Issue #38](https://github.com/EgoSay/kairos/issues/38)。
+Status: In progress — 技术方案 v0.2，2026-10-27；Cloudflare Workers AI 方案已确认，后台与界面已实现，工程检查与本地模拟验收已开展；真实模型和完整性能目标尚未验收。跟踪：[Issue #38](https://github.com/EgoSay/kairos/issues/38)。
 
 前置产品方案：[随机漫步：沿着记录发现关联](random-walk-associations.md)，Evan 已确认 v0.2，要求继续讨论技术实现。本稿落实自动关联、语义检索、后台更新和即时阅读；不改变已确认的产品流程。
 
@@ -273,8 +273,7 @@ memo.changed／space.changed、恢复可见、重连或账户变化会触发资�
 | 位置 | 职责 |
 | --- | --- |
 | core/recordgraph/（新增） | 图谱构建、关联规则、检索组合、任务处理、局部结果发布与读取；把复杂性集中在一个有清晰输入输出的 Module |
-| provider/ai/embedding/（新增） | 文档／问题向量的 HTTP Adapter、配置能力校验、响应检查 |
-| provider/ai/association/（新增） | 关注点与关系的结构化模型调用；不直接查库或保存图谱 |
+| provider/ai/association/（新增） | Cloudflare 嵌入、关注点与关系的结构化模型调用；统一端点与响应校验，不直接查库或保存图谱 |
 | store/ 与三个数据库 driver | 原子变更登记、任务租约、版本和派生数据持久化；不写提示词或做模型判断 |
 | server/api/v1/ | 薄路由、账户上下文、请求上限、错误映射与无内容 SSE 通知 |
 | web/src/hooks/ 与漫步组件 | 查询／预取，局部阅读状态、地图与既有原位阅读复用 |
@@ -343,4 +342,6 @@ core 对前台提供少量稳定操作：获取起点、获取邻域、校验版
 - [Qdrant 索引说明](https://qdrant.tech/documentation/manage-data/indexing/)：小范围扫描与 HNSW 的取舍；本稿未引入该依赖。
 - [SQLite WAL](https://sqlite.org/wal.html)：读写并发的能力与限制；当前仓库已使用 WAL。
 
-本轮已完成源码与文档调查，以及上述纯合成内存检索基准。尚未运行真实 embedding／关系模型、目标服务器测试、浏览器交互测试或生产数据评估。本稿是具体技术建议，不代表已实现或已达到性能目标。
+实现与本地验证见 [本地验收记录](../operations/random-walk-local-verification.md)。后台、数据库、阅读接口及界面已有实现；已运行自动检查和 ego lite 模拟数据浏览器验收。未运行真实 Cloudflare 模型、目标服务器或生产数据评估，不能据此宣布关联质量、后台增量时延或全部性能目标达成。
+
+实施收敛：嵌入与关系推理共用 `provider/ai/association`；派生任务与语义表示合并在 source 行，主题是有来源依据的局部阅读标签；邻域在有界读取时组装，不另建一份复制原文的快照表。内存索引最多 24,576 条原文片段向量，前台不依赖它。前端缓存以账户和节点分组，数据携带 profile/epoch，失效时清除再读取。新实现状态以源码与验收记录为准。
