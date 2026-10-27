@@ -25,6 +25,9 @@ feedback advances the epoch without generating another model job. Expiring lease
 revision checks and atomic publication reject late results. Partial validated
 representations survive deferred jobs. The in-memory candidate index is bounded
 at 24,576 original vectors (96 MiB for vector values, plus metadata and Go overhead).
+Before ranking, the background worker reconciles paginated source metadata against
+current eligibility and revisions. Withdrawn vectors release memory and candidate
+slots; unchanged vectors are reused, and only missing revisions are decoded.
 Very long originals and collections exceeding this bound are delayed explicitly;
 they remain readable. Scaling beyond that requires an index implementation change.
 

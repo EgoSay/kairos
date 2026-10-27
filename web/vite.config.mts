@@ -62,7 +62,9 @@ export default defineConfig({
             // cold HTTP/1.1 visit, delaying the first original on mobile networks.
             {
               name: "ui-vendor",
-              test: /node_modules[\\/](?:@base-ui|@floating-ui|lucide-react|react|react-dom|scheduler)([\\/]|$)/,
+              // Map icons use react-dom/server. Keep that renderer in the lazy map
+              // chunk instead of making every reading entry download it.
+              test: /node_modules[\\/](?:@base-ui|@floating-ui|lucide-react|react|react-dom(?![\\/](?:server|cjs[\\/]react-dom-server))|scheduler)([\\/]|$)/,
               priority: 10,
             },
             {

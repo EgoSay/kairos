@@ -3,6 +3,7 @@ package recordgraph
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -152,6 +153,27 @@ func TestLateModelResultCannotPublishAfterConcurrentEdit(t *testing.T) {
 	n, err := s.Neighborhood(ctx, owner, b.ID)
 	require.NoError(t, err)
 	require.Empty(t, n.Directions)
+}
+
+func TestDeletedCandidatesDoNotCrowdOutRemainingConnections(t *testing.T) {
+	ctx := context.Background()
+	s, _, owner := fixture(t)
+	removed := []*store.Memo{}
+	for i := range 12 {
+		removed = append(removed, add(t, s, owner, "old-"+strconv.Itoa(i), "陪伴的旧想法 "+strconv.Itoa(i)))
+		run(t, s)
+	}
+	remaining := add(t, s, owner, "remaining", "家庭里的倾听与耐心。")
+	run(t, s)
+	for _, memo := range removed {
+		require.NoError(t, s.Store.DeleteMemo(ctx, &store.DeleteMemo{ID: memo.ID}))
+	}
+	current := add(t, s, owner, "current", "陪伴，需要彼此留一点时间。")
+	run(t, s)
+	n, err := s.Neighborhood(ctx, owner, current.ID)
+	require.NoError(t, err)
+	require.Len(t, n.Directions, 1, "deleted high-ranking candidates must not consume the model's candidate slots")
+	require.Equal(t, "memos/"+remaining.UID, n.Directions[0].Original.Name)
 }
 
 func TestQuotaAndConfigurationPauseDoNotRetryOrSendOtherSources(t *testing.T) {

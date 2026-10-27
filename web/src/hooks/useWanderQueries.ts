@@ -96,10 +96,13 @@ export function useWanderWarmup() {
   const client = useQueryClient();
   useEffect(() => {
     if (!owner) return;
-    const timer = window.setTimeout(() => {
-      void import("@/pages/JournalWander");
-      void client.prefetchQuery(wanderStartOptions(owner));
-    }, 1200);
+    const timer = window.setTimeout(
+      () => {
+        void import("@/pages/JournalWander");
+        void client.prefetchQuery(wanderStartOptions(owner));
+      },
+      window.location.pathname === "/journal/wander" ? 0 : 1200,
+    );
     return () => window.clearTimeout(timer);
   }, [client, owner]);
 }

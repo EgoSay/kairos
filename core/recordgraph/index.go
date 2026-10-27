@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/EgoSay/kairos/core/journal"
 	"github.com/EgoSay/kairos/store"
 )
 
@@ -27,19 +28,52 @@ type hit struct {
 }
 
 func (s *Service) loadIndex(ctx context.Context, owner int32, profile string) (*semanticIndex, error) {
-	if s.index != nil && s.index.Owner == owner && s.index.Profile == profile {
-		return s.index, nil
+	p, err := journal.GetPreferences(ctx, s.Store, owner)
+	if err != nil {
+		return nil, err
 	}
-	idx := &semanticIndex{Owner: owner, Profile: profile, Records: map[int32]indexedRecord{}}
+	idx := s.index
+	if idx == nil || idx.Owner != owner || idx.Profile != profile {
+		idx = &semanticIndex{Owner: owner, Profile: profile, Records: map[int32]indexedRecord{}}
+	}
+	// Reconcile small source metadata before ranking. Otherwise withdrawn sources
+	// can consume all candidate slots and retain their vectors indefinitely. Reuse
+	// unchanged vectors; only missing revisions need representation reads/decoding.
+	current := map[int32]int64{}
+	missing := []int32{}
 	var after int32
 	for {
-		rows, err := s.Store.ListGraphSources(ctx, &store.FindGraphSource{OwnerID: owner, Profile: profile, AfterID: after, Limit: 128})
+		rows, err := s.Store.ListGraphSources(ctx, &store.FindGraphSource{OwnerID: owner, Profile: profile, AfterID: after, Limit: 256, ExcludeRepresentation: true, ReadableOnly: true, ExcludedUIDs: excludedUIDs(p)})
 		if err != nil {
 			return nil, err
 		}
 		for _, row := range rows {
 			after = row.MemoID
-			if row.ProcessedRevision != row.Revision {
+			if row.ProcessedRevision != row.Revision || row.State != "ready" {
+				continue
+			}
+			current[row.MemoID] = row.Revision
+			if cached, ok := idx.Records[row.MemoID]; !ok || cached.Revision != row.Revision {
+				missing = append(missing, row.MemoID)
+			}
+		}
+		if len(rows) < 256 {
+			break
+		}
+	}
+	for id, cached := range idx.Records {
+		if revision, ok := current[id]; !ok || revision != cached.Revision {
+			idx.Vectors -= len(cached.Representation.Chunks)
+			delete(idx.Records, id)
+		}
+	}
+	for ids := range slices.Chunk(missing, 64) {
+		rows, err := s.Store.ListGraphSources(ctx, &store.FindGraphSource{OwnerID: owner, Profile: profile, MemoIDs: ids, Limit: 64})
+		if err != nil {
+			return nil, err
+		}
+		for _, row := range rows {
+			if row.Revision != current[row.MemoID] || row.ProcessedRevision != row.Revision || row.State != "ready" {
 				continue
 			}
 			r, err := decodeRepresentation(row.Representation)
@@ -49,9 +83,6 @@ func (s *Service) loadIndex(ctx context.Context, owner int32, profile string) (*
 			if err = idx.put(row.MemoID, row.Revision, r); err != nil {
 				return nil, err
 			}
-		}
-		if len(rows) < 128 {
-			break
 		}
 	}
 	s.index = idx
