@@ -147,7 +147,7 @@ export default function JournalMemo({ memo }: { memo: Memo }) {
           <MemoMetadataRows
             audio={attachments.audio}
             docs={attachments.docs}
-            relations={[]}
+            relations={memo.relations}
             currentMemoName={memo.name}
             parentPage={parentPage}
           />

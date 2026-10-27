@@ -10,6 +10,8 @@ type MemoRelationType string
 const (
 	// MemoRelationReference is the type for a reference memo relation.
 	MemoRelationReference MemoRelationType = "REFERENCE"
+	// MemoRelationContentReference is derived from saved Markdown, independently of manual references.
+	MemoRelationContentReference MemoRelationType = "CONTENT_REFERENCE"
 	// MemoRelationComment is the type for a comment memo relation.
 	MemoRelationComment MemoRelationType = "COMMENT"
 )
@@ -160,5 +162,19 @@ func (m *MemoMutation) PruneUnavailableReference(endpointID int32) bool {
 	if removed {
 		m.ReferenceRelations = filtered
 	}
+	content := make([]*MemoRelation, 0, len(m.ContentReferences))
+	for _, relation := range m.ContentReferences {
+		if relation != nil && relation.RelatedMemoID == endpointID {
+			removed = true
+			continue
+		}
+		content = append(content, relation)
+	}
+	m.ContentReferences = content
 	return removed
+}
+
+// AllReferenceRelations returns both independently managed sources for endpoint checks.
+func (m *MemoMutation) AllReferenceRelations() []*MemoRelation {
+	return append(append([]*MemoRelation{}, m.ReferenceRelations...), m.ContentReferences...)
 }

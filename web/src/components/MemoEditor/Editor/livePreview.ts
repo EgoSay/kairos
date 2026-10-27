@@ -2,6 +2,8 @@ import { isolateHistory } from "@codemirror/commands";
 import { syntaxTree } from "@codemirror/language";
 import { ChangeSet, Compartment, EditorSelection, EditorState, type Range, StateField, type Transaction } from "@codemirror/state";
 import { Decoration, type DecorationSet, EditorView, keymap, WidgetType } from "@codemirror/view";
+import { memoReferenceRanges } from "@/lib/memo-reference";
+import { RecordReferenceWidget, recordLinkRendering } from "./recordReferenceWidgets";
 
 export const previewCompartment = new Compartment();
 
@@ -176,6 +178,16 @@ const safeImageSource = (source: string) => {
 
 export function buildLivePreview(state: EditorState): DecorationSet {
   const decorations: Range<Decoration>[] = [];
+  const recordRenderer = state.facet(recordLinkRendering);
+  const references = recordRenderer ? memoReferenceRanges(state.doc.toString(), recordRenderer.origins) : [];
+  if (recordRenderer)
+    for (const reference of references)
+      decorations.push(
+        Decoration.replace({ widget: new RecordReferenceWidget(reference, recordRenderer), atomic: true }).range(
+          reference.from,
+          reference.to,
+        ),
+      );
   const quoteLines = new Set<number>();
   const hide = (from: number, to: number) => {
     if (from < to) decorations.push(Decoration.replace({ atomic: true }).range(from, to));
@@ -204,6 +216,7 @@ export function buildLivePreview(state: EditorState): DecorationSet {
   }
   syntaxTree(state).iterate({
     enter: (node) => {
+      if (references.some((reference) => reference.from <= node.from && node.to <= reference.to)) return false;
       if (node.from === pendingFrom && node.to === pendingTo) return false;
       if (node.name === "Table") {
         const rows = [...node.node.getChildren("TableHeader"), ...node.node.getChildren("TableRow")];

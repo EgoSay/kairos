@@ -93,6 +93,8 @@ const (
 	MemoRelation_TYPE_UNSPECIFIED MemoRelation_Type = 0
 	MemoRelation_REFERENCE        MemoRelation_Type = 1
 	MemoRelation_COMMENT          MemoRelation_Type = 2
+	// Output only. Derived from links in the saved Markdown; independent of manual references.
+	MemoRelation_CONTENT_REFERENCE MemoRelation_Type = 3
 )
 
 // Enum value maps for MemoRelation_Type.
@@ -101,11 +103,13 @@ var (
 		0: "TYPE_UNSPECIFIED",
 		1: "REFERENCE",
 		2: "COMMENT",
+		3: "CONTENT_REFERENCE",
 	}
 	MemoRelation_Type_value = map[string]int32{
-		"TYPE_UNSPECIFIED": 0,
-		"REFERENCE":        1,
-		"COMMENT":          2,
+		"TYPE_UNSPECIFIED":  0,
+		"REFERENCE":         1,
+		"COMMENT":           2,
+		"CONTENT_REFERENCE": 3,
 	}
 )
 
@@ -3206,7 +3210,7 @@ const file_api_v1_memo_service_proto_rawDesc = "" +
 	"page_token\x18\x03 \x01(\tB\x03\xe0A\x01R\tpageToken\"\x81\x01\n" +
 	"\x1bListMemoAttachmentsResponse\x12:\n" +
 	"\vattachments\x18\x01 \x03(\v2\x18.memos.api.v1.AttachmentR\vattachments\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xdb\x02\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xf2\x02\n" +
 	"\fMemoRelation\x128\n" +
 	"\x04memo\x18\x01 \x01(\v2\x1f.memos.api.v1.MemoRelation.MemoB\x03\xe0A\x02R\x04memo\x12G\n" +
 	"\frelated_memo\x18\x02 \x01(\v2\x1f.memos.api.v1.MemoRelation.MemoB\x03\xe0A\x02R\vrelatedMemo\x128\n" +
@@ -3214,11 +3218,12 @@ const file_api_v1_memo_service_proto_rawDesc = "" +
 	"\x04Memo\x12-\n" +
 	"\x04name\x18\x01 \x01(\tB\x19\xe0A\x02\xfaA\x13\n" +
 	"\x11memos.api.v1/MemoR\x04name\x12\x1d\n" +
-	"\asnippet\x18\x02 \x01(\tB\x03\xe0A\x03R\asnippet\"8\n" +
+	"\asnippet\x18\x02 \x01(\tB\x03\xe0A\x03R\asnippet\"O\n" +
 	"\x04Type\x12\x14\n" +
 	"\x10TYPE_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tREFERENCE\x10\x01\x12\v\n" +
-	"\aCOMMENT\x10\x02\"\x87\x01\n" +
+	"\aCOMMENT\x10\x02\x12\x15\n" +
+	"\x11CONTENT_REFERENCE\x10\x03\"\x87\x01\n" +
 	"\x17SetMemoRelationsRequest\x12-\n" +
 	"\x04name\x18\x01 \x01(\tB\x19\xe0A\x02\xfaA\x13\n" +
 	"\x11memos.api.v1/MemoR\x04name\x12=\n" +

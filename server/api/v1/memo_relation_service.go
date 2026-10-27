@@ -172,6 +172,8 @@ func convertMemoRelationTypeFromStore(relationType store.MemoRelationType) v1pb.
 	switch relationType {
 	case store.MemoRelationReference:
 		return v1pb.MemoRelation_REFERENCE
+	case store.MemoRelationContentReference:
+		return v1pb.MemoRelation_CONTENT_REFERENCE
 	case store.MemoRelationComment:
 		return v1pb.MemoRelation_COMMENT
 	default:

@@ -19,7 +19,7 @@ type postgresRelationMemoState struct {
 }
 
 func validatePostgresMemoRelationEndpoints(ctx context.Context, tx *sql.Tx, mutation *store.MemoMutation) error {
-	if !mutation.ReplaceReferenceRelations && mutation.CommentContextMemoID == nil {
+	if !mutation.ReplaceReferenceRelations && !mutation.ReplaceContentReferences && mutation.CommentContextMemoID == nil {
 		return nil
 	}
 
@@ -97,7 +97,7 @@ func postgresRelationAuthorizationEndpointIDs(mutation *store.MemoMutation) []in
 	} else if mutation.CommentContextMemoID != nil {
 		add(*mutation.CommentContextMemoID)
 	}
-	for _, relation := range mutation.ReferenceRelations {
+	for _, relation := range mutation.AllReferenceRelations() {
 		if relation != nil {
 			add(relation.RelatedMemoID)
 		}

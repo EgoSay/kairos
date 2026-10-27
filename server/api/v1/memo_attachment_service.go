@@ -168,6 +168,10 @@ func (s *APIV1Service) createMemoWithMutation(
 		return store.ErrMemoPermissionDenied
 	}
 	bindings, _ := buildMemoAttachmentMutationBindings(prepared)
+	contentReferences, err := s.prepareContentReferences(ctx, create, create.Content)
+	if err != nil {
+		return err
+	}
 	relations := make([]*store.MemoRelation, 0, len(referenceRelations))
 	for _, relation := range referenceRelations {
 		if relation == nil {
@@ -188,6 +192,8 @@ func (s *APIV1Service) createMemoWithMutation(
 		RequiredAttachmentIDs:             requiredAttachmentIDs,
 		ReplaceReferenceRelations:         len(relations) > 0,
 		ReferenceRelations:                relations,
+		ReplaceContentReferences:          true,
+		ContentReferences:                 contentReferences,
 		SkipUnavailableReferenceRelations: true,
 	})
 }
@@ -256,6 +262,13 @@ func (s *APIV1Service) applyMemoMutation(
 	}
 	if referenceRelations != nil {
 		mutation.ReferenceRelations = *referenceRelations
+	}
+	if memoUpdate != nil && memoUpdate.Content != nil {
+		mutation.ContentReferences, err = s.prepareContentReferences(ctx, memo, *memoUpdate.Content)
+		if err != nil {
+			return err
+		}
+		mutation.ReplaceContentReferences = true
 	}
 	if err := s.Store.ApplyMemoMutation(ctx, mutation); err != nil {
 		if errors.Is(err, store.ErrMemoMutationConflict) {

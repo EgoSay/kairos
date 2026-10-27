@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { useMemo, useState } from "react";
 import MetadataSection, { METADATA_ROW_BOX_CLASSES, MetadataRowRemoveControl } from "@/components/MemoMetadata/MetadataSection";
+import { useRecordReading } from "@/components/RecordReference/RecordReadingContext";
 import type { MemoRelation } from "@/types/proto/api/v1/memo_service_pb";
 import { useTranslate } from "@/utils/i18n";
 import RelatedRecordPreview from "./RelatedRecordPreview";
@@ -16,6 +17,7 @@ interface RelationListEditorProps {
 
 const RelationListEditor: FC<RelationListEditorProps> = ({ relations, onRelationsChange, memoName }) => {
   const [previewName, setPreviewName] = useState<string>();
+  const reader = useRecordReading();
   const t = useTranslate();
   const referenceRelations = useMemo(() => getEditorReferenceRelations(relations, memoName), [relations, memoName]);
   const relatedMemoNames = useMemo(
@@ -50,7 +52,7 @@ const RelationListEditor: FC<RelationListEditorProps> = ({ relations, onRelation
               type="button"
               className="w-full min-w-0 truncate py-2 pl-3 pr-10 text-left text-sm"
               disabled={unavailable}
-              onClick={() => setPreviewName(memo.name)}
+              onClick={(event) => (reader.enabled ? reader.open(memo.name, event.currentTarget, memoName) : setPreviewName(memo.name))}
             >
               {memo.snippet || "附件记录"}
             </button>

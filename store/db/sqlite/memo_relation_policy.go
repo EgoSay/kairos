@@ -19,7 +19,7 @@ type sqliteRelationMemoState struct {
 }
 
 func validateSQLiteMemoRelationEndpoints(ctx context.Context, executor dbExecutor, mutation *store.MemoMutation) error {
-	if !mutation.ReplaceReferenceRelations && mutation.CommentContextMemoID == nil {
+	if !mutation.ReplaceReferenceRelations && !mutation.ReplaceContentReferences && mutation.CommentContextMemoID == nil {
 		return nil
 	}
 
@@ -94,7 +94,7 @@ func sqliteRelationAuthorizationEndpointIDs(mutation *store.MemoMutation) []int3
 	} else if mutation.CommentContextMemoID != nil {
 		unique[*mutation.CommentContextMemoID] = struct{}{}
 	}
-	for _, relation := range mutation.ReferenceRelations {
+	for _, relation := range mutation.AllReferenceRelations() {
 		if relation != nil {
 			unique[relation.RelatedMemoID] = struct{}{}
 		}

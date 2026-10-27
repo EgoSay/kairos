@@ -41,7 +41,7 @@ func (d *DB) ApplyMemoMutation(ctx context.Context, mutation *store.MemoMutation
 		mutation.MemoID = create.ID
 		mutation.MemoCreatorID = create.CreatorID
 		mutation.ExpectedMemoContent = create.Content
-		for _, relation := range mutation.ReferenceRelations {
+		for _, relation := range mutation.AllReferenceRelations() {
 			if relation != nil {
 				relation.MemoID = create.ID
 			}
@@ -168,7 +168,12 @@ func (d *DB) ApplyMemoMutation(ctx context.Context, mutation *store.MemoMutation
 		}
 	}
 	if mutation.ReplaceReferenceRelations {
-		if err := replaceMemoReferenceRelations(ctx, tx, mutation.MemoID, mutation.ReferenceRelations); err != nil {
+		if err := replaceMemoReferenceRelations(ctx, tx, mutation.MemoID, mutation.ReferenceRelations, store.MemoRelationReference); err != nil {
+			return err
+		}
+	}
+	if mutation.ReplaceContentReferences {
+		if err := replaceMemoReferenceRelations(ctx, tx, mutation.MemoID, mutation.ContentReferences, store.MemoRelationContentReference); err != nil {
 			return err
 		}
 	}
@@ -192,12 +197,12 @@ func insertMySQLMemoCommentRelation(ctx context.Context, tx *sql.Tx, memoID, con
 	return nil
 }
 
-func replaceMemoReferenceRelations(ctx context.Context, tx *sql.Tx, memoID int32, relations []*store.MemoRelation) error {
-	if _, err := tx.ExecContext(ctx, "DELETE FROM `memo_relation` WHERE `memo_id` = ? AND `type` = ?", memoID, store.MemoRelationReference); err != nil {
+func replaceMemoReferenceRelations(ctx context.Context, tx *sql.Tx, memoID int32, relations []*store.MemoRelation, relationType store.MemoRelationType) error {
+	if _, err := tx.ExecContext(ctx, "DELETE FROM `memo_relation` WHERE `memo_id` = ? AND `type` = ?", memoID, relationType); err != nil {
 		return errors.Wrap(err, "failed to delete memo reference relations")
 	}
 	for _, relation := range relations {
-		if relation == nil || relation.MemoID != memoID || relation.Type != store.MemoRelationReference {
+		if relation == nil || relation.MemoID != memoID || relation.Type != relationType {
 			return errors.New("invalid memo reference relation mutation")
 		}
 		if _, err := tx.ExecContext(ctx,

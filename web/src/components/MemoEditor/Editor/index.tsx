@@ -1,7 +1,11 @@
 import { EditorState } from "@codemirror/state";
 import { placeholder as cmPlaceholder, EditorView } from "@codemirror/view";
 import { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useRecordReading } from "@/components/RecordReference/RecordReadingContext";
+import RecordReference from "@/components/RecordReference/RecordReference";
 import { useTagCounts } from "@/hooks/useUserQueries";
+import type { MemoReferenceRange } from "@/lib/memo-reference";
 import { cn } from "@/lib/utils";
 import type { EditorController } from "../types/editorController";
 import { createController } from "./controller";
@@ -10,6 +14,7 @@ import { buildEditorExtensions, type EditorFileOrigin, placeholderCompartment } 
 import { createFormattingController } from "./formatting";
 import { livePreview, previewCompartment } from "./livePreview";
 import type { MemoLinkRequest } from "./memoLinkIntent";
+import { recordLinkRendering } from "./recordReferenceWidgets";
 
 interface EditorProps {
   className: string;
@@ -61,7 +66,11 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
   const placeholderRef = useRef(placeholder);
   const listenersRef = useRef(new Set<() => void>());
   const [pasteAlternative, setPasteAlternative] = useState<(() => void) | undefined>();
-  const [pastedMemo, setPastedMemo] = useState<string>();
+  const reader = useRecordReading();
+  const [recordWidgets, setRecordWidgets] = useState<
+    { id: number; element: HTMLElement; reference: MemoReferenceRange; view: EditorView }[]
+  >([]);
+  const widgetSequence = useRef(0);
   const onLinkRequestRef = useRef(onLinkRequest);
   onLinkRequestRef.current = onLinkRequest;
   // A user can only author their own memos. Reuse the current-user stats query
@@ -88,24 +97,45 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
   // shows an empty host, then the placeholder pops in (a load flicker).
   useLayoutEffect(() => {
     if (!hostRef.current) return;
+    let alive = true;
     const view = new EditorView({
       state: EditorState.create({
         doc: initialContent,
-        extensions: buildEditorExtensions({
-          placeholder,
-          sourceMode,
-          onChange: (md) => {
-            if (!applyingExternalContentRef.current) onChangeRef.current(md);
-          },
-          onFiles: (files, origin) => onFilesRef.current(files, origin),
-          onUpdate: () => listenersRef.current.forEach((l) => l()),
-          onSubmit: () => onSubmitRef.current(),
-          getTags: () => tagsRef.current,
-          consumePlainPaste: () => consumePlainPasteRef.current?.() ?? false,
-          onPasteAlternative: (action) => setPasteAlternative(() => action),
-          onLinkRequest: (request) => onLinkRequestRef.current?.(request),
-          onPastedMemo: setPastedMemo,
-        }),
+        extensions: [
+          ...buildEditorExtensions({
+            placeholder,
+            sourceMode,
+            onChange: (md) => {
+              if (!applyingExternalContentRef.current) onChangeRef.current(md);
+            },
+            onFiles: (files, origin) => onFilesRef.current(files, origin),
+            onUpdate: () => listenersRef.current.forEach((l) => l()),
+            onSubmit: () => onSubmitRef.current(),
+            getTags: () => tagsRef.current,
+            consumePlainPaste: () => consumePlainPasteRef.current?.() ?? false,
+            onPasteAlternative: (action) => setPasteAlternative(() => action),
+            onLinkRequest: (request) => onLinkRequestRef.current?.(request),
+          }),
+          ...(reader.enabled
+            ? [
+                recordLinkRendering.of({
+                  origins: reader.origins,
+                  mount: (element, reference, editorView) => {
+                    const id = ++widgetSequence.current;
+                    queueMicrotask(() => {
+                      if (alive && element.isConnected)
+                        setRecordWidgets((previous) => [...previous, { id, element, reference, view: editorView }]);
+                    });
+                    return () => {
+                      queueMicrotask(() => {
+                        if (alive) setRecordWidgets((previous) => previous.filter((widget) => widget.id !== id));
+                      });
+                    };
+                  },
+                }),
+              ]
+            : []),
+        ],
       }),
       parent: hostRef.current,
     });
@@ -132,6 +162,7 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
     };
     view.contentDOM.addEventListener("compositionend", handleCompositionEnd);
     return () => {
+      alive = false;
       view.contentDOM.removeEventListener("compositionend", handleCompositionEnd);
       view.destroy();
       viewRef.current = null;
@@ -192,18 +223,18 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
           </button>
         </div>
       )}
-      {pastedMemo && onLinkRequest && (
-        <div className="mt-2 flex shrink-0 items-center gap-2 text-xs text-muted-foreground" role="status">
-          <span>这是 Kairos 中的一条记录</span>
-          <button
-            type="button"
-            className="min-h-11 rounded-lg px-2 underline underline-offset-4 hover:bg-accent"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => onLinkRequest({ memoName: pastedMemo, onLinked: () => setPastedMemo(undefined) })}
-          >
-            关联此记录
-          </button>
-        </div>
+      {recordWidgets.map(({ id, element, reference, view }) =>
+        createPortal(
+          <RecordReference
+            name={reference.name}
+            href={reference.href}
+            label={reference.label}
+            restoreFocus={() => view.focus()}
+            onResize={() => view.requestMeasure()}
+          />,
+          element,
+          String(id),
+        ),
       )}
     </div>
   );

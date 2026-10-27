@@ -23,9 +23,12 @@ server provider; no editor-open or keystroke triggers an external lookup.
 Association uses the same debounced candidate query and rows as Quick Find.
 Selecting a candidate updates draft metadata only; the relation is committed
 with the memo save. The `[[` shortcut opens that picker and removes its trigger
-only after a successful selection. Pasting a same-origin memo URL offers an
-explicit association action, revalidates the target and never fetches another
-origin. Closing either picker returns to the same editor selection.
+only after a successful selection. Same-instance memo URLs render compact circular
+arrows through CodeMirror widgets, with authored link labels preserved, while retaining the
+authored Markdown and undo history. Opening one uses the shared reading dialog
+for permission-checked full content, and closing it returns to the same editor selection. Saving synchronizes content
+references independently of manually selected associations; removing a body link
+never removes a manual association to the same record.
 
 ```
 ┌─────────────────────────────────────────┐
@@ -69,7 +72,8 @@ MemoEditor/
 │   ├── extensions.ts           # buildEditorExtensions(): assembles the CM extension set
 │   ├── livePreview.ts          # Direct StateField decorations; visual/source compartment
 │   ├── clipboard.ts            # HTML semantic paste; no style import or remote image fetch
-│   ├── memoLinkIntent.ts        # Optional [[ picker and explicit same-origin pasted-link action
+│   ├── memoLinkIntent.ts        # Optional [[ picker intent
+│   ├── recordReferenceWidgets.ts # Same-instance reference atoms, React portal lifecycle
 │   ├── theme.ts                # Syntax-highlight style + editor theme (CSS-var colors)
 │   ├── tagMentionDecorations.ts# ViewPlugin that decorates #tag / @mention spans
 │   ├── markdownTagRanges.ts    # Markdown syntax-tree adapter for the shared tag scanner

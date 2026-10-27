@@ -135,7 +135,11 @@ export const MemoMarkdownRendererCore = ({
         {children}
       </Heading>
     ),
-    p: ({ children, ...props }) => <Paragraph {...props}>{children}</Paragraph>,
+    p: ({ children, ...props }) => (
+      <Paragraph {...props} sourceName={memoName}>
+        {children}
+      </Paragraph>
+    ),
     blockquote: ({ children, ...props }) => <Blockquote {...props}>{children}</Blockquote>,
     details: Details,
     summary: Summary,
@@ -158,7 +162,7 @@ export const MemoMarkdownRendererCore = ({
         );
       }
       return (
-        <Link href={href} {...props}>
+        <Link href={href} {...props} sourceName={memoName}>
           {children}
         </Link>
       );
