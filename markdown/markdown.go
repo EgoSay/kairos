@@ -35,6 +35,7 @@ type ExtractedData struct {
 	ExplicitTags                       []string
 	Mentions                           []string
 	ImageDestinations                  []string
+	LinkDestinations                   []string
 	ManagedAttachmentReferences        []ManagedAttachmentReference
 	InvalidManagedAttachmentReferences []string
 	Property                           *storepb.MemoPayload_Property
@@ -432,6 +433,12 @@ func (s *service) ExtractAll(content []byte) (*ExtractedData, error) {
 		}
 		if mentionNode, ok := n.(*mast.MentionNode); ok {
 			data.Mentions = append(data.Mentions, string(mentionNode.Username))
+		}
+		switch link := n.(type) {
+		case *gast.Link:
+			data.LinkDestinations = append(data.LinkDestinations, string(link.Destination))
+		case *gast.AutoLink:
+			data.LinkDestinations = append(data.LinkDestinations, string(link.URL(content)))
 		}
 		if imageNode, ok := n.(*gast.Image); ok {
 			destination := string(imageNode.Destination)

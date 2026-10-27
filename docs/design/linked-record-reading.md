@@ -1,7 +1,8 @@
 # Linked record reading
 
-Status: Approved, implementation in progress
+Status: Implemented on 2026-10-27; pending Evan acceptance
 Issue: https://github.com/EgoSay/kairos/issues/36
+Draft PR: https://github.com/EgoSay/kairos/pull/37
 
 ## Intent
 
@@ -57,3 +58,27 @@ environment and report evidence to Evan.
 
 The PR remains unmerged until Evan accepts. No release tag or deployment belongs
 to this implementation stage.
+
+## Implementation and verification receipt
+
+- Same-instance references use the configured canonical instance origin and the
+  current browser origin. The server derives automatic references from the
+  canonical instance origin or root-relative Markdown links without fetching URLs.
+- `CONTENT_REFERENCE` is an additive, output-only relation type. Body, attachment
+  and reference changes share the existing transaction; manual `REFERENCE` and
+  immutable `COMMENT` retain their contracts. No database schema change is needed.
+- Frontend lint, all 242 test files / 2,207 tests, and production build passed.
+  Server, core and Markdown race tests passed. Full store tests passed for SQLite,
+  MySQL and PostgreSQL; targeted automatic-reference rollback tests also passed
+  on all three drivers. Proto generation, lint and formatting passed.
+- Ego lite checked real native paste, continued typing, source mode, undo, close
+  and focus/caret restoration, same-dialog forward/back reading, independent
+  manual-reference activation, and saving/removing a body link while preserving
+  the manual edge. The saved body remained original Markdown.
+- Desktop and 390 × 844 mobile checks passed. Mobile has no horizontal overflow
+  and connections start collapsed. Network-block/retry, deleted cached target,
+  media-only label and loaded image checks passed against isolated synthetic data.
+- Permission and shared-reader restrictions are covered by service/component
+  tests. Browser verification used a local demo account; it did not access or
+  modify production records. Production deployment and Evan acceptance remain
+  separate, explicitly pending stages.

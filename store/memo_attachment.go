@@ -49,6 +49,9 @@ type MemoMutation struct {
 	RequiredAttachmentIDs     []int32
 	ReplaceReferenceRelations bool
 	ReferenceRelations        []*MemoRelation
+	// Content references are replaced only when the caller saves the Markdown body.
+	ReplaceContentReferences bool
+	ContentReferences        []*MemoRelation
 	// SkipUnavailableReferenceRelations preserves a body save if an optional target disappears.
 	SkipUnavailableReferenceRelations bool
 	Policy                            *MemoWritePolicy
@@ -168,7 +171,7 @@ func (s *Store) ApplyMemoMutation(ctx context.Context, mutation *MemoMutation) e
 		}
 	}
 	if policy != nil && policy.LifecycleOnly &&
-		(len(mutation.Bindings) != 0 || len(mutation.RemovedAttachmentIDs) != 0 || len(mutation.RequiredAttachmentIDs) != 0 || mutation.ReplaceReferenceRelations) {
+		(len(mutation.Bindings) != 0 || len(mutation.RemovedAttachmentIDs) != 0 || len(mutation.RequiredAttachmentIDs) != 0 || mutation.ReplaceReferenceRelations || mutation.ReplaceContentReferences) {
 		return ErrMemoSpaceMembershipRequired
 	}
 	if mutation.ReplaceReferenceRelations {
@@ -190,6 +193,16 @@ func (s *Store) ApplyMemoMutation(ctx context.Context, mutation *MemoMutation) e
 				return errors.New("duplicate memo reference relation")
 			}
 			seenRelatedMemoIDs[relation.RelatedMemoID] = struct{}{}
+		}
+	}
+	if mutation.ReplaceContentReferences {
+		seen := make(map[int32]bool)
+		for _, relation := range mutation.ContentReferences {
+			if relation == nil || relation.Type != MemoRelationContentReference || relation.RelatedMemoID <= 0 ||
+				(mutation.MemoCreate == nil && relation.MemoID != mutation.MemoID) || relation.RelatedMemoID == mutation.MemoID || seen[relation.RelatedMemoID] {
+				return errors.New("invalid content reference relation")
+			}
+			seen[relation.RelatedMemoID] = true
 		}
 	}
 	err := s.driver.ApplyMemoMutation(ctx, mutation)

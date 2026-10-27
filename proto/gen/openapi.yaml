@@ -4572,6 +4572,7 @@ components:
                         - TYPE_UNSPECIFIED
                         - REFERENCE
                         - COMMENT
+                        - CONTENT_REFERENCE
                     type: string
                     format: enum
         MemoRelation_Memo:

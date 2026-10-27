@@ -1,7 +1,10 @@
 import type { Element } from "hast";
+import { useRecordReading } from "@/components/RecordReference/RecordReadingContext";
+import RecordReference from "@/components/RecordReference/RecordReference";
 import { useLinkPreviewEnabled } from "@/contexts/ViewContext";
 import { useNearViewport } from "@/hooks/useNearViewport";
 import { markdownStyles } from "@/lib/markdownStyles";
+import { memoNameFromURL } from "@/lib/memo-reference";
 import { cn } from "@/lib/utils";
 import LinkMetadataCard from "../LinkMetadataCard";
 import { useMarkdownRenderContext } from "../MarkdownRenderContext";
@@ -9,6 +12,7 @@ import type { ReactMarkdownProps } from "./types";
 
 interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement>, ReactMarkdownProps {
   children: React.ReactNode;
+  sourceName?: string;
 }
 
 interface DeferredLinkPreviewProps extends React.HTMLAttributes<HTMLParagraphElement> {
@@ -36,7 +40,7 @@ export function getSingleLinkHref(node?: Element): string | undefined {
 
   const href = onlyChild.properties?.href;
   // Only web links have metadata to preview; `tel:`/`sms:`/`mailto:` hand off to another app.
-  if (typeof href !== "string" || !/^https?:\/\//i.test(href)) {
+  if (typeof href !== "string" || (!/^https?:\/\//i.test(href) && !href.startsWith("/memos/"))) {
     return undefined;
   }
 
@@ -63,10 +67,22 @@ const DeferredLinkPreview = ({ children, className, href, ...props }: DeferredLi
   return <LinkMetadataCard url={href} fallback={fallback} enabled={isNearViewport} />;
 };
 
-export const Paragraph = ({ children, className, node, ...props }: ParagraphProps) => {
+export const Paragraph = ({ children, className, node, sourceName, ...props }: ParagraphProps) => {
   const { blockDepth } = useMarkdownRenderContext();
+  const reader = useRecordReading();
   const linkPreviewEnabled = useLinkPreviewEnabled();
-  const href = blockDepth === 0 && linkPreviewEnabled ? getSingleLinkHref(node) : undefined;
+  const singleHref = getSingleLinkHref(node);
+  const recordName = singleHref && memoNameFromURL(singleHref, reader.origins);
+  if (recordName && singleHref) {
+    return reader.enabled ? (
+      <RecordReference name={recordName} href={singleHref} block={blockDepth === 0} sourceName={sourceName} />
+    ) : (
+      <p className={cn(markdownStyles.paragraph, className)} {...props}>
+        {children}
+      </p>
+    );
+  }
+  const href = blockDepth === 0 && linkPreviewEnabled ? singleHref : undefined;
 
   if (href) {
     return (

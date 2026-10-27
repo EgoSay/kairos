@@ -658,6 +658,8 @@ message MemoRelation {
     TYPE_UNSPECIFIED = 0;
     REFERENCE = 1;
     COMMENT = 2;
+    // Output only. Derived from links in the saved Markdown; independent of manual references.
+    CONTENT_REFERENCE = 3;
   }
   Type type = 3 [(google.api.field_behavior) = REQUIRED];
 

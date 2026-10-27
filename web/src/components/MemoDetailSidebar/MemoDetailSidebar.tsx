@@ -19,6 +19,7 @@ import { getRelationBuckets, getRelationMemo } from "@/components/MemoMetadata/R
 import { useResolvedRelationMemos } from "@/components/MemoMetadata/Relation/useResolvedRelationMemos";
 import MemoParentPlaceholder, { type MemoParentStatus } from "@/components/MemoParentPlaceholder";
 import { createMemoNavigationState } from "@/components/MemoView/navigation";
+import { isOrdinaryActivation, useRecordReading } from "@/components/RecordReference/RecordReadingContext";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useInstance } from "@/contexts/InstanceContext";
 import { useOverflowTitle } from "@/hooks";
@@ -63,6 +64,7 @@ const BacklinkRow = ({
   referencedByLabel: string;
 }) => {
   const { ref, title } = useOverflowTitle<HTMLSpanElement>(snippet);
+  const reader = useRecordReading();
   const relatedMemo = getRelationMemo(relation, "referenced");
   if (!relatedMemo) {
     return null;
@@ -76,6 +78,12 @@ const BacklinkRow = ({
       state={parentPage ? createMemoNavigationState(parentPage) : undefined}
       title={title}
       viewTransition
+      onClick={(event) => {
+        if (reader.enabled && isOrdinaryActivation(event)) {
+          event.preventDefault();
+          reader.open(relatedMemo.name, event.currentTarget);
+        }
+      }}
     >
       <SidebarRowIconSlot icon={LinkIcon} />
       <span ref={ref} className="min-w-0 flex-1 truncate text-start">
@@ -120,7 +128,7 @@ const MemoDetailSidebar = ({
   const { referenced } = useMemo(() => getRelationBuckets(memo.relations, memo.name), [memo.relations, memo.name]);
   const backlinkMemoNames = useMemo(
     () =>
-      forceReadonly || privateDiary
+      forceReadonly
         ? []
         : referenced.flatMap((relation) => {
             const relatedMemo = getRelationMemo(relation, "referenced");
@@ -141,7 +149,7 @@ const MemoDetailSidebar = ({
   const parentSnippet = parentMemo ? normalizeSnippet(parentMemo.snippet || parentMemo.content || parentMemo.name) : "";
   const showComments = !privateDiary && !forceReadonly && commentCount !== undefined && commentCount > 0;
   const showOnThisMemo = headings.length > 1 || showComments;
-  const showConnections = !privateDiary && !forceReadonly && (!!parentMemo || !!parentStatus || referenced.length > 0);
+  const showConnections = !forceReadonly && (!!parentMemo || !!parentStatus || referenced.length > 0);
 
   const handleCopyLink = () => {
     const host = (profile.instanceUrl || window.location.origin).replace(/\/+$/, "");

@@ -9,6 +9,7 @@ import AppSidebar, {
   SidebarResizeHandle,
   useSidebarWidth,
 } from "@/components/AppSidebar";
+import RecordReadingProvider from "@/components/RecordReference/RecordReadingProvider";
 import ViewComposerDialog from "@/components/ViewComposer";
 import { AppSidebarProvider } from "@/contexts/AppSidebarContext";
 import { GlobalMemoEditorProvider } from "@/contexts/GlobalMemoEditorContext";
@@ -116,11 +117,13 @@ const RootLayout = () => (
   <SpaceProvider>
     <MemoFilterProvider>
       <AppSidebarProvider>
-        <GlobalMemoEditorProvider>
-          <JournalSessionProvider>
-            <RootLayoutContent />
-          </JournalSessionProvider>
-        </GlobalMemoEditorProvider>
+        <RecordReadingProvider>
+          <GlobalMemoEditorProvider>
+            <JournalSessionProvider>
+              <RootLayoutContent />
+            </JournalSessionProvider>
+          </GlobalMemoEditorProvider>
+        </RecordReadingProvider>
       </AppSidebarProvider>
     </MemoFilterProvider>
   </SpaceProvider>

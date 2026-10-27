@@ -46,7 +46,7 @@ describe("MemoDetailSidebar", () => {
     currentUserState.value = { name: "users/alice" };
   });
 
-  it("keeps personal originals quiet and starts an explicit preview-based share", () => {
+  it("shows personal reference context without social controls and starts an explicit preview-based share", () => {
     const memo = create(MemoSchema, {
       name: "memos/diary",
       creator: "users/alice",
@@ -54,7 +54,8 @@ describe("MemoDetailSidebar", () => {
       relations: [createIncomingReference("memos/diary")],
     });
     renderSidebar(<MemoDetailSidebar memo={memo} privateDiary commentCount={4} onEdit={vi.fn()} onCommentCreate={vi.fn()} />);
-    expect(screen.queryByText("memo.connections")).not.toBeInTheDocument();
+    expect(screen.getByText("memo.connections")).toBeInTheDocument();
+    expect(screen.getByText("Incoming backlink")).toBeInTheDocument();
     expect(screen.queryByText("memo.comment.self")).not.toBeInTheDocument();
     expect(screen.queryByText("memo.comment.write-a-comment")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "common.share" })).not.toBeInTheDocument();
