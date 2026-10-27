@@ -53,6 +53,21 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             {
+              name: "app-shared",
+              test: /[\\/]src[\\/](?:hooks|contexts|lib|utils|types)[\\/]/,
+              minShareCount: 2,
+              priority: 5,
+            },
+            // Shared UI primitives otherwise produce dozens of tiny requests on a
+            // cold HTTP/1.1 visit, delaying the first original on mobile networks.
+            {
+              name: "ui-vendor",
+              // Map icons use react-dom/server. Keep that renderer in the lazy map
+              // chunk instead of making every reading entry download it.
+              test: /node_modules[\\/](?:@base-ui|@floating-ui|lucide-react|react|react-dom(?![\\/](?:server|cjs[\\/]react-dom-server))|scheduler)([\\/]|$)/,
+              priority: 10,
+            },
+            {
               name: "utils-vendor",
               test: /node_modules[\\/](dayjs|lodash-es)([\\/]|$)/,
             },

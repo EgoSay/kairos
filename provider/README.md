@@ -6,7 +6,7 @@ swapped.
 
 | Package | Backend |
 | --- | --- |
-| `ai/` | speech-to-text and audio-capable LLM providers (OpenAI, Gemini) |
+| `ai/` | speech-to-text, audio-capable LLM providers (OpenAI, Gemini), and strict Cloudflare association inference (`ai/association/`) |
 | `idp/` | identity providers for SSO (OAuth2) |
 | `storage/` | attachment object storage (local disk, S3) |
 | `geocoding/` | user-requested Nominatim place search, cached and globally rate limited per instance |

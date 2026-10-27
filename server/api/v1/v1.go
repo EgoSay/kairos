@@ -17,6 +17,7 @@ import (
 
 	"github.com/EgoSay/kairos/core/notification"
 	"github.com/EgoSay/kairos/core/partition"
+	"github.com/EgoSay/kairos/core/recordgraph"
 	"github.com/EgoSay/kairos/internal/linkmeta"
 	"github.com/EgoSay/kairos/internal/profile"
 	"github.com/EgoSay/kairos/internal/ratelimit"
@@ -60,6 +61,7 @@ func requestBodyLimit(procedure string) int64 {
 
 type APIV1Service struct {
 	JournalPartitions *partition.Service
+	RecordGraph       *recordgraph.Service
 	v1pb.UnimplementedInstanceServiceServer
 	v1pb.UnimplementedAuthServiceServer
 	v1pb.UnimplementedUserServiceServer

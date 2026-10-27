@@ -3,6 +3,8 @@ package test
 import (
 	"context"
 	"encoding/json"
+	"os"
+	"regexp"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -61,6 +63,7 @@ func TestJournalSchemaUpgradePreservesBaselineAndAccountDeletionCleansDocuments(
 	require.NoError(t, err)
 	memo, err := s.CreateMemo(ctx, &store.Memo{UID: "legacy-life", CreatorID: owner.ID, Content: "original words", Visibility: store.Private})
 	require.NoError(t, err)
+	dropGraphFixture(ctx, t, s)
 	_, err = s.GetDriver().GetDB().ExecContext(ctx, "DROP TABLE journal_document")
 	require.NoError(t, err)
 	setSchemaVersion(ctx, t, s, "0.31.8")
@@ -80,4 +83,30 @@ func TestJournalSchemaUpgradePreservesBaselineAndAccountDeletionCleansDocuments(
 	removed, err := s.GetJournalDocument(ctx, owner.ID, "insight", "private")
 	require.NoError(t, err)
 	require.Nil(t, removed)
+}
+
+// Reconstruct the pre-graph baseline; a newer fresh schema is not a historical fixture.
+func dropGraphFixture(ctx context.Context, t *testing.T, s *store.Store) {
+	t.Helper()
+	driver := getDriverFromEnv()
+	ddl, err := os.ReadFile("../migration/" + driver + "/26.10/01__record_graph.sql")
+	require.NoError(t, err)
+	for _, match := range regexp.MustCompile(`CREATE TRIGGER (\w+) AFTER (?:INSERT|UPDATE|DELETE) ON ([^ ]+)`).FindAllStringSubmatch(string(ddl), -1) {
+		q := "DROP TRIGGER " + match[1]
+		if driver == "postgres" {
+			q += " ON " + match[2]
+		}
+		_, err = s.GetDriver().GetDB().ExecContext(ctx, q)
+		require.NoError(t, err)
+	}
+	if driver == "postgres" {
+		for _, match := range regexp.MustCompile(`CREATE FUNCTION (\w+)\(\)`).FindAllStringSubmatch(string(ddl), -1) {
+			_, err = s.GetDriver().GetDB().ExecContext(ctx, "DROP FUNCTION "+match[1]+"()")
+			require.NoError(t, err)
+		}
+	}
+	for _, table := range []string{"record_graph_edge", "record_graph_source", "record_graph_owner", "record_graph_budget"} {
+		_, err = s.GetDriver().GetDB().ExecContext(ctx, "DROP TABLE "+table)
+		require.NoError(t, err)
+	}
 }

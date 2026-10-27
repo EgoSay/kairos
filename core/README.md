@@ -10,6 +10,7 @@ apply the same way.
 | `notification/` | building and dispatching inbox and email notifications |
 | `memopayload/` | rebuilding a memo's derived payload from its markdown |
 | `memoreference/` | identifying current-instance record links in Markdown |
+| `recordgraph/` | background semantic associations, evidence validation, owner-only prepared neighborhoods and model budgets |
 | `journal/` | private review, calendar, sharing selection and derived-content withdrawal |
 | `journalrecord/` | original record revision and trash retention |
 | `partition/` | personal organization and durable explicitly authorized external delivery |

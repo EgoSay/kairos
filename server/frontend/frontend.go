@@ -61,6 +61,16 @@ func (s *FrontendService) Serve(_ context.Context, e *echo.Echo) {
 		return false
 	}
 
+	// Compress only public build assets. Journal/API/SSE responses keep their own
+	// transport behavior, and reverse proxies need no special compression setup.
+	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
+		Level:     1,
+		MinLength: 1024,
+		Skipper: func(c *echo.Context) bool {
+			return !strings.HasPrefix(c.Request().URL.Path, "/assets/")
+		},
+	}))
+
 	// Route to serve the frontend static assets.
 	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		Filesystem: frontendFS,

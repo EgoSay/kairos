@@ -1,9 +1,13 @@
 package frontend
 
 import (
+	"compress/gzip"
 	"context"
+	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/labstack/echo/v5"
@@ -272,4 +276,51 @@ func setFrontendAccessMode(ctx context.Context, t *testing.T, stores *store.Stor
 		}},
 	})
 	require.NoError(t, err)
+}
+
+func TestFrontendAssetCompressionLeavesPrivateTransportsUntouched(t *testing.T) {
+	frontendFS := getFileSystem("dist")
+	asset := ""
+	var original []byte
+	require.NoError(t, fs.WalkDir(frontendFS, ".", func(path string, _ fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if asset == "" && strings.HasPrefix(path, "assets/") && strings.HasSuffix(path, ".js") {
+			data, readErr := fs.ReadFile(frontendFS, path)
+			if readErr != nil {
+				return readErr
+			}
+			if len(data) > 4096 {
+				asset = path
+				original = data
+			}
+		}
+		return nil
+	}))
+	if asset == "" {
+		t.Skip("frontend build assets are not present")
+	}
+	e := echo.New()
+	NewFrontendService(&profile.Profile{}, nil).Serve(context.Background(), e)
+	e.GET("/api/v1/compression-fixture", func(c *echo.Context) error { return c.String(http.StatusOK, strings.Repeat("private", 1024)) })
+	for _, path := range []string{"/" + asset, "/api/v1/compression-fixture"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.Header.Set("Accept-Encoding", "gzip")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		require.Equal(t, http.StatusOK, rec.Code)
+		if strings.HasPrefix(path, "/api/") {
+			require.Empty(t, rec.Header().Get("Content-Encoding"))
+			continue
+		}
+		require.Equal(t, "gzip", rec.Header().Get("Content-Encoding"))
+		require.Equal(t, frontendHashedAssetCacheControl, rec.Header().Get("Cache-Control"))
+		reader, err := gzip.NewReader(rec.Body)
+		require.NoError(t, err)
+		decompressed, err := io.ReadAll(reader)
+		require.NoError(t, err)
+		require.NoError(t, reader.Close())
+		require.Equal(t, original, decompressed)
+	}
 }

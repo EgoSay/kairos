@@ -1,10 +1,13 @@
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, type Dispatch, type ReactNode, type SetStateAction, useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import type { JournalWanderSession } from "@/lib/journal";
+import type { WanderSession } from "@/lib/wander";
 import { ROUTES } from "@/router/routes";
 
 interface JournalSessionContextValue {
+  graphWalk: WanderSession | undefined;
+  setGraphWalk: Dispatch<SetStateAction<WanderSession | undefined>>;
   reviewDay: { date: string; timezone: string } | undefined;
   setReviewDay: (day: { date: string; timezone: string } | undefined) => void;
   wander: JournalWanderSession | undefined;
@@ -17,6 +20,7 @@ const JournalSessionContext = createContext<JournalSessionContextValue | undefin
 
 function JournalSession({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  const [graphWalk, setGraphWalk] = useState<WanderSession>();
   const [reviewDay, setReviewDay] = useState<{ date: string; timezone: string }>();
   const [wander, setWander] = useState<JournalWanderSession>();
   const [expanded, setExpandedNames] = useState<ReadonlySet<string>>(new Set());
@@ -25,13 +29,18 @@ function JournalSession({ children }: { children: ReactNode }) {
     // later entry use its new local day/timezone without moving an open page.
     if (pathname.startsWith("/memos/")) return;
     if (pathname !== ROUTES.JOURNAL_REVIEW) setReviewDay(undefined);
-    if (pathname !== ROUTES.JOURNAL_WANDER) setWander(undefined);
+    if (pathname !== ROUTES.JOURNAL_WANDER) {
+      setWander(undefined);
+      setGraphWalk(undefined);
+    }
   }, [pathname]);
   return (
     <JournalSessionContext.Provider
       value={{
         reviewDay,
         setReviewDay,
+        graphWalk,
+        setGraphWalk,
         wander,
         setWander,
         expanded,

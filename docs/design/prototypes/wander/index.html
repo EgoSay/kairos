@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Kairos · 随机漫步交互试读</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="review-shell">
+      <header class="review-header">
+        <div><span class="review-label">KAIROS / 交互试读</span><span class="fiction-label">虚构记录 · 独立原型</span></div>
+        <a href="../../random-walk-interaction-options.md" class="brief-link">设计说明 ↗</a>
+      </header>
+      <nav class="modes" aria-label="比较交互方案">
+        <a href="#flow" data-mode="flow"><span>A</span> 顺着读 <small>推荐</small></a>
+        <a href="#hybrid" data-mode="hybrid"><span>A+C</span> 连读与地图 <small>新增</small></a>
+        <a href="#pages" data-mode="pages"><span>B</span> 翻页并读</a>
+        <a href="#map" data-mode="map"><span>C</span> 原文地图</a>
+      </nav>
+      <div class="concept">
+        <div><p id="concept-kicker"></p><h1 id="concept-title"></h1></div>
+        <p id="concept-description"></p>
+      </div>
+      <div class="prototype-toolbar">
+        <span id="try-instruction"></span>
+        <label><input id="long-note" type="checkbox" /> 试试长记录</label>
+      </div>
+      <section class="app" aria-label="Kairos 随机漫步体验">
+        <header class="app-header">
+          <div class="brand"><span class="brand-mark" aria-hidden="true">k<span></span></span><span>Kairos</span><span class="brand-divider"></span><span class="app-title">随机漫步</span></div>
+          <div class="app-actions">
+            <button type="button" data-action="hybrid-back" class="quiet-button" hidden>← 回到刚才</button>
+            <button type="button" data-action="hybrid-map" class="quiet-button" aria-haspopup="dialog" aria-controls="nearby-dialog" hidden><svg class="nearby-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5L15 7L9 15L5 5"/><circle cx="5" cy="5" r="2"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="15" r="2"/></svg> 附近地图</button>
+            <button type="button" data-action="trail" class="quiet-button"><span aria-hidden="true">⌁</span> 看看来路</button>
+            <button type="button" data-action="stop" class="icon-button" aria-label="结束这次漫步">×</button>
+          </div>
+        </header>
+        <main id="experience" tabindex="-1"></main>
+      </section>
+      <footer class="review-footer">
+        <p id="tradeoff"></p>
+        <details><summary>关于这个原型</summary><p>三个基础方案与 A+C 组合版使用同一组人工编写的虚构记录与关联，供比较交互手感。原型不访问 Kairos 账户、不调用模型，也不代表真实关联质量或正式应用性能。方案切换、长文开关位于原型外框，正式产品无需选择阅读模式。</p><p>设计参考：<a href="https://help.flomoapp.com/advance/random-walk.html" target="_blank" rel="noreferrer">flomo 随机漫步</a>、Kairos BRAND.md。</p></details>
+      </footer>
+    </div>
+    <dialog id="trail-dialog" aria-labelledby="trail-title">
+      <div class="dialog-heading"><div><span class="eyebrow">这一次漫步</span><h2 id="trail-title">刚才经过的地方</h2></div><button type="button" data-action="close-trail" class="icon-button" aria-label="关闭来路">×</button></div>
+      <p class="dialog-caption">只留下位置，随时回去看看。</p>
+      <ol id="trail-list"></ol>
+      <p class="dialog-footnote">没有需要完成的路线。</p>
+    </dialog>
+    <dialog id="nearby-dialog" aria-labelledby="nearby-title" aria-describedby="nearby-description">
+      <div class="nearby-heading">
+        <div><span class="eyebrow">偶尔抬头，看看附近</span><h2 id="nearby-title">这一带的小径</h2></div>
+        <button type="button" data-action="hybrid-close" class="icon-button" aria-label="收起附近地图" autofocus>×</button>
+      </div>
+      <p id="nearby-description">点一篇，直接回到原文接着读。</p>
+      <div class="nearby-map" aria-label="本次原文关系地图">
+        <svg class="nearby-lines" aria-hidden="true"></svg>
+        <div id="nearby-nodes"></div>
+      </div>
+      <footer class="nearby-footer"><p><span class="legend-line"></span> 这次的小径 <span class="legend-line is-dashed"></span> 另一条联系</p><button type="button" data-action="hybrid-close" class="quiet-button">回到原文 ↙</button></footer>
+    </dialog>
+    <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  </body>
+</html>

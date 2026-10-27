@@ -29,7 +29,11 @@ const SignIn = lazyWithReload(() => import("@/pages/SignIn"));
 const SignUp = lazyWithReload(() => import("@/pages/SignUp"));
 const JournalExplore = lazyWithReload(() => import("@/pages/JournalExplore"));
 const JournalReview = lazyWithReload(() => import("@/pages/JournalReview"));
-const JournalWander = lazyWithReload(() => import("@/pages/JournalWander"));
+const loadJournalWander = () => import("@/pages/JournalWander");
+const JournalWander = lazyWithReload(loadJournalWander);
+// Public code may load while identity and display settings are verified. The
+// route's normal guards still own data access and original visibility.
+if (window.location.pathname === ROUTES.JOURNAL_WANDER) void loadJournalWander().catch(() => undefined);
 const JournalDay = lazyWithReload(() => import("@/pages/JournalDay"));
 const JournalInsights = lazyWithReload(() => import("@/pages/JournalInsights"));
 const JournalPartitions = lazyWithReload(() => import("@/pages/JournalPartitions"));

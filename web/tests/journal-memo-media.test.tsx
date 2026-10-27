@@ -50,6 +50,20 @@ const show = (memo: Memo) =>
   );
 
 describe("journal original Markdown and media", () => {
+  it("reads a long original continuously without an expand gate and retains its media", () => {
+    const memo = record(`# 漫步长文\n\n${"原话保持完整。".repeat(150)}`);
+    const { container } = render(
+      <MemoryRouter>
+        <MemoFilterProvider>
+          <JournalMemo memo={memo} continuous />
+        </MemoFilterProvider>
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("heading", { name: "漫步长文" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "journal.expand-full" })).not.toBeInTheDocument();
+    expect(container.querySelector('[style*="max-height"]')).toBeNull();
+    expect(screen.getByRole("img", { name: photo.filename })).toBeInTheDocument();
+  });
   it("renders real tags and task status without a MemoViewProvider or a mutable task handler", () => {
     show(record("散步回来 #日常\n\n- [x] 看过夕阳\n- [ ] 还没整理照片"));
     expect(screen.getByText("#日常")).toHaveAttribute("data-tag", "日常");
