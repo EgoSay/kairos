@@ -15,7 +15,6 @@ Active design specifications (decided direction, not yet implemented):
 
 Explorations (not yet decided, free to change):
 
-- [随机漫步 A+C 交互](random-walk-interaction-options.md) — 已确认连续原文与按需地图，正在实施；A/B/C 讨论原型保留，入口 `prototypes/wander/index.html`，组合版 `#hybrid`。
 - `prototypes/` — 设计系统方向原型（HTML，可直接双击打开）。入口 `prototypes/index.html`；用于配色、排版等风格取舍的实际体验对比。
 
 Personal Life Journal design baseline:
@@ -26,6 +25,7 @@ Personal Life Journal design baseline:
 
 The following designs have been implemented and are frozen:
 
+- [随机漫步 A+C 交互](random-walk-interaction-options.md) — 连续原文与按需地图已实现，待 Evan 本地验收；后续证据见 [运行报告](../operations/random-walk-local-verification.md)。A/B/C 讨论原型保留，入口 `prototypes/wander/index.html`，组合版 `#hybrid`。
 - [API abuse controls](api-abuse-controls.md)
 - [Configuration provisioning](configuration-provisioning.md)
 - [Kairos 日期页 collection 上下文](kairos-journal-day-collection-2026-10-19.md)
