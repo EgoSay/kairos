@@ -28,6 +28,7 @@ Color comes from the semantic OKLCH tokens documented in
 | **Badge** | default · secondary · destructive · outline · **warning** | shape: default · **pill** | `warning` + `shape` are local additions. `pill` = `rounded-full`. |
 | **Tabs** | — | variant: **segmented** · **underline** | Local component (not upstream shadcn). Context-based `Tabs`/`TabsList`/`TabsTrigger`, no Radix. `underline` relies on the consumer's own divider. |
 | **Dialog** | — | size: sm · default · lg · xl · 2xl · full | Local `size` variants + auto-focus prevention on open. |
+| **Sheet** | — | size: default · **reading** | `reading` gives a full-width mobile bottom panel / up to 2xl desktop drawer, brief reduced-motion-aware transition and a 44px close target. Set `closeLabel` for a localized accessible name. |
 | **Select** | — | size: xs · sm · default | Local `size` prop on the trigger. |
 | **DropdownMenu** | item: default · destructive | — | Local destructive item variant + a sub-menu hover-delay hook. |
 

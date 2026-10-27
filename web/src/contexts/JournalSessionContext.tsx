@@ -1,12 +1,13 @@
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, type Dispatch, type ReactNode, type SetStateAction, useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import type { JournalWanderSession } from "@/lib/journal";
+import type { WanderSession } from "@/lib/wander";
 import { ROUTES } from "@/router/routes";
 
 interface JournalSessionContextValue {
-  graphWalk: { history: string[]; index: number } | undefined;
-  setGraphWalk: (value: { history: string[]; index: number } | undefined) => void;
+  graphWalk: WanderSession | undefined;
+  setGraphWalk: Dispatch<SetStateAction<WanderSession | undefined>>;
   reviewDay: { date: string; timezone: string } | undefined;
   setReviewDay: (day: { date: string; timezone: string } | undefined) => void;
   wander: JournalWanderSession | undefined;
@@ -19,7 +20,7 @@ const JournalSessionContext = createContext<JournalSessionContextValue | undefin
 
 function JournalSession({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const [graphWalk, setGraphWalk] = useState<{ history: string[]; index: number }>();
+  const [graphWalk, setGraphWalk] = useState<WanderSession>();
   const [reviewDay, setReviewDay] = useState<{ date: string; timezone: string }>();
   const [wander, setWander] = useState<JournalWanderSession>();
   const [expanded, setExpandedNames] = useState<ReadonlySet<string>>(new Set());

@@ -26,7 +26,7 @@ import { useTranslate } from "@/utils/i18n";
 import { filterInlineManagedAttachments } from "@/utils/managed-attachment";
 
 /** An original record, with no social counters, automatic playback or generated preamble. */
-export default function JournalMemo({ memo }: { memo: Memo }) {
+export default function JournalMemo({ memo, continuous = false }: { memo: Memo; continuous?: boolean }) {
   const t = useTranslate();
   const location = useLocation();
   const navigate = useNavigate();
@@ -40,7 +40,7 @@ export default function JournalMemo({ memo }: { memo: Memo }) {
   const [recordDialog, setRecordDialog] = useState<"history" | "originals" | null>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const hidden = isMemoBlurred(memo, userTagsSetting) && !revealed;
-  const isExpanded = expanded.has(memo.name);
+  const isExpanded = continuous || expanded.has(memo.name);
   const long = memo.content.length > 700;
   const { previewState, openPreview, setPreviewOpen } = useImagePreview();
   const handleMemoContentClick = (event: MouseEvent) => {
@@ -133,7 +133,7 @@ export default function JournalMemo({ memo }: { memo: Memo }) {
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-card to-transparent" />
             )}
           </div>
-          {long && (
+          {long && !continuous && (
             <Button
               variant="ghost"
               onClick={() => setExpanded(memo.name, !isExpanded)}

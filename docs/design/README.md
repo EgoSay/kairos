@@ -15,6 +15,7 @@ Active design specifications (decided direction, not yet implemented):
 
 Explorations (not yet decided, free to change):
 
+- [随机漫步 A+C 交互](random-walk-interaction-options.md) — 已确认连续原文与按需地图，正在实施；A/B/C 讨论原型保留，入口 `prototypes/wander/index.html`，组合版 `#hybrid`。
 - `prototypes/` — 设计系统方向原型（HTML，可直接双击打开）。入口 `prototypes/index.html`；用于配色、排版等风格取舍的实际体验对比。
 
 Personal Life Journal design baseline:

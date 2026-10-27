@@ -40,8 +40,10 @@ const SheetContent = React.forwardRef<
   HTMLDivElement,
   SheetPrimitive.Popup.Props & {
     side?: "top" | "right" | "bottom" | "left";
+    size?: "default" | "reading";
+    closeLabel?: string;
   }
->(({ className, children, side = "right", ...props }, ref) => {
+>(({ className, children, side = "right", size = "default", closeLabel = "Close", ...props }, ref) => {
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -56,6 +58,9 @@ const SheetContent = React.forwardRef<
             "inset-y-0 left-0 h-full w-3/4 border-r data-starting-style:-translate-x-full data-ending-style:-translate-x-full sm:max-w-sm",
           side === "top" && "inset-x-0 top-0 h-auto border-b data-starting-style:-translate-y-full data-ending-style:-translate-y-full",
           side === "bottom" && "inset-x-0 bottom-0 h-auto border-t data-starting-style:translate-y-full data-ending-style:translate-y-full",
+          size === "reading" &&
+            "w-full max-h-dvh gap-0 duration-150 data-ending-style:duration-150 motion-reduce:transition-none sm:max-w-2xl",
+          size === "reading" && side === "bottom" && "h-[90dvh] rounded-t-xl",
           className,
         )}
         {...props}
@@ -63,10 +68,14 @@ const SheetContent = React.forwardRef<
         {children}
         <SheetPrimitive.Close
           data-slot="sheet-close"
-          className="ring-offset-background absolute top-4 end-4 rounded-xs opacity-60 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
+          aria-label={closeLabel}
+          className={cn(
+            "ring-offset-background absolute top-4 end-4 rounded-xs opacity-60 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none",
+            size === "reading" && "flex size-11 items-center justify-center",
+          )}
         >
           <XIcon className="size-5" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">{closeLabel}</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Popup>
     </SheetPortal>

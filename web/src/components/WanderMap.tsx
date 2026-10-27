@@ -1,58 +1,98 @@
-import type { WanderDirection } from "@/hooks/useWanderQueries";
+import { FOCUS_VISIBLE_OUTLINE_CLASSES } from "@/components/ui/focus";
+import type { WanderOriginal } from "@/hooks/useWanderQueries";
+import { cn } from "@/lib/utils";
 
-/** Stable local layout: an original, shared reading themes, then linked originals. */
-export default function WanderMap({ directions, onFollow }: { directions: WanderDirection[]; onFollow: (name: string) => void }) {
-  const height = Math.max(150, directions.length * 72);
-  const y = (index: number) => ((index + 0.5) / directions.length) * 100;
-  const topics = [...new Set(directions.map((d) => d.topicId))].map((id) => {
-    const rows = directions.map((d, i) => ({ d, i })).filter(({ d }) => d.topicId === id);
-    return { id, label: rows[0].d.topic, y: rows.reduce((sum, row) => sum + y(row.i), 0) / rows.length, indices: rows.map((row) => row.i) };
-  });
+export interface WanderMapNode {
+  original: WanderOriginal;
+  source: string;
+  label: string;
+}
+export interface WanderMapEdge {
+  source: string;
+  target: string;
+  inPath: boolean;
+}
+
+/** A bounded map of actual originals. Choosing a landmark returns to the full reading trail. */
+export default function WanderMap({
+  current,
+  nodes,
+  edges,
+  disabled,
+  onChoose,
+}: {
+  current: string;
+  nodes: WanderMapNode[];
+  edges: WanderMapEdge[];
+  disabled?: boolean;
+  onChoose: (source: string, target: string) => void;
+}) {
+  const ordered = [...nodes.filter((node) => node.original.name === current), ...nodes.filter((node) => node.original.name !== current)];
+  const height = 156 + Math.ceil((ordered.length - 1) / 2) * 184;
+  const positions = new Map(
+    ordered.map((node, i) => [node.original.name, { x: i === 0 ? 50 : i % 2 ? 23 : 77, y: i === 0 ? 72 : 72 + Math.ceil(i / 2) * 184 }]),
+  );
   return (
-    <div aria-label="局部关联图" className="relative overflow-hidden rounded-xl border border-border/60 bg-muted/20" style={{ height }}>
-      <svg aria-hidden="true" className="absolute inset-0 size-full text-border" viewBox="0 0 100 100" preserveAspectRatio="none">
-        {topics.map((topic) => (
-          <path key={topic.id} d={`M 17 50 C 30 50, 30 ${topic.y}, 45 ${topic.y}`} fill="none" stroke="currentColor" strokeWidth="0.5" />
-        ))}
-        {topics.flatMap((topic) =>
-          topic.indices.map((index) => (
-            <path
-              key={index}
-              d={`M 45 ${topic.y} C 63 ${topic.y}, 63 ${y(index)}, 83 ${y(index)}`}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="0.5"
-            />
-          )),
-        )}
+    <div aria-label="附近原文关系地图" className="relative w-full" style={{ height }}>
+      <svg
+        aria-hidden="true"
+        className="absolute inset-0 size-full text-primary/40"
+        viewBox={`0 0 100 ${height}`}
+        preserveAspectRatio="none"
+      >
+        {edges.map((edge) => {
+          const from = positions.get(edge.source),
+            to = positions.get(edge.target);
+          return (
+            from &&
+            to && (
+              <path
+                key={`${edge.source}:${edge.target}`}
+                d={`M ${from.x} ${from.y} L ${to.x} ${to.y}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
+                strokeDasharray={edge.inPath ? undefined : "4 5"}
+              />
+            )
+          );
+        })}
       </svg>
-      <span className="absolute left-[17%] top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/30 bg-card px-3 py-3 text-xs text-primary">
-        这段原文
-      </span>
-      {topics.map((topic) => (
-        <span
-          key={topic.id}
-          style={{ top: `${topic.y}%` }}
-          className="absolute left-[45%] max-w-[27%] -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-card px-2 py-2 text-center text-[11px] leading-5"
-        >
-          {topic.label}
-        </span>
-      ))}
-      {directions.map((d, i) => (
-        <button
-          key={d.original.name}
-          type="button"
-          style={{ top: `${y(i)}%` }}
-          className="absolute left-[83%] min-h-11 w-[26%] -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-card px-2 py-2 text-left text-xs leading-5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2"
-          onClick={() => onFollow(d.original.name)}
-          aria-label={`探索线索 ${i + 1}：${d.topic}`}
-        >
-          <span className="block text-[10px] text-muted-foreground">记录 {i + 1}</span>
-          <span className="line-clamp-1">
-            {new Date(d.original.createdTs * 1000).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}
-          </span>
-        </button>
-      ))}
+      {ordered.map((node) => {
+        const position = positions.get(node.original.name)!;
+        const selected = node.original.name === current;
+        return (
+          <button
+            key={node.original.name}
+            type="button"
+            disabled={disabled}
+            data-map-node={node.original.name}
+            aria-current={selected ? "location" : undefined}
+            aria-label={`${selected ? "正在读" : node.label}：${new Date(node.original.createdTs * 1000).toLocaleDateString("zh-CN")}，${node.original.content.replace(/\s+/g, " ").slice(0, 80)}`}
+            className={cn(
+              "absolute flex h-36 w-[46%] -translate-x-1/2 flex-col gap-2 rounded-lg border bg-card p-3 text-left hover:border-primary disabled:opacity-50",
+              selected && "border-primary bg-accent",
+              FOCUS_VISIBLE_OUTLINE_CLASSES,
+            )}
+            style={{ left: `${position.x}%`, top: position.y - 72 }}
+            onClick={() => onChoose(node.source, node.original.name)}
+          >
+            <time className="text-xs text-muted-foreground">
+              {new Date(node.original.createdTs * 1000).toLocaleDateString("zh-CN", { year: "numeric", month: "short", day: "numeric" })}
+            </time>
+            <span className="line-clamp-2 font-content text-base leading-7">{node.original.content}</span>
+            <span className="mt-auto text-xs text-muted-foreground">
+              {selected ? "正在读" : node.label}
+              {!selected && (
+                <span aria-hidden="true" className="float-right">
+                  ↗
+                </span>
+              )}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

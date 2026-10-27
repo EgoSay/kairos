@@ -1,88 +1,45 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeftIcon, ArrowRightIcon, GitBranchIcon, RotateCcwIcon, Settings2Icon, ShuffleIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeftIcon, MapIcon, RotateCcwIcon, Settings2Icon, ShuffleIcon } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import JournalMemo from "@/components/JournalMemo";
 import MemoContent from "@/components/MemoContent";
 import { Button } from "@/components/ui/button";
-import WanderMap from "@/components/WanderMap";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import WanderConnection from "@/components/WanderConnection";
+import WanderMap, { type WanderMapEdge, type WanderMapNode } from "@/components/WanderMap";
 import WanderSettings from "@/components/WanderSettings";
-import { useAuth } from "@/contexts/AuthContext";
-import { useJournalSession } from "@/contexts/JournalSessionContext";
-import useCurrentUser from "@/hooks/useCurrentUser";
 import { journalRequest } from "@/hooks/useJournalQueries";
-import { useSSEConnectionStatus } from "@/hooks/useLiveMemoRefresh";
-import { memoDetailQueryOptions } from "@/hooks/useMemoQueries";
-import {
-  rememberNeighborhood,
-  resetWander,
-  useWanderStatus,
-  type WanderDirection,
-  type WanderNeighborhood,
-  type WanderOriginal,
-  wanderKeys,
-  wanderNodeOptions,
-  wanderStartOptions,
-} from "@/hooks/useWanderQueries";
-import { isMemoBlurred } from "@/lib/tag";
+import useMediaQuery from "@/hooks/useMediaQuery";
+import { resetWander, useWanderStatus, type WanderNeighborhood, type WanderOriginal, wanderKeys } from "@/hooks/useWanderQueries";
+import { useWanderTrail } from "@/hooks/useWanderTrail";
+import type { WanderPosition } from "@/lib/wander";
 import { ROUTES } from "@/router/routes";
+import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
 
-function Original({ value, compact = false }: { value: WanderOriginal; compact?: boolean }) {
-  const { userTagsSetting } = useAuth();
-  const { expanded, setExpanded } = useJournalSession();
-  const [revealed, setRevealed] = useState(false);
-  const hidden = isMemoBlurred({ tags: value.tags ?? [] }, userTagsSetting) && !revealed;
-  const detail = useQuery({ ...memoDetailQueryOptions(value.name), staleTime: 60_000 });
-  const long = value.content.length > 700;
-  const open = expanded.has(value.name);
-  if (detail.data && (value.truncated ? detail.data.content.startsWith(value.content) : detail.data.content === value.content)) {
+function Original({ value, memo, blurred }: { value: WanderOriginal; memo: Memo | null | undefined; blurred: boolean }) {
+  if (memo && (value.truncated ? memo.content.startsWith(value.content) : memo.content === value.content))
+    return <JournalMemo memo={memo} continuous />;
+  if (blurred)
     return (
-      <div data-original={value.name}>
-        <JournalMemo memo={detail.data} />
-      </div>
+      <p role="status" className="py-6 text-sm text-muted-foreground">
+        正在核对这篇记录的阅读设置…
+      </p>
     );
-  }
   return (
-    <article className="rounded-xl border border-border/60 bg-card px-5 py-5 sm:px-7 sm:py-6" data-original={value.name}>
+    <article className="rounded-xl border border-border/60 bg-card px-5 py-5 sm:px-7 sm:py-6">
       <Link
         to={`/${value.name}`}
-        className="mb-4 inline-flex min-h-11 items-center text-xs text-muted-foreground underline-offset-4 hover:underline"
+        className="mb-4 inline-flex min-h-11 items-center text-sm text-muted-foreground underline-offset-4 hover:underline"
       >
         <time dateTime={new Date(value.createdTs * 1000).toISOString()}>
           {new Date(value.createdTs * 1000).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}
         </time>
       </Link>
-      {hidden ? (
-        <Button variant="outline" onClick={() => setRevealed(true)}>
-          显示这篇记录
-        </Button>
-      ) : (
-        <>
-          <div className={long && !open ? "relative max-h-64 overflow-hidden" : ""}>
-            <MemoContent
-              memoName={value.name}
-              parentPage={ROUTES.JOURNAL_WANDER}
-              content={value.content}
-              attachments={[]}
-              readonly
-              compact={compact}
-              contentClassName="leading-8"
-            />
-            {long && !open && (
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-card to-transparent" />
-            )}
-          </div>
-          {long && (
-            <Button variant="ghost" className="mt-2" aria-expanded={open} onClick={() => setExpanded(value.name, !open)}>
-              {open ? "收起原文" : "展开原文"}
-            </Button>
-          )}
-          {value.truncated && (
-            <Link className="mt-3 block text-sm underline" to={`/${value.name}`}>
-              继续阅读完整记录
-            </Link>
-          )}
-        </>
+      <MemoContent memoName={value.name} parentPage={ROUTES.JOURNAL_WANDER} content={value.content} attachments={[]} readonly />
+      {value.truncated && (
+        <p role="status" className="mt-4 text-sm text-muted-foreground">
+          正在接上后面的原文…
+        </p>
       )}
     </article>
   );
@@ -97,226 +54,222 @@ const stateText: Record<string, string> = {
 };
 
 export default function JournalWander() {
-  const owner = useCurrentUser()?.name ?? "";
-  const client = useQueryClient();
-  const { graphWalk, setGraphWalk } = useJournalSession();
-  const name = graphWalk?.history[graphWalk.index] ?? "";
-  const connection = useSSEConnectionStatus();
-  const current = useQuery(wanderNodeOptions(owner, name));
+  const trail = useWanderTrail();
   const status = useWanderStatus();
+  const desktop = useMediaQuery("md");
   const [settings, setSettings] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  const [empty, setEmpty] = useState(false);
-  const [expandedHint, setExpandedHint] = useState<string>();
+  const [mapOpen, setMapOpen] = useState(false);
+  const [mapName, setMapName] = useState("");
+  const [restore, setRestore] = useState<WanderPosition>();
+  const [message, setMessage] = useState("");
   const [dismissed, setDismissed] = useState<{ source: string; target: string }>();
-  const [online, setOnline] = useState(navigator.onLine);
-  const operation = useRef(0);
-  const starting = useRef(false);
-  const data = current.data;
+  const elements = useRef(new Map<string, HTMLDivElement>());
+  const opener = useRef<HTMLElement | null>(null);
+  const mapPosition = useRef<WanderPosition | undefined>(undefined);
+  const mapDestination = useRef<string | undefined>(undefined);
+  const restoreFocus = useRef<HTMLElement | null>(null);
+  const captureLatest = useRef<() => WanderPosition | undefined>(() => undefined);
+  const initialized = useRef(false);
+  const active = trail.entries.find((entry) => entry.original.name === mapName) ?? trail.entries[0];
 
-  const adopt = (value: WanderNeighborhood, restart: boolean) => {
-    rememberNeighborhood(client, owner, value);
-    setEmpty(!value.root);
-    if (value.root)
-      setGraphWalk(
-        restart || !graphWalk
-          ? { history: [value.root.name], index: 0 }
-          : {
-              history: [...graphWalk.history.slice(0, graphWalk.index + 1), value.root.name].slice(-64),
-              index: Math.min(graphWalk.index + 1, 63),
-            },
-      );
-    setExpandedHint(undefined);
+  const capture = (): WanderPosition | undefined => {
+    const sightline = Math.min(window.innerHeight * 0.4, 320);
+    const candidates = [...elements.current.entries()].map(([name, element]) => ({ name, rect: element.getBoundingClientRect() }));
+    const nearest = candidates.sort(
+      (a, b) =>
+        Math.max(a.rect.top - sightline, sightline - a.rect.bottom, 0) - Math.max(b.rect.top - sightline, sightline - b.rect.bottom, 0),
+    )[0];
+    return nearest ? { name: nearest.name, offset: nearest.rect.top, scrollY: window.scrollY } : undefined;
   };
-  const start = async () => {
-    const seq = ++operation.current;
-    setPending(true);
-    setError("");
-    try {
-      const value = await client.fetchQuery(wanderStartOptions(owner, graphWalk?.history ?? []));
-      if (seq !== operation.current) return;
-      adopt(value, true);
-      client.removeQueries({ queryKey: ["wander", owner, "start"], exact: true });
-      void client.prefetchQuery(wanderStartOptions(owner, [...(graphWalk?.history ?? []), ...(value.root ? [value.root.name] : [])]));
-    } catch (e) {
-      if (seq === operation.current) setError(e instanceof Error ? e.message : "暂时无法打开");
-    } finally {
-      if (seq === operation.current) setPending(false);
+  captureLatest.current = capture;
+  useLayoutEffect(
+    () => () => {
+      const position = captureLatest.current();
+      if (position) trail.savePosition(position);
+    },
+    [trail.savePosition],
+  );
+  useLayoutEffect(() => {
+    if (!initialized.current && trail.entries.length) {
+      initialized.current = true;
+      if (trail.session?.position) setRestore(trail.session.position);
     }
+    if (!restore || mapOpen) return;
+    const element = elements.current.get(restore.name);
+    if (!element) return;
+    window.scrollTo({ top: window.scrollY + element.getBoundingClientRect().top - restore.offset, behavior: "instant" });
+    (restoreFocus.current?.isConnected ? restoreFocus.current : element).focus({ preventScroll: true });
+    restoreFocus.current = null;
+    setRestore(undefined);
+  }, [restore, mapOpen, trail.entries, trail.session?.position]);
+  useEffect(() => {
+    if (mapOpen && !trail.entries.some((entry) => entry.original.name === mapName)) setMapOpen(false);
+  }, [mapOpen, mapName, trail.entries]);
+
+  const openMap = (trigger: HTMLElement, from?: string) => {
+    const position = capture();
+    if (!position) return;
+    mapPosition.current = position;
+    opener.current = trigger;
+    mapDestination.current = undefined;
+    setMapName(from ?? position.name);
+    setMapOpen(true);
   };
-  useEffect(() => {
-    if (owner && !name && !starting.current) {
-      starting.current = true;
-      void start();
-    }
-  }, [owner, name]);
-  useEffect(() => {
-    if (!data?.root) return;
-    for (const direction of data.directions)
-      void client
-        .fetchQuery(wanderNodeOptions(owner, direction.original.name))
-        .then((value) => rememberNeighborhood(client, owner, value))
-        .catch(() => undefined);
-  }, [client, owner, data]);
-  useEffect(() => {
-    const invalidate = () => {
-      if (document.visibilityState === "visible") {
-        operation.current++;
-        setPending(false);
-        resetWander(client);
-      }
-    };
-    const connectivity = () => {
-      setOnline(navigator.onLine);
-      invalidate();
-    };
-    document.addEventListener("visibilitychange", invalidate);
-    window.addEventListener("online", connectivity);
-    window.addEventListener("offline", connectivity);
-    return () => {
-      document.removeEventListener("visibilitychange", invalidate);
-      window.removeEventListener("online", connectivity);
-      window.removeEventListener("offline", connectivity);
-      operation.current++;
-    };
-  }, [client]);
-  const follow = async (target: string) => {
-    const seq = ++operation.current;
-    setError("");
-    const cached = client.getQueryData<WanderNeighborhood>(wanderKeys.node(owner, target));
-    if (connection === "connected" && cached?.root && cached.epoch === data?.epoch) {
-      setPending(false);
-      adopt(cached, false);
+  const finishMap = (open: boolean) => {
+    if (open) return;
+    const target = mapDestination.current;
+    const toolbarHeight = document.querySelector('[aria-label="漫步阅读工具"]')?.getBoundingClientRect().height ?? 56;
+    const position = target ? { name: target, offset: desktop ? 80 : 64 + toolbarHeight, scrollY: 0 } : mapPosition.current;
+    if (position) setRestore(position);
+    restoreFocus.current = target ? null : opener.current;
+    mapDestination.current = undefined;
+  };
+  const choose = async (source: string, target: string) => {
+    if (!mapPosition.current) return;
+    if (target === mapName) {
+      setMapOpen(false);
       return;
     }
-    setPending(true);
-    try {
-      const next = await client.fetchQuery({ ...wanderNodeOptions(owner, target), staleTime: 0 });
-      if (seq === operation.current) adopt(next, false);
-    } catch (e) {
-      if (seq === operation.current) setError(e instanceof Error ? e.message : "暂时无法打开");
-    } finally {
-      if (seq === operation.current) setPending(false);
+    if (await trail.choose(source, target, mapPosition.current)) {
+      mapDestination.current = target;
+      setMapOpen(false);
+      setMessage("原文已经在这里，可以接着读。");
     }
   };
   const feedback = async (source: string, target: string, dismiss: boolean) => {
     try {
       await journalRequest("/wander/feedback", { method: "POST", body: JSON.stringify({ source, target, dismiss }) });
       setDismissed(dismiss ? { source, target } : undefined);
-      resetWander(client);
+      resetWander(trail.client);
     } catch {
-      setError("这次反馈没有保存，请稍后重试。");
+      setMessage("这次反馈没有保存，请稍后重试。");
     }
   };
-  const { userTagsSetting, isUserSettingsInitialized } = useAuth();
-  const safeDirections =
-    data?.directions.filter(
-      (d) =>
-        !isMemoBlurred({ tags: d.original.tags ?? [] }, userTagsSetting) &&
-        !isMemoBlurred({ tags: data.root?.tags ?? [] }, userTagsSetting),
-    ) ?? [];
-  const direction = (d: WanderDirection, index: number) => (
-    <section key={d.original.name} className="rounded-xl border border-border/70 bg-card p-4">
-      <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-        <span className="flex size-5 items-center justify-center rounded-full bg-muted">{index + 1}</span>
-        <span>{d.manual ? "你建立的关联" : d.topic}</span>
-      </div>
-      <p className="mb-3 line-clamp-3 whitespace-pre-wrap font-content text-base leading-7">{d.original.content}</p>
-      <button
-        type="button"
-        className="min-h-11 w-full text-left text-sm leading-6 text-muted-foreground hover:text-foreground"
-        aria-expanded={expandedHint === d.original.name}
-        onClick={() => setExpandedHint(expandedHint === d.original.name ? undefined : d.original.name)}
-      >
-        {d.hint} <span aria-hidden="true">{expandedHint === d.original.name ? "−" : "+"}</span>
-      </button>
-      {expandedHint === d.original.name && (
-        <div className="my-3 space-y-3 border-l-2 border-primary/30 pl-3 text-sm leading-6">
-          <p className="text-xs text-muted-foreground">这条提示来自两段原文</p>
-          <blockquote>“{d.sourceQuote}”</blockquote>
-          <blockquote>“{d.targetQuote}”</blockquote>
-          {d.context && <p className="text-muted-foreground">{d.context}</p>}
-          {!d.manual && (
-            <Button variant="ghost" size="sm" onClick={() => data?.root && void feedback(data.root.name, d.original.name, true)}>
-              这条关联不贴切
-            </Button>
-          )}
-        </div>
-      )}
-      <Button
-        variant="ghost"
-        className="mt-1 min-h-11 w-full justify-between"
-        disabled={!online}
-        onClick={() => void follow(d.original.name)}
-      >
-        沿这条线索走走
-        <ArrowRightIcon className="size-4" />
-      </Button>
-    </section>
-  );
+  const restart = async () => {
+    const name = await trail.start();
+    setDismissed(undefined);
+    if (name) setRestore({ name, offset: desktop ? 80 : 124, scrollY: 0 });
+  };
+
+  const mapNodes: WanderMapNode[] = [];
+  const mapEdges: WanderMapEdge[] = [];
+  if (active && !trail.hidden(active.original)) {
+    const current = active.original.name;
+    const visiblePath = [active, ...trail.entries.filter((entry) => entry.original.name !== current).slice(-3)];
+    for (const entry of visiblePath) {
+      if (!trail.hidden(entry.original)) mapNodes.push({ original: entry.original, source: current, label: "来路与小径" });
+      if (entry.source) mapEdges.push({ source: entry.source, target: entry.original.name, inPath: true });
+    }
+    for (const direction of active.neighborhood?.directions ?? []) {
+      const cached = trail.client.getQueryData<WanderNeighborhood>(wanderKeys.node(trail.owner, direction.original.name));
+      if (
+        trail.hidden(direction.original) ||
+        trail.memos.get(direction.original.name) === null ||
+        (cached && (!cached.root || trail.hidden(cached.root) || cached.epoch !== active.neighborhood?.epoch))
+      )
+        continue;
+      if (!mapNodes.some((node) => node.original.name === direction.original.name))
+        mapNodes.push({ original: cached?.root ?? direction.original, source: current, label: "一条岔路" });
+      if (
+        !mapEdges.some(
+          (edge) =>
+            (edge.source === current && edge.target === direction.original.name) ||
+            (edge.target === current && edge.source === direction.original.name),
+        )
+      )
+        mapEdges.push({ source: current, target: direction.original.name, inPath: false });
+    }
+  }
+  const visibleNames = new Set(mapNodes.map((node) => node.original.name));
+  const available = trail.entries.length > 0;
+  const last = trail.entries.at(-1);
+
   return (
-    <div className="mx-auto max-w-5xl pb-16 pt-2 sm:pt-7">
+    <div className="mx-auto max-w-3xl pb-16 pt-2 sm:pt-7">
       <Link to={ROUTES.JOURNAL} className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
         <ArrowLeftIcon className="size-4" />
         探索
       </Link>
-      <header className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <p className="mb-2 text-xs tracking-widest text-muted-foreground">在散落的记录之间</p>
-          <h1 className="font-content text-3xl font-medium">随机漫步</h1>
-          <p className="mt-3 text-sm text-muted-foreground">从一段原文出发，看看它还通向哪里。</p>
-        </div>
-        <Button variant="ghost" size="icon" aria-label="关联准备设置" onClick={() => setSettings(!settings)}>
-          <Settings2Icon className="size-4" />
-        </Button>
+      <header className="mb-5">
+        <p className="mb-2 text-xs tracking-widest text-muted-foreground">在散落的记录之间</p>
+        <h1 className="font-content text-3xl font-medium">随机漫步</h1>
+        <p className="mt-3 text-sm text-muted-foreground">顺着这些原话，慢慢读。</p>
       </header>
+      <div
+        className="sticky top-12 z-20 mb-5 flex min-h-14 flex-wrap items-center justify-between gap-2 border-b border-border/60 bg-background py-2 md:top-0"
+        aria-label="漫步阅读工具"
+      >
+        <div className="flex items-center gap-1">
+          {!!trail.session?.returns.length && (
+            <Button
+              variant="quiet"
+              disabled={!trail.online}
+              onClick={() => {
+                const position = trail.back();
+                if (position) setRestore(position);
+              }}
+            >
+              <ArrowLeftIcon />
+              回到刚才
+            </Button>
+          )}
+          <Button
+            variant="quiet"
+            disabled={trail.pending || !trail.online}
+            onClick={() => {
+              void restart();
+            }}
+          >
+            <ShuffleIcon />
+            换个起点
+          </Button>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="quiet"
+            aria-haspopup="dialog"
+            aria-expanded={mapOpen}
+            disabled={!available || !trail.online || Boolean(active && trail.hidden(active.original))}
+            onClick={(event) => openMap(event.currentTarget)}
+          >
+            <MapIcon />
+            附近地图
+          </Button>
+          <Button variant="quiet" size="icon" aria-label="关联准备设置" aria-expanded={settings} onClick={() => setSettings(!settings)}>
+            <Settings2Icon />
+          </Button>
+        </div>
+      </div>
       {settings && <WanderSettings onClose={() => setSettings(false)} />}
       {status.data && stateText[status.data.state] && (
         <p role="status" className="mb-5 text-sm leading-6 text-muted-foreground">
           {stateText[status.data.state]}
-          {status.data.counts.pending > 0 && ` 已准备 ${status.data.counts.ready} 篇。`}
         </p>
       )}
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        <Button
-          variant="outline"
-          disabled={!graphWalk || graphWalk.index === 0 || !online}
-          onClick={() => {
-            operation.current++;
-            setPending(false);
-            if (graphWalk) setGraphWalk({ ...graphWalk, index: graphWalk.index - 1 });
-          }}
-        >
-          <ArrowLeftIcon className="size-4" />
-          回到上一步
-        </Button>
-        <Button variant="outline" disabled={pending || !online} onClick={() => void start()}>
-          <ShuffleIcon className="size-4" />
-          换个起点
-        </Button>
-        {pending && (
-          <span role="status" className="text-xs text-muted-foreground">
-            正在打开…
-          </span>
-        )}
-        <span className="ml-auto text-xs text-muted-foreground">{graphWalk ? `走到第 ${graphWalk.index + 1} 站` : ""}</span>
+      <div className="sr-only" role="status" aria-live="polite">
+        {message}
       </div>
-      {!isUserSettingsInitialized ? (
+      {!trail.ready ? (
         <p role="status" className="py-12 text-muted-foreground">
           正在核对阅读设置…
         </p>
-      ) : !online ? (
+      ) : !trail.online ? (
         <p role="status" className="py-12 text-muted-foreground">
           网络恢复后会核对记录的最新状态，再继续漫步。
         </p>
       ) : (
         <>
-          {(error || current.isError) && (
+          {(trail.error || trail.failed) && (
             <div role="alert" className="mb-5 flex items-center gap-3 text-sm">
-              <span>{error || "记录可能已更新，请重新打开。"}</span>
-              <Button variant="ghost" onClick={() => (name ? void current.refetch() : void start())}>
-                <RotateCcwIcon className="size-4" />
+              <p>{trail.error || "这段原文暂时无法核对，已读的内容仍留在这里。"}</p>
+              <Button
+                variant="quiet"
+                onClick={() => {
+                  if (trail.session) resetWander(trail.client);
+                  else void restart();
+                }}
+              >
+                <RotateCcwIcon />
                 重试
               </Button>
             </div>
@@ -324,47 +277,116 @@ export default function JournalWander() {
           {dismissed && (
             <div role="status" className="mb-5 flex items-center gap-3 text-sm text-muted-foreground">
               已隐藏这条关联。
-              <Button variant="ghost" onClick={() => void feedback(dismissed.source, dismissed.target, false)}>
+              <Button variant="quiet" onClick={() => void feedback(dismissed.source, dismissed.target, false)}>
                 撤销
               </Button>
             </div>
           )}
-          {data?.root ? (
-            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-              <div className="min-w-0">
-                <Original key={data.root.name} value={data.root} />
-                <p className="mt-3 text-xs leading-5 text-muted-foreground">原文保留自己的语境，关联提示只是一次并读的邀请。</p>
-              </div>
-              <aside aria-label="与这篇记录相连的线索" className="min-w-0 space-y-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <GitBranchIcon className="size-4" />
-                  <span>{safeDirections.length ? "从这里延伸" : "在这里停留也很好"}</span>
+          <div aria-label="连续原文" className="space-y-3">
+            {trail.entries.map((entry, index) => {
+              const name = entry.original.name;
+              const key = `${entry.source}:${name}`;
+              const resuming = index > 0 && entry.source !== trail.entries[index - 1].original.name;
+              const forks =
+                entry.neighborhood?.directions.filter(
+                  (direction) => !trail.session?.history.includes(direction.original.name) && !trail.hidden(direction.original),
+                ) ?? [];
+              return (
+                <div
+                  key={name}
+                  ref={(element) => {
+                    if (element) elements.current.set(name, element);
+                    else elements.current.delete(name);
+                  }}
+                  tabIndex={-1}
+                  data-wander-original={name}
+                  className="outline-none"
+                >
+                  {resuming && (
+                    <p className="mb-3 pt-2 text-xs text-muted-foreground">
+                      {entry.direction ? "再顺着前面的记录，看看另一处。" : "刚才读过的原文"}
+                    </p>
+                  )}
+                  {entry.direction && (
+                    <WanderConnection
+                      direction={entry.direction}
+                      open={trail.session?.hints.includes(key) ?? false}
+                      onToggle={(open) => trail.toggleHint(key, open)}
+                      onDismiss={() => entry.source && void feedback(entry.source, name, true)}
+                    />
+                  )}
+                  <Original value={entry.original} memo={trail.memos.get(name)} blurred={trail.hidden(entry.original)} />
+                  {forks.length > 0 && !trail.hidden(entry.original) && (
+                    <div className="ml-3 py-2">
+                      <Button variant="quiet" size="sm" onClick={(event) => openMap(event.currentTarget, name)}>
+                        ↳ 附近还有别的记录
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                {safeDirections.length > 0 && <WanderMap directions={safeDirections} onFollow={(target) => void follow(target)} />}
-                {safeDirections.map(direction)}
-                {safeDirections.length === 0 && (
-                  <p className="rounded-xl border border-dashed p-5 text-sm leading-7 text-muted-foreground">
-                    暂时没有找到值得并读的记录。可以换个起点，让这段原文先留在心里。
-                  </p>
-                )}
-              </aside>
-            </div>
-          ) : empty || data?.state === "unavailable" ? (
-            <p className="py-12 text-muted-foreground">
-              {empty ? "暂时没有可漫步的记录。写下第一段想法后，再回来看看。" : "这篇记录已变更或不再参与漫步，请换个起点。"}
-            </p>
+              );
+            })}
+          </div>
+          {!available && (trail.empty || (!trail.loading && !trail.pending && trail.session)) ? (
+            <p className="py-12 text-muted-foreground">暂时没有可读的原文，可以换个起点。</p>
           ) : (
-            !error && (
-              <div
-                role="status"
-                className="min-h-64 animate-pulse rounded-xl bg-muted/40 p-6 text-sm text-muted-foreground motion-reduce:animate-none"
-              >
+            !available &&
+            !trail.error && (
+              <div role="status" className="min-h-64 rounded-xl bg-muted/40 p-6 text-sm text-muted-foreground">
                 正在打开原文…
               </div>
             )
           )}
+          {available && trail.loading && (
+            <p role="status" className="py-5 text-sm text-muted-foreground">
+              正在接上附近的原文…
+            </p>
+          )}
+          {available && !trail.loading && !trail.hidden(last!.original) && (
+            <div className="mt-9 border-t border-border/60 px-5 py-9 text-center">
+              <p className="font-content text-xl">这条小径，先到这里。</p>
+              <p className="mt-3 text-sm text-muted-foreground">刚才读到的，可以再留一会儿。</p>
+              <div className="mt-5">
+                <Button variant="quiet" disabled={trail.pending} onClick={() => void restart()}>
+                  去别处看看 <ShuffleIcon />
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
+      <Sheet open={mapOpen} onOpenChange={setMapOpen} onOpenChangeComplete={finishMap}>
+        <SheetContent side={desktop ? "right" : "bottom"} size="reading" closeLabel="收起附近地图" finalFocus={false}>
+          <SheetHeader>
+            <div className="pr-12">
+              <SheetTitle>这一带的小径</SheetTitle>
+            </div>
+            <SheetDescription>原话是路标。点一篇，回到完整原文接着读。</SheetDescription>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-6">
+            {mapNodes.length ? (
+              <WanderMap
+                current={mapName}
+                nodes={mapNodes}
+                edges={mapEdges.filter((edge) => visibleNames.has(edge.source) && visibleNames.has(edge.target))}
+                disabled={trail.pending}
+                onChoose={(source, target) => void choose(source, target)}
+              />
+            ) : (
+              <p className="py-8 text-sm text-muted-foreground">正在核对附近的原文；可以先回去继续读。</p>
+            )}
+            {trail.error && (
+              <p role="alert" className="py-3 text-sm text-muted-foreground">
+                {trail.error}
+              </p>
+            )}
+          </div>
+          <SheetFooter>
+            <p className="text-xs text-muted-foreground">实线是这次的小径，虚线是另一条联系。</p>
+            <SheetClose render={<Button variant="quiet" />}>回到原文</SheetClose>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
