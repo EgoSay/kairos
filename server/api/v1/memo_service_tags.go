@@ -449,8 +449,8 @@ func (s *APIV1Service) applyTagRewrite(ctx context.Context, memo *store.Memo, re
 			}
 			return nil, false, err
 		}
-		now := time.Now().Unix()
-		if err := s.markJournalRecordModified(ctx, current.CreatorID, current.UID, now); err != nil {
+		nowSec := time.Now().Unix()
+		if err := s.markJournalRecordModified(ctx, current.CreatorID, current.UID, nowSec); err != nil {
 			return nil, false, status.Errorf(codes.Internal, "failed to mark record modified: %v", err)
 		}
 		if s.JournalPartitions != nil {

@@ -42,6 +42,7 @@ type Service struct {
 	NewModel func(ai.ProviderConfig) (Model, error)
 	mu       sync.Mutex
 	index    *semanticIndex
+	Now      func() time.Time
 }
 
 // New creates a graph service with a strict Cloudflare adapter.
@@ -114,67 +115,6 @@ func digest(text string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// Status describes preparation independently from the ability to read existing originals.
-type Status struct {
-	State           string            `json:"state"`
-	Counts          store.GraphCounts `json:"counts"`
-	Epoch           int64             `json:"epoch"`
-	Profile         string            `json:"profile"`
-	ReservedNeurons int64             `json:"reservedNeurons"`
-	DailyNeurons    int64             `json:"dailyNeurons"`
-	ResetAt         int64             `json:"resetAt"`
-	Error           string            `json:"error,omitempty"`
-}
-
-// Status reads preparation metadata without invoking a model.
-func (s *Service) Status(ctx context.Context, owner int32) (Status, error) {
-	result := Status{State: "unconfigured", ResetAt: nextDay(time.Now()), DailyNeurons: 8000}
-	c, err := s.GetConfig(ctx, owner)
-	if err != nil {
-		return result, err
-	}
-	result.DailyNeurons = c.DailyNeurons
-	result.Epoch, err = s.Store.GraphEpoch(ctx, owner)
-	if err != nil {
-		return result, err
-	}
-	p, configErr := s.provider(ctx, c)
-	if configErr == nil {
-		result.Profile = modelProfile(c, p)
-	}
-	result.Counts, err = s.Store.CountGraphSources(ctx, owner, result.Profile)
-	if err != nil {
-		return result, err
-	}
-	if c.ProviderID == "" {
-		return result, nil
-	}
-	if !c.Enabled {
-		result.State = "paused"
-		return result, nil
-	}
-	if configErr != nil {
-		result.State = "configuration-error"
-		result.Error = "Cloudflare 服务配置不可用"
-		return result, nil //nolint:nilerr // Configuration failure is reading status, not a failure to read that status.
-	}
-	result.ReservedNeurons, err = s.Store.ReadGraphBudget(ctx, digest(p.Endpoint), time.Now().UTC().Format("2006-01-02"))
-	if err != nil {
-		return result, err
-	}
-	result.State = "ready"
-	if result.Counts.Pending > 0 {
-		result.State = "preparing"
-	}
-	if result.Counts.Failed > 0 {
-		result.State = "delayed"
-	}
-	if result.ReservedNeurons >= c.DailyNeurons {
-		result.State = "quota-paused"
-	}
-	return result, nil
-}
-
 func nextDay(now time.Time) int64 {
 	u := now.UTC()
 	return time.Date(u.Year(), u.Month(), u.Day()+1, 0, 0, 0, 0, time.UTC).Unix()
@@ -222,4 +162,11 @@ func excludedUIDs(p journal.Preferences) []string {
 		out = append(out, strings.TrimPrefix(name, "memos/"))
 	}
 	return out
+}
+
+func (s *Service) now() time.Time {
+	if s.Now != nil {
+		return s.Now()
+	}
+	return time.Now()
 }

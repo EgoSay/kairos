@@ -6,7 +6,7 @@ import useCurrentUser from "@/hooks/useCurrentUser";
 import { journalRequest } from "@/hooks/useJournalQueries";
 import { resetWander, type WanderConfig } from "@/hooks/useWanderQueries";
 
-export default function WanderSettings({ onClose }: { onClose: () => void }) {
+export default function WanderSettings({ onClose, onProgress }: { onClose: () => void; onProgress: (trigger: HTMLElement) => void }) {
   const owner = useCurrentUser()?.name ?? "";
   const client = useQueryClient();
   const config = useQuery({
@@ -37,6 +37,11 @@ export default function WanderSettings({ onClose }: { onClose: () => void }) {
         <h2 className="font-medium">在后台准备关联</h2>
         <Button variant="ghost" onClick={onClose}>
           收起
+        </Button>
+      </div>
+      <div>
+        <Button variant="quiet" size="touch" onClick={(event) => onProgress(event.currentTarget)}>
+          查看关联准备进度
         </Button>
       </div>
       <p className="text-sm leading-6 text-muted-foreground">

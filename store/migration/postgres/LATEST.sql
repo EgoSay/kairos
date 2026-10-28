@@ -183,7 +183,11 @@ CREATE TABLE record_graph_source (
   next_attempt_ts BIGINT NOT NULL DEFAULT 0,
   state VARCHAR(32) NOT NULL DEFAULT 'pending',
   error_code VARCHAR(64) NOT NULL DEFAULT '',
-  updated_ts BIGINT NOT NULL DEFAULT 0
+  updated_ts BIGINT NOT NULL DEFAULT 0,
+  stage VARCHAR(32) NOT NULL DEFAULT '',
+  failure_stage VARCHAR(32) NOT NULL DEFAULT '',
+  last_attempt_ts BIGINT NOT NULL DEFAULT 0,
+  status_version BIGINT NOT NULL DEFAULT 1
 );
 CREATE INDEX idx_graph_source_owner_id ON record_graph_source(owner_id,memo_id);
 CREATE INDEX idx_graph_source_due ON record_graph_source(owner_id,dirty,next_attempt_ts,lease_until,memo_id);
@@ -247,3 +251,49 @@ CREATE FUNCTION graph_access_system_setting_update_fn() RETURNS TRIGGER AS $$ BE
 CREATE TRIGGER graph_access_system_setting_update AFTER UPDATE ON "system_setting" FOR EACH ROW EXECUTE FUNCTION graph_access_system_setting_update_fn();
 CREATE FUNCTION graph_access_system_setting_delete_fn() RETURNS TRIGGER AS $$ BEGIN IF OLD.name='AI' THEN UPDATE record_graph_owner SET epoch=epoch+1;UPDATE record_graph_source SET dirty=1,lease_until=0,lease_token='',next_attempt_ts=0,attempts=0; END IF; RETURN NULL; END; $$ LANGUAGE plpgsql;
 CREATE TRIGGER graph_access_system_setting_delete AFTER DELETE ON "system_setting" FOR EACH ROW EXECUTE FUNCTION graph_access_system_setting_delete_fn();
+
+
+-- No original text, credentials, prompts or raw provider responses are retained.
+CREATE TABLE record_graph_call (
+  id VARCHAR(64) PRIMARY KEY,
+  owner_id INTEGER NOT NULL,
+  memo_id INTEGER NOT NULL,
+  revision BIGINT NOT NULL,
+  stage VARCHAR(32) NOT NULL,
+  account_key VARCHAR(64) NOT NULL,
+  budget_day VARCHAR(10) NOT NULL,
+  reserved_units BIGINT NOT NULL,
+  charged_units BIGINT NOT NULL,
+  usage_kind VARCHAR(24) NOT NULL DEFAULT 'unknown',
+  input_tokens BIGINT NOT NULL DEFAULT 0,
+  output_tokens BIGINT NOT NULL DEFAULT 0,
+  outcome VARCHAR(24) NOT NULL DEFAULT 'pending',
+  error_code VARCHAR(64) NOT NULL DEFAULT '',
+  http_status INTEGER NOT NULL DEFAULT 0,
+  provider_code INTEGER NOT NULL DEFAULT 0,
+  request_id VARCHAR(128) NOT NULL DEFAULT '',
+  started_ts BIGINT NOT NULL,
+  finished_ts BIGINT NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_graph_call_history ON record_graph_call(owner_id,memo_id,started_ts,id);
+CREATE INDEX idx_graph_call_budget ON record_graph_call(account_key,budget_day);
+CREATE TABLE record_graph_runtime (
+  connection_key VARCHAR(64) PRIMARY KEY,
+  failures INTEGER NOT NULL DEFAULT 0,
+  trips INTEGER NOT NULL DEFAULT 0,
+  blocked_until BIGINT NOT NULL DEFAULT 0,
+  error_code VARCHAR(64) NOT NULL DEFAULT ''
+);
+CREATE TABLE record_graph_retry (
+  owner_id INTEGER NOT NULL,
+  request_id VARCHAR(64) NOT NULL,
+  payload TEXT NOT NULL,
+  created_ts BIGINT NOT NULL,
+  PRIMARY KEY(owner_id,request_id)
+);
+CREATE FUNCTION graph_call_memo_delete_fn() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN DELETE FROM record_graph_call WHERE memo_id=OLD.id; RETURN NULL; END; $$;
+CREATE TRIGGER graph_call_memo_delete AFTER DELETE ON memo FOR EACH ROW EXECUTE FUNCTION graph_call_memo_delete_fn();
+CREATE FUNCTION graph_call_owner_change_fn() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN DELETE FROM record_graph_call WHERE memo_id=OLD.id AND OLD.creator_id<>NEW.creator_id; RETURN NULL; END; $$;
+CREATE TRIGGER graph_call_owner_change AFTER UPDATE ON memo FOR EACH ROW EXECUTE FUNCTION graph_call_owner_change_fn();
+CREATE FUNCTION graph_work_user_delete_fn() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN DELETE FROM record_graph_call WHERE owner_id=OLD.id;DELETE FROM record_graph_retry WHERE owner_id=OLD.id; RETURN NULL; END; $$;
+CREATE TRIGGER graph_work_user_delete AFTER DELETE ON "user" FOR EACH ROW EXECUTE FUNCTION graph_work_user_delete_fn();

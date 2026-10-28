@@ -3,7 +3,6 @@ package recordgraph
 import (
 	"context"
 	"encoding/json"
-	"math"
 	"strconv"
 	"time"
 	"uuid"
@@ -46,25 +45,55 @@ func (s *Service) RunOnce(ctx context.Context) (bool, error) {
 		if !c.Enabled || !c.FreePlanConfirmed {
 			continue
 		}
+		maintenance, err := s.maintenance(ctx, doc.OwnerID)
+		if err != nil {
+			return changed, err
+		}
+		if maintenance.Paused {
+			continue
+		}
 		p, err := s.provider(ctx, c)
 		if err != nil {
+			continue
+		}
+		quota, err := s.Store.GetGraphRuntime(ctx, quotaKey(p))
+		if err != nil {
+			return changed, err
+		}
+		if quota.Until > s.now().Unix() {
+			continue
+		}
+		runtime, err := s.Store.GetGraphRuntime(ctx, connectionKey(p))
+		if err != nil {
+			return changed, err
+		}
+		if runtime.Until > s.now().Unix() {
 			continue
 		}
 		model, err := s.NewModel(p)
 		if err != nil {
 			continue
 		}
-		rows, err := s.Store.ListGraphSources(ctx, &store.FindGraphSource{OwnerID: doc.OwnerID, DueTs: time.Now().Unix(), Limit: 1})
+		rows, err := s.Store.ListGraphSources(ctx, &store.FindGraphSource{OwnerID: doc.OwnerID, DueTs: s.now().Unix(), Limit: 1})
 		if err != nil {
 			return changed, err
 		}
 		if len(rows) == 0 {
 			continue
 		}
+		if runtime.Failures >= 3 {
+			ok, probeErr := s.Store.ClaimGraphProbe(ctx, runtime.Key, s.now().Unix())
+			if probeErr != nil {
+				return changed, probeErr
+			}
+			if !ok {
+				continue
+			}
+		}
 		source := rows[0]
 		source.LeaseToken = uuid.New().String()
-		source.LeaseUntil = time.Now().Add(15 * time.Minute).Unix()
-		ok, err := s.Store.ClaimGraphSource(ctx, source, time.Now().Unix())
+		source.LeaseUntil = s.now().Add(15 * time.Minute).Unix()
+		ok, err := s.Store.ClaimGraphSource(ctx, source, s.now().Unix())
 		if err != nil {
 			return changed, err
 		}
@@ -79,43 +108,12 @@ func (s *Service) RunOnce(ctx context.Context) (bool, error) {
 			changed = true
 			continue
 		}
-		source.State = "retrying"
-		source.ErrorCode = "temporary"
-		source.NextAttemptTs = time.Now().Add(time.Duration(1<<min(source.Attempts, 7)) * time.Minute).Unix()
-		var remote *association.ServiceError
-		if errors.Is(err, errQuota) {
-			source.State = "quota-paused"
-			source.ErrorCode = "daily-budget"
-			source.NextAttemptTs = nextDay(time.Now())
-		} else if errors.Is(err, store.ErrGraphConflict) {
-			source.NextAttemptTs = time.Now().Add(5 * time.Second).Unix()
-			source.ErrorCode = "source-changed"
-		} else if errors.As(err, &remote) {
-			if remote.Code == 3036 {
-				source.State = "quota-paused"
-				used, _ := s.Store.ReadGraphBudget(ctx, digest(p.Endpoint), time.Now().UTC().Format("2006-01-02"))
-				if used < c.DailyNeurons {
-					_, _ = s.Store.ReserveGraphBudget(ctx, digest(p.Endpoint), time.Now().UTC().Format("2006-01-02"), c.DailyNeurons-used, c.DailyNeurons)
-				}
-				source.ErrorCode = "cloudflare-daily-quota"
-				source.NextAttemptTs = nextDay(time.Now())
-			} else if remote.Status >= 400 && remote.Status < 500 && remote.Status != 408 && remote.Status != 429 {
-				source.State = "failed"
-				source.ErrorCode = "configuration"
-				source.NextAttemptTs = 253402300799
-			} else if remote.RetryAfter > 0 {
-				source.NextAttemptTs = time.Now().Add(min(remote.RetryAfter, 24*time.Hour)).Unix()
-			}
-		} else if source.Attempts >= 3 {
-			source.State = "failed"
-			source.ErrorCode = "invalid-result"
-			source.NextAttemptTs = 253402300799
-		}
+		s.deferFailure(source, err)
 		// A cancelled process releases its lease when possible; persisted attempts and budget survive a crash.
 		releaseCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 		releaseErr := s.Store.DeferGraphSource(releaseCtx, source)
 		cancel()
-		if releaseErr != nil {
+		if releaseErr != nil && !errors.Is(releaseErr, store.ErrGraphConflict) {
 			return changed, releaseErr
 		}
 	}
@@ -123,6 +121,13 @@ func (s *Service) RunOnce(ctx context.Context) (bool, error) {
 }
 
 func (s *Service) check(ctx context.Context, source *store.GraphSource, epoch int64, c Config, expected map[int32]string) error {
+	maintenance, err := s.maintenance(ctx, source.OwnerID)
+	if err != nil {
+		return err
+	}
+	if maintenance.Paused {
+		return store.ErrGraphConflict
+	}
 	current, err := s.GetConfig(ctx, source.OwnerID)
 	if err != nil {
 		return err
@@ -154,40 +159,6 @@ func (s *Service) check(ctx context.Context, source *store.GraphSource, epoch in
 	return nil
 }
 
-// billed reserves a conservative byte-based upper bound before any network action.
-func (s *Service) billed(ctx context.Context, p ai.ProviderConfig, c Config, inputBytes int, chat bool, call func() (association.Usage, error)) error {
-	rate := 1075.0
-	output := 0.0
-	if chat {
-		rate = 4625
-		output = 2400 * 30475.0 / 1e6
-	}
-	reserved := int64(math.Ceil(float64(2*inputBytes+8192)*rate/1e6+output)) + 1
-	account, day := digest(p.Endpoint), time.Now().UTC().Format("2006-01-02")
-	ok, err := s.Store.ReserveGraphBudget(ctx, account, day, reserved, c.DailyNeurons)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return errQuota
-	}
-	usage, err := call()
-	if err != nil {
-		return err
-	}
-	// Unknown accounting is retained conservatively; no second automatic retry here.
-	if usage.Input > 0 && (!chat || usage.Output > 0) {
-		actual := int64(math.Ceil(float64(usage.Input) * rate / 1e6))
-		if chat {
-			actual = int64(math.Ceil(float64(usage.Input)*rate/1e6 + float64(usage.Output)*30475/1e6))
-		}
-		if actual < reserved {
-			return s.Store.RefundGraphBudget(ctx, account, day, reserved-actual)
-		}
-	}
-	return nil
-}
-
 func (s *Service) process(ctx context.Context, source *store.GraphSource, epoch int64, c Config, p ai.ProviderConfig, model Model) error {
 	profile := modelProfile(c, p)
 	memos, err := s.readable(ctx, source.OwnerID, []int32{source.MemoID})
@@ -199,7 +170,7 @@ func (s *Service) process(ctx context.Context, source *store.GraphSource, epoch 
 		source.Profile = profile
 		source.Representation = []byte(`{}`)
 		source.State = "excluded"
-		return s.Store.PublishGraphSource(ctx, &store.GraphPublication{Source: source, ExpectedEpoch: epoch, Now: time.Now().Unix()})
+		return s.Store.PublishGraphSource(ctx, &store.GraphPublication{Source: source, ExpectedEpoch: epoch, Now: s.now().Unix()})
 	}
 	expected := map[int32]string{memo.ID: digest(memo.Content)}
 	r, decodeErr := decodeRepresentation(source.Representation)
@@ -213,6 +184,16 @@ func (s *Service) process(ctx context.Context, source *store.GraphSource, epoch 
 	source.Profile = profile
 	// Preserve validated partial work on deferred jobs, without publishing it to readers.
 	defer func() { source.Representation, _ = json.Marshal(r) }()
+	if r.Publication != nil {
+		if r.Publication.Epoch == epoch && s.check(ctx, source, epoch, c, r.Publication.Expected) == nil {
+			idx, e := s.loadIndex(ctx, source.OwnerID, profile)
+			if e != nil {
+				return e
+			}
+			return s.publishPrepared(ctx, source, epoch, c, &r, idx)
+		}
+		r.Publication = nil
+	}
 	for i := 0; i < len(r.Chunks); {
 		indices := []int{}
 		texts := []string{}
@@ -233,28 +214,46 @@ func (s *Service) process(ctx context.Context, source *store.GraphSource, epoch 
 		if err = s.check(ctx, source, epoch, c, expected); err != nil {
 			return err
 		}
+		if err = s.checkpoint(ctx, source, r, "embedding"); err != nil {
+			return err
+		}
 		var vectors [][]float32
 		size := 0
 		for _, v := range texts {
 			size += len(v)
 		}
-		err = s.billed(ctx, p, c, size, false, func() (association.Usage, error) {
+		err = s.billed(ctx, source, p, c, size, len(texts), false, func() (association.Usage, error) {
 			var u association.Usage
 			var e error
 			vectors, u, e = model.Embed(ctx, texts)
+			if e == nil {
+				if len(vectors) != len(indices) {
+					e = association.InvalidResult("embedding-count")
+				} else {
+					for _, v := range vectors {
+						if !validVector(v) {
+							e = association.InvalidResult("embedding-dimensions")
+							break
+						}
+					}
+				}
+			}
 			return u, e
 		})
 		if err != nil {
 			return err
 		}
 		if len(vectors) != len(indices) {
-			return errors.New("invalid embedding count")
+			return association.InvalidResult("embedding-count")
 		}
 		for j, index := range indices {
 			if !validVector(vectors[j]) {
-				return errors.New("invalid embedding")
+				return association.InvalidResult("embedding-dimensions")
 			}
 			r.Chunks[index].Vector = vectors[j]
+		}
+		if err = s.checkpoint(ctx, source, r, "embedding"); err != nil {
+			return err
 		}
 	}
 	if len(r.Chunks) > 0 && !r.ConcernsReady {
@@ -262,27 +261,44 @@ func (s *Service) process(ctx context.Context, source *store.GraphSource, epoch 
 		if err = s.check(ctx, source, epoch, c, expected); err != nil {
 			return err
 		}
+		if err = s.checkpoint(ctx, source, r, "facets"); err != nil {
+			return err
+		}
 		var facets []association.Facet
-		err = s.billed(ctx, p, c, len(text), true, func() (association.Usage, error) {
+		err = s.billed(ctx, source, p, c, len(text), 1, true, func() (association.Usage, error) {
 			var u association.Usage
 			var e error
 			facets, u, e = model.Facets(ctx, association.Source{Name: "memos/" + memo.UID, Text: text})
+			if e == nil {
+				if len(facets) > 3 {
+					e = association.InvalidResult("result-schema")
+				}
+				for _, f := range facets {
+					if _, ok := quoteSpan(memo.Content, f.Quote); !ok {
+						e = association.InvalidResult("quote-mismatch")
+						break
+					}
+				}
+			}
 			return u, e
 		})
 		if err != nil {
 			return err
 		}
 		if len(facets) > 3 {
-			return errors.New("too many concerns")
+			return association.InvalidResult("result-schema")
 		}
 		for _, f := range facets {
 			quote, ok := quoteSpan(memo.Content, f.Quote)
 			if !ok {
-				return errors.New("concern quote is not original")
+				return association.InvalidResult("quote-mismatch")
 			}
 			r.Concerns = append(r.Concerns, concern{span: quote, Question: f.Question})
 		}
 		r.ConcernsReady = true
+		if err = s.checkpoint(ctx, source, r, "facets"); err != nil {
+			return err
+		}
 	}
 	for i := range r.Concerns {
 		if len(r.Concerns[i].Vector) > 0 {
@@ -292,20 +308,29 @@ func (s *Service) process(ctx context.Context, source *store.GraphSource, epoch 
 		if err = s.check(ctx, source, epoch, c, expected); err != nil {
 			return err
 		}
+		if err = s.checkpoint(ctx, source, r, "concern-embedding"); err != nil {
+			return err
+		}
 		var vectors [][]float32
-		err = s.billed(ctx, p, c, len(text), false, func() (association.Usage, error) {
+		err = s.billed(ctx, source, p, c, len(text), 1, false, func() (association.Usage, error) {
 			var u association.Usage
 			var e error
 			vectors, u, e = model.Embed(ctx, []string{text})
+			if e == nil && (len(vectors) != 1 || !validVector(vectors[0])) {
+				e = association.InvalidResult("embedding-dimensions")
+			}
 			return u, e
 		})
 		if err != nil {
 			return err
 		}
 		if len(vectors) != 1 || !validVector(vectors[0]) {
-			return errors.New("invalid concern vector")
+			return association.InvalidResult("embedding-dimensions")
 		}
 		r.Concerns[i].Vector = vectors[0]
+		if err = s.checkpoint(ctx, source, r, "concern-embedding"); err != nil {
+			return err
+		}
 	}
 	idx, err := s.loadIndex(ctx, source.OwnerID, profile)
 	if err != nil {
@@ -351,42 +376,56 @@ func (s *Service) process(ctx context.Context, source *store.GraphSource, epoch 
 		if err = s.check(ctx, source, epoch, c, expected); err != nil {
 			return err
 		}
+		if err = s.checkpoint(ctx, source, r, "relations"); err != nil {
+			return err
+		}
 		var relations []association.Relation
-		err = s.billed(ctx, p, c, size, true, func() (association.Usage, error) {
+		err = s.billed(ctx, source, p, c, size, 1, true, func() (association.Usage, error) {
 			var u association.Usage
 			var e error
 			relations, u, e = model.Relate(ctx, association.Source{Name: "memos/" + memo.UID, Text: text}, candidates)
+			if e != nil {
+				return u, e
+			}
+			for _, rel := range relations {
+				target := byName[rel.Target]
+				if target == nil {
+					return u, association.InvalidResult("result-schema")
+				}
+				a, okA := quoteSpan(memo.Content, rel.SourceQuote)
+				b, okB := quoteSpan(target.Content, rel.TargetQuote)
+				if !okA || !okB {
+					return u, association.InvalidResult("quote-mismatch")
+				}
+				edge := &store.GraphEdge{OwnerID: source.OwnerID, A: memo.ID, B: target.ID, RevisionA: source.Revision, RevisionB: idx.Records[target.ID].Revision, Profile: profile}
+				ev := evidence{Kind: rel.Kind, Hint: rel.Hint, Topic: rel.Topic, Context: rel.Context, A: a, B: b}
+				if edge.A > edge.B {
+					edge.A, edge.B = edge.B, edge.A
+					edge.RevisionA, edge.RevisionB = edge.RevisionB, edge.RevisionA
+					ev.A, ev.B = ev.B, ev.A
+				}
+				edge.Payload, _ = json.Marshal(ev)
+				edges = append(edges, edge)
+			}
 			return u, e
 		})
 		if err != nil {
 			return err
 		}
-		for _, rel := range relations {
-			target := byName[rel.Target]
-			if target == nil {
-				return errors.New("unknown relationship source")
-			}
-			a, okA := quoteSpan(memo.Content, rel.SourceQuote)
-			b, okB := quoteSpan(target.Content, rel.TargetQuote)
-			if !okA || !okB {
-				return errors.New("relationship quote is not original")
-			}
-			edge := &store.GraphEdge{OwnerID: source.OwnerID, A: memo.ID, B: target.ID, RevisionA: source.Revision, RevisionB: idx.Records[target.ID].Revision, Profile: profile}
-			ev := evidence{Kind: rel.Kind, Hint: rel.Hint, Topic: rel.Topic, Context: rel.Context, A: a, B: b}
-			if edge.A > edge.B {
-				edge.A, edge.B = edge.B, edge.A
-				edge.RevisionA, edge.RevisionB = edge.RevisionB, edge.RevisionA
-				ev.A, ev.B = ev.B, ev.A
-			}
-			edge.Payload, _ = json.Marshal(ev)
-			edges = append(edges, edge)
-		}
 	}
-	if err = s.check(ctx, source, epoch, c, expected); err != nil {
+	r.Publication = &publicationCheckpoint{Epoch: epoch, Expected: expected, Edges: edges}
+	if err = s.checkpoint(ctx, source, r, "publish"); err != nil {
 		return err
 	}
-	source.Representation, _ = json.Marshal(r)
-	source.State = "ready"
+	return s.publishPrepared(ctx, source, epoch, c, &r, idx)
+}
+
+func (s *Service) publishPrepared(ctx context.Context, source *store.GraphSource, epoch int64, c Config, r *representation, idx *semanticIndex) error {
+	saved := r.Publication
+	if err := s.check(ctx, source, epoch, c, saved.Expected); err != nil {
+		return err
+	}
+	source.Stage = "publish"
 	oldCount := 0
 	if old, ok := idx.Records[source.MemoID]; ok {
 		oldCount = len(old.Representation.Chunks)
@@ -394,10 +433,14 @@ func (s *Service) process(ctx context.Context, source *store.GraphSource, epoch 
 	if idx.Vectors-oldCount+len(r.Chunks) > 24576 {
 		return errors.New("semantic index memory budget reached")
 	}
-	if err = s.Store.PublishGraphSource(ctx, &store.GraphPublication{Source: source, ExpectedEpoch: epoch, Edges: edges, Now: time.Now().Unix()}); err != nil {
+	r.Publication = nil
+	source.Representation, _ = json.Marshal(r)
+	source.State = "ready"
+	if err := s.Store.PublishGraphSource(ctx, &store.GraphPublication{Source: source, ExpectedEpoch: epoch, Edges: saved.Edges, Now: s.now().Unix()}); err != nil {
+		r.Publication = saved
 		return err
 	}
-	return idx.put(source.MemoID, source.Revision, r)
+	return idx.put(source.MemoID, source.Revision, *r)
 }
 
 func pairKey(a, b int32) string {

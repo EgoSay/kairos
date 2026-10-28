@@ -43,6 +43,12 @@ export interface WanderStatus {
   dailyNeurons: number;
   resetAt: number;
   error?: string;
+  progress: { total: number; ready: number; preparing: number; quota: number; attention: number; excluded: number };
+  updatedTs: number;
+  cloudflareFreeNeurons: number;
+  blockers: { code: string; until: number }[];
+  baseline?: { resetAt: number; providerNeurons?: number; providerObservedAt?: number; providerApproximate?: boolean };
+  usage: { knownNeurons: number; estimatedNeurons: number; inFlightNeurons: number; unknownNeurons: number; day: string; scope: string };
 }
 export const wanderKeys = {
   all: ["wander"] as const,
@@ -106,13 +112,13 @@ export function useWanderWarmup() {
     return () => window.clearTimeout(timer);
   }, [client, owner]);
 }
-export function useWanderStatus() {
+export function useWanderStatus(interval = 30_000) {
   const owner = useCurrentUser()?.name ?? "";
   return useQuery({
     queryKey: ["wander", owner, "status"],
     queryFn: ({ signal }) => journalRequest<WanderStatus>("/wander/status", { signal }),
     staleTime: 10_000,
-    refetchInterval: 30_000,
+    refetchInterval: interval,
     enabled: Boolean(owner),
   });
 }

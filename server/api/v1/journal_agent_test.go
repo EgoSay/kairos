@@ -57,6 +57,7 @@ func TestAgentCredentialReadOnlyAcrossTransportsAndLifecycle(t *testing.T) {
 		{"GET", "/api/v1/sse", ""},
 		{"PATCH", "/api/v1/journal/preferences", `{"timezone":"UTC"}`},
 		{"POST", "/api/v1/journal/cloud-backup/run", "{}"},
+		{"POST", "/api/v1/journal/wander/retry", `{"requestId":"readonly-must-not-retry"}`},
 		{"GET", "/api/v1/journal/cloud-backup/status", ""},
 		{"POST", "/api/v1/journal/agent/records", "{}"},
 	} {

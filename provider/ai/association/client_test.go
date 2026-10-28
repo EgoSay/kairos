@@ -140,3 +140,61 @@ func TestDailyQuotaCodeSupportsBothErrorEnvelopes(t *testing.T) {
 		require.NotContains(t, err.Error(), "private")
 	}
 }
+
+func TestHTTPFailureRetainsExplicitUsageWithoutExposingBody(t *testing.T) {
+	c := modelServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("CF-Ray", "synthetic-request-LAX")
+		w.WriteHeader(500)
+		_, _ = w.Write([]byte(`{"error":{"message":"PRIVATE_MODEL_OUTPUT"},"usage":{"prompt_tokens":100,"completion_tokens":0}}`))
+	})
+	_, usage, err := c.Facets(context.Background(), Source{Name: "fixture", Text: "fictional"})
+	var remote *ServiceError
+	require.ErrorAs(t, err, &remote)
+	require.True(t, usage.InputKnown)
+	require.True(t, usage.OutputKnown)
+	require.EqualValues(t, 100, usage.Input)
+	require.Zero(t, usage.Output)
+	require.Equal(t, 500, usage.HTTPStatus)
+	require.Equal(t, "synthetic-request-LAX", usage.RequestID)
+	require.NotContains(t, err.Error(), "PRIVATE")
+}
+
+func TestUsagePresenceAndTruncatedResponsesPreserveAccounting(t *testing.T) {
+	for _, tc := range []struct {
+		name, usage             string
+		inputKnown, outputKnown bool
+	}{
+		{"absent", ``, false, false}, {"zero", `,"usage":{"prompt_tokens":0,"completion_tokens":0}`, true, true}, {"partial", `,"usage":{"prompt_tokens":100}`, true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := modelServer(t, func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("CF-Ray", "request-123-LAX")
+				_, _ = w.Write([]byte(`{"choices":[{"finish_reason":"length","message":{"content":"PRIVATE_INVALID_MODEL_TEXT"}}]` + tc.usage + `}`))
+			})
+			_, usage, err := c.Facets(context.Background(), Source{Name: "fixture", Text: "fictional source"})
+			var invalid *ResultError
+			require.ErrorAs(t, err, &invalid)
+			require.Equal(t, "generation-incomplete", invalid.Code)
+			require.Equal(t, tc.inputKnown, usage.InputKnown)
+			require.Equal(t, tc.outputKnown, usage.OutputKnown)
+			require.Equal(t, "request-123-LAX", usage.RequestID)
+			require.Equal(t, 200, usage.HTTPStatus)
+			require.NotContains(t, err.Error(), "PRIVATE")
+		})
+	}
+}
+
+func TestEmptyArrayIsValidButMissingResultIsNot(t *testing.T) {
+	for _, tc := range []struct {
+		content string
+		valid   bool
+	}{{`{"facets":[]}`, true}, {`{}`, false}, {`{"facets":null}`, false}} {
+		c := modelServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			_ = json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": tc.content}}}, "usage": map[string]int{"prompt_tokens": 20, "completion_tokens": 2}})
+		})
+		_, u, err := c.Facets(context.Background(), Source{Name: "fixture", Text: "fictional"})
+		require.Equal(t, tc.valid, err == nil)
+		require.True(t, u.InputKnown)
+		require.True(t, u.OutputKnown)
+	}
+}

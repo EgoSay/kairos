@@ -6,6 +6,8 @@ import type { WanderSession } from "@/lib/wander";
 import { ROUTES } from "@/router/routes";
 
 interface JournalSessionContextValue {
+  preparation: { filter?: "attention" | "preparing" | "quota" | "ready"; expanded: string; scroll: number } | undefined;
+  setPreparation: Dispatch<SetStateAction<JournalSessionContextValue["preparation"]>>;
   graphWalk: WanderSession | undefined;
   setGraphWalk: Dispatch<SetStateAction<WanderSession | undefined>>;
   reviewDay: { date: string; timezone: string } | undefined;
@@ -21,6 +23,7 @@ const JournalSessionContext = createContext<JournalSessionContextValue | undefin
 function JournalSession({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const [graphWalk, setGraphWalk] = useState<WanderSession>();
+  const [preparation, setPreparation] = useState<JournalSessionContextValue["preparation"]>();
   const [reviewDay, setReviewDay] = useState<{ date: string; timezone: string }>();
   const [wander, setWander] = useState<JournalWanderSession>();
   const [expanded, setExpandedNames] = useState<ReadonlySet<string>>(new Set());
@@ -32,11 +35,14 @@ function JournalSession({ children }: { children: ReactNode }) {
     if (pathname !== ROUTES.JOURNAL_WANDER) {
       setWander(undefined);
       setGraphWalk(undefined);
+      setPreparation(undefined);
     }
   }, [pathname]);
   return (
     <JournalSessionContext.Provider
       value={{
+        preparation,
+        setPreparation,
         reviewDay,
         setReviewDay,
         graphWalk,

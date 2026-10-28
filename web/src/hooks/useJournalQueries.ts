@@ -32,7 +32,9 @@ export async function journalRequest<T>(path: string, options: RequestInit = {})
   const response = await fetch(`/api/v1/journal${path}`, { ...options, headers, credentials: "same-origin" });
   if (!response.ok) {
     const body = await response.json().catch(() => undefined);
-    throw new Error(typeof body?.message === "string" ? body.message : i18n.t("journal.request-error"));
+    throw Object.assign(new Error(typeof body?.message === "string" ? body.message : i18n.t("journal.request-error")), {
+      status: response.status,
+    });
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
