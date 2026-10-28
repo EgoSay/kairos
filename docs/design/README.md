@@ -15,6 +15,7 @@ Active design specifications (decided direction, not yet implemented):
 
 Explorations (not yet decided, free to change):
 
+- [随机漫步：后台恢复与关联准备状态](random-walk-recovery-and-status.md) — #38 的后续修复草案；错误分类、预算结算、自动恢复、进度明细与历史失败恢复，尚未实施。
 - `prototypes/` — 设计系统方向原型（HTML，可直接双击打开）。入口 `prototypes/index.html`；用于配色、排版等风格取舍的实际体验对比。
 
 Personal Life Journal design baseline:
