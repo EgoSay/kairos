@@ -198,3 +198,35 @@ func TestEmptyArrayIsValidButMissingResultIsNot(t *testing.T) {
 		require.True(t, u.OutputKnown)
 	}
 }
+
+func TestEvidenceFailureReasonDistinguishesShapeFromQuoteMismatch(t *testing.T) {
+	for _, tc := range []struct {
+		name, content, want string
+		relations           bool
+	}{
+		{"long-question", `{"facets":[{"question":"` + strings.Repeat("x", 161) + `","quote":"fictional source"}]}`, "result-schema", false},
+		{"invented-facet-quote", `{"facets":[{"question":"topic","quote":"invented"}]}`, "quote-mismatch", false},
+		{"foreign-target", `{"relations":[{"target":"foreign","kind":"complement","hint":"hint","context":"","topic":"topic","sourceQuote":"fictional source","targetQuote":"fictional target"}]}`, "result-schema", true},
+		{"long-hint", `{"relations":[{"target":"target","kind":"complement","hint":"` + strings.Repeat("x", 241) + `","context":"","topic":"topic","sourceQuote":"fictional source","targetQuote":"fictional target"}]}`, "result-schema", true},
+		{"invented-relation-quote", `{"relations":[{"target":"target","kind":"complement","hint":"hint","context":"","topic":"topic","sourceQuote":"invented","targetQuote":"fictional target"}]}`, "quote-mismatch", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := modelServer(t, func(w http.ResponseWriter, _ *http.Request) {
+				_ = json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": tc.content}}}, "usage": map[string]int{"prompt_tokens": 20, "completion_tokens": 2}})
+			})
+			source := Source{Name: "source", Text: "fictional source"}
+			var err error
+			var usage Usage
+			if tc.relations {
+				_, usage, err = c.Relate(context.Background(), source, []Source{{Name: "target", Text: "fictional target"}})
+			} else {
+				_, usage, err = c.Facets(context.Background(), source)
+			}
+			var rejected *ResultError
+			require.ErrorAs(t, err, &rejected)
+			require.Equal(t, tc.want, rejected.Code)
+			require.True(t, usage.InputKnown)
+			require.True(t, usage.OutputKnown)
+		})
+	}
+}
