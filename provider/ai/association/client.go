@@ -137,10 +137,13 @@ func (c *Client) request(ctx context.Context, path string, input, output any, us
 			Code json.RawMessage `json:"code"`
 		}
 		var failure struct {
-			Errors []errorCode `json:"errors"`
-			Error  errorCode   `json:"error"`
+			Errors []errorCode     `json:"errors"`
+			Error  errorCode       `json:"error"`
+			Usage  json.RawMessage `json:"usage"`
 		}
-		_ = json.NewDecoder(io.LimitReader(resp.Body, 16384)).Decode(&failure)
+		if json.NewDecoder(io.LimitReader(resp.Body, 16384)).Decode(&failure) == nil && len(failure.Usage) > 0 {
+			_ = json.Unmarshal(failure.Usage, usage)
+		}
 		raw := failure.Error.Code
 		if len(failure.Errors) > 0 {
 			raw = failure.Errors[0].Code

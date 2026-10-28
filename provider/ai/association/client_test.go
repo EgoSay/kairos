@@ -141,6 +141,24 @@ func TestDailyQuotaCodeSupportsBothErrorEnvelopes(t *testing.T) {
 	}
 }
 
+func TestHTTPFailureRetainsExplicitUsageWithoutExposingBody(t *testing.T) {
+	c := modelServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("CF-Ray", "synthetic-request-LAX")
+		w.WriteHeader(500)
+		_, _ = w.Write([]byte(`{"error":{"message":"PRIVATE_MODEL_OUTPUT"},"usage":{"prompt_tokens":100,"completion_tokens":0}}`))
+	})
+	_, usage, err := c.Facets(context.Background(), Source{Name: "fixture", Text: "fictional"})
+	var remote *ServiceError
+	require.ErrorAs(t, err, &remote)
+	require.True(t, usage.InputKnown)
+	require.True(t, usage.OutputKnown)
+	require.EqualValues(t, 100, usage.Input)
+	require.Zero(t, usage.Output)
+	require.Equal(t, 500, usage.HTTPStatus)
+	require.Equal(t, "synthetic-request-LAX", usage.RequestID)
+	require.NotContains(t, err.Error(), "PRIVATE")
+}
+
 func TestUsagePresenceAndTruncatedResponsesPreserveAccounting(t *testing.T) {
 	for _, tc := range []struct {
 		name, usage             string
