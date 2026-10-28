@@ -26,6 +26,10 @@ type GraphSource struct {
 	State             string
 	ErrorCode         string
 	UpdatedTs         int64
+	Stage             string
+	FailureStage      string
+	LastAttemptTs     int64
+	StatusVersion     int64
 }
 
 // FindGraphSource bounds source enumeration for workers, index warming and random roots.
@@ -41,6 +45,9 @@ type FindGraphSource struct {
 	ReadableOnly          bool
 	ConnectedOnly         bool
 	ExcludedUIDs          []string
+	WorkState             string
+	CurrentProfile        string
+	Now                   int64
 }
 
 // GraphEdge stores one evidenced, undirected connection between source versions.
@@ -125,9 +132,9 @@ func (s *Store) CountGraphSources(ctx context.Context, owner int32, profile stri
 	return s.driver.CountGraphSources(ctx, owner, profile)
 }
 
-// ReserveGraphBudget atomically reserves conservative whole Neurons across owners sharing an account.
+// ReserveGraphBudget reserves micro-Neurons across owners sharing an account.
 func (s *Store) ReserveGraphBudget(ctx context.Context, account, day string, amount, limit int64) (bool, error) {
-	if len(account) != 64 || len(day) != 10 || amount <= 0 || limit <= 0 || limit > 9000 {
+	if len(account) != 64 || len(day) != 10 || amount <= 0 || limit <= 0 || limit > 9000*GraphNeuronUnits {
 		return false, errors.New("invalid graph budget")
 	}
 	return s.driver.ReserveGraphBudget(ctx, account, day, amount, limit)

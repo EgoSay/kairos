@@ -5,6 +5,11 @@ before building the Go image. `Dockerfile.dokploy` builds both from a clean Git
 checkout. Its separate context allowlist excludes local data, secrets,
 node_modules and previously generated frontend files.
 
+For an explicitly authorized random-walk accounting reset, use the
+[pause, backup and reset runbook](../docs/operations/wander-ledger-reset.md).
+`wander_ledger_reset.py` preserves originals and graph representations and
+requires a stopped, source-identified repaired container before clearing usage.
+
 ## Personal journal deployment
 
 `journal-image.yml` runs only when a release tag is pushed. Kairos starts at

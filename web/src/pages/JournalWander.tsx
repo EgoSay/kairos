@@ -1,12 +1,13 @@
 import { ArrowLeftIcon, MapIcon, RotateCcwIcon, Settings2Icon, ShuffleIcon } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import JournalMemo from "@/components/JournalMemo";
 import MemoContent from "@/components/MemoContent";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import WanderConnection from "@/components/WanderConnection";
 import WanderMap, { type WanderMapEdge, type WanderMapNode } from "@/components/WanderMap";
+import WanderPreparation, { preparationMessage } from "@/components/WanderPreparation";
 import WanderSettings from "@/components/WanderSettings";
 import { journalRequest } from "@/hooks/useJournalQueries";
 import useMediaQuery from "@/hooks/useMediaQuery";
@@ -44,17 +45,14 @@ function Original({ value, memo, blurred }: { value: WanderOriginal; memo: Memo 
     </article>
   );
 }
-const stateText: Record<string, string> = {
-  unconfigured: "原文已经在这里。连接 Cloudflare 后，会在后台逐步准备关联。",
-  paused: "关联准备已暂停，已准备的内容仍可阅读。",
-  preparing: "正在后台寻找线索，你可以先读原文。",
-  "quota-paused": "今天的后台预算已用完，已有的线索仍可继续阅读。",
-  delayed: "部分记录暂未处理成功，已有的线索仍可阅读。",
-  "configuration-error": "Cloudflare 服务暂不可用，请检查关联设置。",
-};
-
 export default function JournalWander() {
   const trail = useWanderTrail();
+  const [search, setSearch] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const preparationOpen = search.get("panel") === "preparation";
+  const preparationPosition = useRef<WanderPosition | undefined>(undefined);
+  const preparationOpener = useRef<HTMLElement | null>(null);
   const status = useWanderStatus();
   const desktop = useMediaQuery("md");
   const [settings, setSettings] = useState(false);
@@ -106,6 +104,28 @@ export default function JournalWander() {
     if (mapOpen && !trail.entries.some((entry) => entry.original.name === mapName)) setMapOpen(false);
   }, [mapOpen, mapName, trail.entries]);
 
+  const openPreparation = (trigger: HTMLElement) => {
+    preparationPosition.current = capture();
+    preparationOpener.current = trigger;
+    setMapOpen(false);
+    const next = new URLSearchParams(search);
+    next.set("panel", "preparation");
+    setSearch(next, { preventScrollReset: true, state: { ...location.state, wanderPreparation: true } });
+  };
+  const closePreparation = () => {
+    if (location.state?.wanderPreparation) navigate(-1);
+    else {
+      const next = new URLSearchParams(search);
+      next.delete("panel");
+      setSearch(next, { replace: true, preventScrollReset: true });
+    }
+  };
+  const finishPreparation = () => {
+    if (preparationPosition.current) {
+      restoreFocus.current = preparationOpener.current;
+      setRestore(preparationPosition.current);
+    } else preparationOpener.current?.focus({ preventScroll: true });
+  };
   const openMap = (trigger: HTMLElement, from?: string) => {
     const position = capture();
     if (!position) return;
@@ -240,11 +260,27 @@ export default function JournalWander() {
           </Button>
         </div>
       </div>
-      {settings && <WanderSettings onClose={() => setSettings(false)} />}
-      {status.data && stateText[status.data.state] && (
-        <p role="status" className="mb-5 text-sm leading-6 text-muted-foreground">
-          {stateText[status.data.state]}
-        </p>
+      {settings && <WanderSettings onClose={() => setSettings(false)} onProgress={openPreparation} />}
+      {status.data && status.data.state !== "ready" && (
+        <div className="mb-5 flex flex-wrap items-center gap-x-2 text-sm leading-6 text-muted-foreground">
+          <p>{preparationMessage(status.data)}</p>
+          <Button
+            variant="quiet"
+            size="touch"
+            aria-haspopup="dialog"
+            aria-expanded={preparationOpen}
+            onClick={(event) => openPreparation(event.currentTarget)}
+          >
+            查看进度
+          </Button>
+        </div>
+      )}
+      {status.isError && (
+        <div className="mb-5">
+          <Button variant="quiet" size="touch" onClick={(event) => openPreparation(event.currentTarget)}>
+            查看关联准备进度
+          </Button>
+        </div>
       )}
       <div className="sr-only" role="status" aria-live="polite">
         {message}
@@ -355,6 +391,7 @@ export default function JournalWander() {
           )}
         </>
       )}
+      <WanderPreparation open={preparationOpen} online={trail.online} onClose={closePreparation} onClosed={finishPreparation} />
       <Sheet open={mapOpen} onOpenChange={setMapOpen} onOpenChangeComplete={finishMap}>
         <SheetContent side={desktop ? "right" : "bottom"} size="reading" closeLabel="收起附近地图" finalFocus={false}>
           <SheetHeader>

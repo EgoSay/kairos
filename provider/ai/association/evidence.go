@@ -41,12 +41,12 @@ func (c *Client) Facets(ctx context.Context, source Source) ([]Facet, Usage, err
 	if err != nil {
 		return nil, usage, err
 	}
-	if len(result.Facets) > 3 {
-		return nil, usage, errors.New("too many extracted concerns")
+	if result.Facets == nil || len(result.Facets) > 3 {
+		return nil, usage, InvalidResult("result-schema")
 	}
 	for _, facet := range result.Facets {
 		if !boundedText(facet.Question, 160) || !exactQuote(source.Text, facet.Quote) {
-			return nil, usage, errors.New("concern has no exact source evidence")
+			return nil, usage, InvalidResult("quote-mismatch")
 		}
 	}
 	return result.Facets, usage, nil
@@ -71,20 +71,20 @@ func (c *Client) Relate(ctx context.Context, source Source, candidates []Source)
 	if err != nil {
 		return nil, usage, err
 	}
-	if len(result.Relations) > 4 {
-		return nil, usage, errors.New("too many suggested relationships")
+	if result.Relations == nil || len(result.Relations) > 4 {
+		return nil, usage, InvalidResult("result-schema")
 	}
 	seen := map[string]bool{}
 	for _, relation := range result.Relations {
 		text, ok := targets[relation.Target]
 		if !ok || seen[relation.Target] || !boundedText(relation.Hint, 240) || !boundedText(relation.Topic, 80) || len(relation.Context) > 400 ||
 			!exactQuote(source.Text, relation.SourceQuote) || !exactQuote(text, relation.TargetQuote) {
-			return nil, usage, errors.New("relationship has invalid source evidence")
+			return nil, usage, InvalidResult("quote-mismatch")
 		}
 		switch relation.Kind {
 		case "same-question", "complement", "contrast", "cross-context":
 		default:
-			return nil, usage, errors.New("invalid relationship kind")
+			return nil, usage, InvalidResult("result-schema")
 		}
 		seen[relation.Target] = true
 	}

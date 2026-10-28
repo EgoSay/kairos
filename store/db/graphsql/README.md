@@ -9,3 +9,11 @@ and both source revisions, and commits one source plus its adjacency atomically.
 Original records remain in `memo`. Representations and suggested edges are derived
 and rebuildable; preference/feedback documents are separate user intent. Ordinary
 read endpoints use bounded source and adjacency queries, never model calls.
+
+Call reservations and request identities commit together; settlement applies a
+single delta to the original account and UTC day. Values are integer micro-Neurons.
+Safe attempt receipts contain no original text or credentials. Progress uses one
+SQL snapshot with mutually exclusive ready/preparing/quota/attention groups.
+Retry receipts are transactional and compare owner epoch, source revision and
+status version, preserving partial work. The connection circuit persists across
+process restarts and uses a conditional update for its single recovery probe.

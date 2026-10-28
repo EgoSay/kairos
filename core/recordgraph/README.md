@@ -34,12 +34,33 @@ they remain readable. Scaling beyond that requires an index implementation chang
 The two fixed models are `@cf/qwen/qwen3-embedding-0.6b` and
 `@cf/qwen/qwen3-30b-a3b-fp8`, through a strict Cloudflare endpoint. Conservative daily
 Neurons reservations are shared by account, survive restarts and have a maximum
-application limit of 9,000. Unknown usage and failed calls keep their reservation.
-Cloudflare's daily quota error pauses the account until UTC midnight. The user
+application limit of 9,000. Each call has a durable identity and uses integer
+micro-Neurons (1 Neuron = 1,000,000 units). Explicit token usage settles the call
+exactly once, including rejected results and explicit zero usage. Successful
+embeddings without usage retain a separate conservative input estimate; missing
+usage on failed calls retains an unknown reservation. No rounding up per call
+or fabricated charge is applied. Settlement stays on the original UTC day.
+Cloudflare's daily quota error pauses the account until UTC midnight without
+changing the ledger to a fictional full-budget charge. The user
 must confirm a Workers Free account; this application cannot inspect billing plans
 or guarantee zero charges on a Paid account. Other applications share the vendor
 quota but are not included in this application's accounting. No automatic fallback
 provider or paid-plan upgrade exists.
+
+Network failures back off and open a persistent credential-scoped circuit after
+three consecutive failures; only one probe may run when it expires. Invalid
+model results stop after three failures at the same stage. Budget waits,
+cancellation and changed sources do not spend validation attempts. Validated
+vectors, concerns and relations are checkpointed before advancing; a failed SQL
+publication can retry without calling the model again.
+
+Progress, paginated jobs and safe attempt receipts are owner-scoped metadata
+reads; they do not take the worker lock or load the semantic index. Retry uses
+an idempotency key plus source revision/status checks, never Configure or a full
+graph rebuild. Original text and provider secrets are not stored in receipts.
+The optional `wander-maintenance` document pauses an operator reset without
+invalidating the graph; clearing the ledger is a separately authorized operation,
+not an application migration or retry behavior.
 
 Test with `DRIVER=sqlite go test -race ./core/recordgraph`; store integration tests
 also exercise all three supported drivers. Model tests use synthetic records and

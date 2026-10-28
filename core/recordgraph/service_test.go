@@ -39,7 +39,7 @@ func (m *testModel) Embed(_ context.Context, texts []string) ([][]float32, assoc
 		v[0] = 1
 		out = append(out, v)
 	}
-	return out, association.Usage{Input: 100}, nil
+	return out, association.Usage{Input: 100, InputKnown: true}, nil
 }
 func (m *testModel) Facets(_ context.Context, source association.Source) ([]association.Facet, association.Usage, error) {
 	m.calls++
@@ -47,7 +47,7 @@ func (m *testModel) Facets(_ context.Context, source association.Source) ([]asso
 	if m.facetError != nil {
 		return nil, association.Usage{}, m.facetError
 	}
-	return []association.Facet{}, association.Usage{Input: 100, Output: 20}, nil
+	return []association.Facet{}, association.Usage{Input: 100, Output: 20, InputKnown: true, OutputKnown: true}, nil
 }
 func (m *testModel) Relate(_ context.Context, source association.Source, targets []association.Source) ([]association.Relation, association.Usage, error) {
 	m.calls++
@@ -58,7 +58,7 @@ func (m *testModel) Relate(_ context.Context, source association.Source, targets
 	for _, target := range targets[:min(4, len(targets))] {
 		out = append(out, association.Relation{Target: target.Name, Kind: "cross-context", Hint: "两段记录都谈到了陪伴", Topic: "怎样陪伴", Context: "发生在不同关系里", SourceQuote: firstQuote(source.Text), TargetQuote: firstQuote(target.Text)})
 	}
-	return out, association.Usage{Input: 200, Output: 100}, nil
+	return out, association.Usage{Input: 200, Output: 100, InputKnown: true, OutputKnown: true}, nil
 }
 func firstQuote(text string) string { r := []rune(text); return string(r[:min(40, len(r))]) }
 func fixture(t *testing.T) (*Service, *testModel, int32) {

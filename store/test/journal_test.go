@@ -91,6 +91,9 @@ func dropGraphFixture(ctx context.Context, t *testing.T, s *store.Store) {
 	driver := getDriverFromEnv()
 	ddl, err := os.ReadFile("../migration/" + driver + "/26.10/01__record_graph.sql")
 	require.NoError(t, err)
+	recoveryDDL, err := os.ReadFile("../migration/" + driver + "/26.10/02__record_graph_recovery.sql")
+	require.NoError(t, err)
+	ddl = append(ddl, recoveryDDL...)
 	for _, match := range regexp.MustCompile(`CREATE TRIGGER (\w+) AFTER (?:INSERT|UPDATE|DELETE) ON ([^ ]+)`).FindAllStringSubmatch(string(ddl), -1) {
 		q := "DROP TRIGGER " + match[1]
 		if driver == "postgres" {
@@ -105,7 +108,7 @@ func dropGraphFixture(ctx context.Context, t *testing.T, s *store.Store) {
 			require.NoError(t, err)
 		}
 	}
-	for _, table := range []string{"record_graph_edge", "record_graph_source", "record_graph_owner", "record_graph_budget"} {
+	for _, table := range []string{"record_graph_call", "record_graph_retry", "record_graph_runtime", "record_graph_edge", "record_graph_source", "record_graph_owner", "record_graph_budget"} {
 		_, err = s.GetDriver().GetDB().ExecContext(ctx, "DROP TABLE "+table)
 		require.NoError(t, err)
 	}

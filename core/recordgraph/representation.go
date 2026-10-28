@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/EgoSay/kairos/provider/ai/association"
+	"github.com/EgoSay/kairos/store"
 )
 
 type span struct {
@@ -27,11 +28,12 @@ type concern struct {
 	Vector   []float32 `json:"vector"`
 }
 type representation struct {
-	Hash          string    `json:"hash"`
-	Chunks        []chunk   `json:"chunks"`
-	Concerns      []concern `json:"concerns"`
-	ConcernsReady bool      `json:"concernsReady"`
-	Terms         []uint64  `json:"terms"`
+	Hash          string                 `json:"hash"`
+	Chunks        []chunk                `json:"chunks"`
+	Concerns      []concern              `json:"concerns"`
+	ConcernsReady bool                   `json:"concernsReady"`
+	Terms         []uint64               `json:"terms"`
+	Publication   *publicationCheckpoint `json:"publication,omitempty"`
 }
 
 func split(text string) ([]chunk, error) {
@@ -148,3 +150,11 @@ func excerpts(text string, chunks []chunk, indices []int) string {
 	}
 	return strings.Join(parts, "\n\n[以下为同一记录的另一片段]\n\n")
 }
+
+type publicationCheckpoint struct {
+	Epoch    int64              `json:"epoch"`
+	Expected map[int32]string   `json:"expected"`
+	Edges    []*store.GraphEdge `json:"edges"`
+}
+
+func encodeRepresentation(r representation) ([]byte, error) { return json.Marshal(r) }

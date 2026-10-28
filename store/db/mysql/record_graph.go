@@ -8,7 +8,7 @@ import (
 )
 
 func (d *DB) graphRepository() graphsql.Repository {
-	return graphsql.Repository{DB: d.db, Postgres: false}
+	return graphsql.Repository{DB: d.db, Postgres: false, MySQL: true}
 }
 func (d *DB) ListGraphSources(ctx context.Context, f *store.FindGraphSource) ([]*store.GraphSource, error) {
 	return d.graphRepository().List(ctx, f)
@@ -40,4 +40,39 @@ func (d *DB) RefundGraphBudget(ctx context.Context, a, day string, n int64) erro
 }
 func (d *DB) ReadGraphBudget(ctx context.Context, a, day string) (int64, error) {
 	return d.graphRepository().Budget(ctx, a, day)
+}
+
+func (d *DB) SaveGraphProgress(ctx context.Context, s *store.GraphSource) error {
+	return d.graphRepository().Checkpoint(ctx, s)
+}
+func (d *DB) BeginGraphCall(ctx context.Context, c *store.GraphCall, limit int64) (bool, error) {
+	return d.graphRepository().BeginCall(ctx, c, limit)
+}
+func (d *DB) SettleGraphCall(ctx context.Context, c *store.GraphCall) error {
+	return d.graphRepository().SettleCall(ctx, c)
+}
+func (d *DB) ReadGraphUsage(ctx context.Context, a, day string, now int64) (store.GraphUsage, error) {
+	return d.graphRepository().Usage(ctx, a, day, now)
+}
+func (d *DB) ListGraphCalls(ctx context.Context, owner, memo int32, before store.GraphCallCursor, limit int) ([]*store.GraphCall, error) {
+	return d.graphRepository().Calls(ctx, owner, memo, before, limit)
+}
+func (d *DB) CountGraphProgress(ctx context.Context, f *store.FindGraphSource) (store.GraphProgress, error) {
+	return d.graphRepository().Progress(ctx, f)
+}
+func (d *DB) GetGraphRuntime(ctx context.Context, key string) (store.GraphRuntime, error) {
+	return d.graphRepository().Runtime(ctx, key)
+}
+func (d *DB) PutGraphRuntime(ctx context.Context, v store.GraphRuntime) error {
+	return d.graphRepository().SaveRuntime(ctx, v)
+}
+func (d *DB) GetGraphRetry(ctx context.Context, owner int32, id string) (*store.GraphRetry, error) {
+	return d.graphRepository().RetryReceipt(ctx, owner, id)
+}
+func (d *DB) RetryGraphSources(ctx context.Context, v *store.GraphRetry) (*store.GraphRetry, error) {
+	return d.graphRepository().Retry(ctx, v)
+}
+
+func (d *DB) ClaimGraphProbe(ctx context.Context, key string, now int64) (bool, error) {
+	return d.graphRepository().Probe(ctx, key, now)
 }

@@ -123,7 +123,7 @@ export function useWanderTrail() {
     };
     const connectivity = () => {
       setOnline(navigator.onLine);
-      invalidate();
+      if (navigator.onLine) invalidate();
     };
     document.addEventListener("visibilitychange", invalidate);
     window.addEventListener("online", connectivity);

@@ -8,6 +8,18 @@ import (
 // Driver is an interface for store driver.
 // It contains all methods that store database driver should implement.
 type Driver interface {
+	SaveGraphProgress(context.Context, *GraphSource) error
+	BeginGraphCall(context.Context, *GraphCall, int64) (bool, error)
+	SettleGraphCall(context.Context, *GraphCall) error
+	ReadGraphUsage(context.Context, string, string, int64) (GraphUsage, error)
+	ListGraphCalls(context.Context, int32, int32, GraphCallCursor, int) ([]*GraphCall, error)
+	CountGraphProgress(context.Context, *FindGraphSource) (GraphProgress, error)
+	GetGraphRuntime(context.Context, string) (GraphRuntime, error)
+	PutGraphRuntime(context.Context, GraphRuntime) error
+	ClaimGraphProbe(context.Context, string, int64) (bool, error)
+	GetGraphRetry(context.Context, int32, string) (*GraphRetry, error)
+	RetryGraphSources(context.Context, *GraphRetry) (*GraphRetry, error)
+
 	ReserveGraphBudget(ctx context.Context, account, day string, amount, limit int64) (bool, error)
 	RefundGraphBudget(ctx context.Context, account, day string, amount int64) error
 	ReadGraphBudget(ctx context.Context, account, day string) (int64, error)
