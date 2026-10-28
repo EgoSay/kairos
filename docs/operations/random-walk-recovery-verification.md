@@ -63,7 +63,7 @@ quality on personal records. Local acceptance: `http://127.0.0.1:3081/journal/wa
 - Go lint with the repository configuration and Go 1.27-compatible golangci-lint
 - `cd web && pnpm lint && pnpm test`: 248 files, 2,229 tests
 - Production frontend build
-- `python3 -m unittest discover -s scripts -p test_wander_ledger_reset.py -v`:
+- `python3 -m unittest discover -s scripts/tests -p test_wander_ledger_reset.py -v`:
   backup integrity/permissions, original and graph preservation, unrelated
   account/provider-quota preservation, idempotence, configuration-drift refusal,
   stopped-container checks and live source attestation

@@ -76,5 +76,5 @@ a new verified attestation, never an assumed label or image tag.
 Local validation uses only fictional data and the actual latest schema:
 
 ```sh
-python3 -m unittest discover -s scripts -p test_wander_ledger_reset.py -v
+python3 -m unittest discover -s scripts/tests -p test_wander_ledger_reset.py -v
 ```

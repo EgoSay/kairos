@@ -3,10 +3,12 @@
 import json
 from pathlib import Path
 import sqlite3
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import wander_ledger_reset as reset
 
 
@@ -17,7 +19,7 @@ class LedgerResetTest(unittest.TestCase):
         self.directory = Path(self.temp.name) / "operation"
         self.db = sqlite3.connect(Path(self.temp.name) / "fixture.db", isolation_level=None)
         self.addCleanup(self.db.close)
-        self.db.executescript((Path(__file__).parents[1] / "store/migration/sqlite/LATEST.sql").read_text())
+        self.db.executescript((Path(__file__).parents[2] / "store/migration/sqlite/LATEST.sql").read_text())
         self.account = "a" * 32
         self.endpoint = "https://api.cloudflare.com/client/v4/accounts/" + self.account + "/ai/v1"
         self.key = reset.digest(self.endpoint)
