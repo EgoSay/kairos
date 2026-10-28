@@ -45,7 +45,10 @@ func (c *Client) Facets(ctx context.Context, source Source) ([]Facet, Usage, err
 		return nil, usage, InvalidResult("result-schema")
 	}
 	for _, facet := range result.Facets {
-		if !boundedText(facet.Question, 160) || !exactQuote(source.Text, facet.Quote) {
+		if !boundedText(facet.Question, 160) || !boundedText(facet.Quote, 1200) {
+			return nil, usage, InvalidResult("result-schema")
+		}
+		if !exactQuote(source.Text, facet.Quote) {
 			return nil, usage, InvalidResult("quote-mismatch")
 		}
 	}
@@ -78,13 +81,16 @@ func (c *Client) Relate(ctx context.Context, source Source, candidates []Source)
 	for _, relation := range result.Relations {
 		text, ok := targets[relation.Target]
 		if !ok || seen[relation.Target] || !boundedText(relation.Hint, 240) || !boundedText(relation.Topic, 80) || len(relation.Context) > 400 ||
-			!exactQuote(source.Text, relation.SourceQuote) || !exactQuote(text, relation.TargetQuote) {
-			return nil, usage, InvalidResult("quote-mismatch")
+			!boundedText(relation.SourceQuote, 1200) || !boundedText(relation.TargetQuote, 1200) {
+			return nil, usage, InvalidResult("result-schema")
 		}
 		switch relation.Kind {
 		case "same-question", "complement", "contrast", "cross-context":
 		default:
 			return nil, usage, InvalidResult("result-schema")
+		}
+		if !exactQuote(source.Text, relation.SourceQuote) || !exactQuote(text, relation.TargetQuote) {
+			return nil, usage, InvalidResult("quote-mismatch")
 		}
 		seen[relation.Target] = true
 	}
